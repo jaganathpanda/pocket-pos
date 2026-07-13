@@ -1,0 +1,1 @@
+﻿class ExpenseModule { const ExpenseModule(); }

@@ -1,0 +1,16 @@
+erDiagram
+  ROLES ||--o{ USERS : has
+  CATEGORIES ||--o{ CATEGORIES : parent_of
+  CATEGORIES ||--o{ PRODUCTS : groups
+  PRODUCTS ||--o{ PRODUCT_VARIANTS : has
+  PRODUCTS ||--o{ INVENTORY : tracked_in
+  PRODUCTS ||--o{ INVENTORY_TRANSACTIONS : moves
+  PRODUCT_VARIANTS ||--o{ INVENTORY : tracked_in
+  CUSTOMERS ||--o{ CARTS : owns
+  CARTS ||--o{ CART_ITEMS : has
+  PRODUCTS ||--o{ CART_ITEMS : selected
+  CARTS ||--o{ SALES : converts_to
+  SALES ||--o{ SALE_ITEMS : has
+  PRODUCTS ||--o{ SALE_ITEMS : sold
+  SALES ||--o{ PAYMENTS : receives
+  USERS ||--o{ AUDIT_LOGS : creates

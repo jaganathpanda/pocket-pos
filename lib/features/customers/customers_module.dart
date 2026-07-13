@@ -1,0 +1,1 @@
+﻿class CustomersModule { const CustomersModule(); }

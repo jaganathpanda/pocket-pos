@@ -1,0 +1,1 @@
+﻿class VariantsModule { const VariantsModule(); }

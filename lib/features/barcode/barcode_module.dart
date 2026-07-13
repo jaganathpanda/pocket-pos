@@ -1,0 +1,1 @@
+﻿class BarcodeModule { const BarcodeModule(); }

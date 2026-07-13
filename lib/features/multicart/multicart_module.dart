@@ -1,0 +1,1 @@
+﻿class MulticartModule { const MulticartModule(); }

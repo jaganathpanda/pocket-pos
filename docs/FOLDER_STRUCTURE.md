@@ -1,0 +1,51 @@
+# Folder Structure
+
+```text
+lib/
+  app/
+    app.dart
+    router.dart
+  core/
+    constants/
+    database/
+    di/
+    services/
+    utilities/
+    widgets/
+  features/
+    auth/
+      data/
+      domain/
+      presentation/
+    dashboard/
+      presentation/
+    categories/
+      data/
+      domain/
+      presentation/
+    products/
+      data/
+      domain/
+      presentation/
+    inventory/
+      data/
+      domain/
+      presentation/
+    sales/
+      data/
+      domain/
+      presentation/
+    multicart/
+    purchases/
+    suppliers/
+    customers/
+    reports/
+    expense/
+    settings/
+    variants/
+    barcode/
+assets/
+docs/
+test/
+tool/
+```

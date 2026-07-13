@@ -1,0 +1,1 @@
+﻿class SuppliersModule { const SuppliersModule(); }
