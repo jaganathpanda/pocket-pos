@@ -28,12 +28,11 @@ class PosBillingPage extends ConsumerWidget {
           const SizedBox(width: 12),
         ],
       ),
-      body: Row(
-        children: [
-          // ─── Cart list (left sidebar) ───────────────────────────────────
-          SizedBox(
-            width: 240,
-            child: Card(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 600;
+
+          final Widget cartList = Card(
               margin: const EdgeInsets.all(12),
               child: Column(
                 children: [
@@ -114,26 +113,59 @@ class PosBillingPage extends ConsumerWidget {
                   ),
                 ],
               ),
-            ),
-          ),
+            );
 
-          // ─── Cart details (main area) ────────────────────────────────────
-          Expanded(
-            child: selectedCartId == null
-                ? const Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.point_of_sale_rounded, size: 64, color: Colors.grey),
-                        SizedBox(height: 12),
-                        Text('Create or select a cart to start billing',
-                            style: TextStyle(color: Colors.grey)),
-                      ],
-                    ),
-                  )
-                : _CartDetails(cartId: selectedCartId),
-          ),
-        ],
+          final Widget details = selectedCartId == null
+              ? const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.point_of_sale_rounded, size: 64, color: Colors.grey),
+                      SizedBox(height: 12),
+                      Text('Create or select a cart to start billing',
+                          style: TextStyle(color: Colors.grey)),
+                    ],
+                  ),
+                )
+              : _CartDetails(cartId: selectedCartId);
+
+          // Phones: show one pane at a time (cart list, or the selected cart).
+          if (isNarrow) {
+            if (selectedCartId == null) {
+              return cartList;
+            }
+            return Column(
+              children: [
+                Material(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        tooltip: 'Back to carts',
+                        onPressed: () =>
+                            ref.read(selectedCartIdProvider.notifier).state = null,
+                      ),
+                      const Expanded(
+                        child: Text('Cart Details',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(child: details),
+              ],
+            );
+          }
+
+          // Wide screens: cart list beside the bill.
+          return Row(
+            children: [
+              SizedBox(width: 240, child: cartList),
+              Expanded(child: details),
+            ],
+          );
+        },
       ),
     );
   }
@@ -318,9 +350,9 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                       child: const Row(
                         children: [
                           Expanded(flex: 3, child: Text('Product', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                          Expanded(flex: 1, child: Text('Qty', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                          Expanded(flex: 1, child: Text('Price', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                          Expanded(flex: 1, child: Text('Total', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                          Expanded(flex: 4, child: Text('Qty', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                          Expanded(flex: 2, child: Text('Price', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                          Expanded(flex: 3, child: Text('Total', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
                           SizedBox(width: 48),
                         ],
                       ),
@@ -348,10 +380,12 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                                       Expanded(
                                         flex: 3,
                                         child: Text(row.product.name,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
                                             style: const TextStyle(fontSize: 13)),
                                       ),
                                       Expanded(
-                                        flex: 1,
+                                        flex: 4,
                                         child: _QtyControl(
                                           qty: row.item.quantity,
                                           onChanged: (newQty) async {
@@ -372,7 +406,7 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                                         ),
                                       ),
                                       Expanded(
-                                        flex: 1,
+                                        flex: 2,
                                         child: Text(
                                           '₹${row.item.unitPrice.toStringAsFixed(2)}',
                                           textAlign: TextAlign.center,
@@ -380,7 +414,7 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                                         ),
                                       ),
                                       Expanded(
-                                        flex: 1,
+                                        flex: 3,
                                         child: Text(
                                           '₹${lineTotal.toStringAsFixed(2)}',
                                           textAlign: TextAlign.right,
@@ -523,7 +557,7 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
             ],
           ),
           content: SizedBox(
-            width: 420,
+            width: (MediaQuery.sizeOf(ctx).width - 48).clamp(280.0, 420.0),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -587,15 +621,19 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                   // Payment mode
                   const Text('Payment Mode', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
                   const SizedBox(height: 8),
-                  SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(value: 'cash', label: Text('Cash'), icon: Icon(Icons.money)),
-                      ButtonSegment(value: 'card', label: Text('Card'), icon: Icon(Icons.credit_card)),
-                      ButtonSegment(value: 'upi', label: Text('UPI'), icon: Icon(Icons.qr_code)),
-                      ButtonSegment(value: 'credit', label: Text('Credit'), icon: Icon(Icons.timer_outlined)),
-                    ],
-                    selected: {paymentMode},
-                    onSelectionChanged: (s) => setDialogState(() => paymentMode = s.first),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SegmentedButton<String>(
+                      showSelectedIcon: false,
+                      segments: const [
+                        ButtonSegment(value: 'cash', label: Text('Cash'), icon: Icon(Icons.money)),
+                        ButtonSegment(value: 'card', label: Text('Card'), icon: Icon(Icons.credit_card)),
+                        ButtonSegment(value: 'upi', label: Text('UPI'), icon: Icon(Icons.qr_code)),
+                        ButtonSegment(value: 'credit', label: Text('Credit'), icon: Icon(Icons.timer_outlined)),
+                      ],
+                      selected: {paymentMode},
+                      onSelectionChanged: (s) => setDialogState(() => paymentMode = s.first),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   
@@ -706,7 +744,7 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
             ],
           ),
           content: SizedBox(
-            width: 500,
+            width: (MediaQuery.sizeOf(ctx).width - 48).clamp(280.0, 500.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [

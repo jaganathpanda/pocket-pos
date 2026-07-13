@@ -99,6 +99,7 @@ class _AppShell extends StatelessWidget {
     ];
 
     final selectedIndex = destinations.indexWhere((d) => location.startsWith(d.route));
+    final isNarrow = MediaQuery.sizeOf(context).width < 600;
 
     return Scaffold(
       body: Row(
@@ -106,7 +107,10 @@ class _AppShell extends StatelessWidget {
           NavigationRail(
             selectedIndex: selectedIndex < 0 ? 0 : selectedIndex,
             onDestinationSelected: (index) => context.go(destinations[index].route),
-            labelType: NavigationRailLabelType.all,
+            labelType: isNarrow
+                ? NavigationRailLabelType.none
+                : NavigationRailLabelType.all,
+            minWidth: isNarrow ? 56 : 72,
             scrollable: true,
             destinations: [
               for (final d in destinations)

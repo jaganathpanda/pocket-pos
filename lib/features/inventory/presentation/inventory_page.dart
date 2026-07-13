@@ -106,7 +106,10 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
                             ),
                       title: Text(item.product.name,
                           style: const TextStyle(fontWeight: FontWeight.w500)),
-                      subtitle: Row(
+                      subtitle: Wrap(
+                        spacing: 8,
+                        runSpacing: 2,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text(
                             '${item.inventory.availableStock.toStringAsFixed(item.inventory.availableStock % 1 == 0 ? 0 : 1)} ${item.product.unit}',
@@ -115,14 +118,12 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
                               color: out ? Colors.red : low ? Colors.orange : Colors.green.shade700,
                             ),
                           ),
-                          const SizedBox(width: 8),
                           if (out)
                             const Text('OUT OF STOCK',
                                 style: TextStyle(fontSize: 10, color: Colors.red))
                           else if (low)
                             const Text('LOW STOCK',
                                 style: TextStyle(fontSize: 10, color: Colors.orange)),
-                          const SizedBox(width: 8),
                           Text('Min: ${item.inventory.lowStockThreshold}',
                               style: const TextStyle(fontSize: 11, color: Colors.grey)),
                         ],
