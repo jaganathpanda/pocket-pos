@@ -3,6 +3,10 @@ import '../../../core/database/app_database.dart';
 abstract class ProductRepository {
   Stream<List<Product>> watchAll();
   Future<List<Product>> search(String query);
+
+  /// Looks up a single active product by its barcode, falling back to an exact
+  /// product-code match. Returns `null` when nothing matches.
+  Future<Product?> findByBarcode(String code);
   Future<void> add({
     required String name,
     required String productCode,

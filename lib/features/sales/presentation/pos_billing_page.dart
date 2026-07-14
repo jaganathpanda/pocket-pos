@@ -5,6 +5,8 @@ import 'package:drift/drift.dart' show Expression;
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_provider.dart';
 import '../../../core/di/providers.dart';
+import '../../barcode/presentation/barcode_scanner_page.dart';
+import '../../barcode/presentation/hid_scanner_listener.dart';
 
 class PosBillingPage extends ConsumerWidget {
   const PosBillingPage({super.key});
@@ -326,11 +328,58 @@ class _CartDetails extends ConsumerStatefulWidget {
 }
 
 class _CartDetailsState extends ConsumerState<_CartDetails> {
+  // While a dialog owns the keyboard, pause the page-level HID scanner so a
+  // scan isn't handled twice (once by the dialog field, once by the page).
+  bool _dialogOpen = false;
+
+  /// Resolves a scanned/typed code to a product and adds it to the cart.
+  Future<void> _addByBarcode(String code) async {
+    final product = await ref.read(productRepositoryProvider).findByBarcode(code);
+    if (!mounted) return;
+    if (product == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No product found for "$code"')),
+      );
+      return;
+    }
+    try {
+      await ref.read(salesRepositoryProvider).addItem(
+            cartId: widget.cartId,
+            productId: product.id,
+          );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Added ${product.name}'),
+            duration: const Duration(milliseconds: 900),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      }
+    }
+  }
+
+  Future<void> _scanWithCamera() async {
+    setState(() => _dialogOpen = true);
+    try {
+      final code = await scanBarcodeWithCamera(context);
+      if (code != null) await _addByBarcode(code);
+    } finally {
+      if (mounted) setState(() => _dialogOpen = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final items = ref.watch(cartItemsProvider(widget.cartId));
 
-    return Column(
+    return HidScannerListener(
+      enabled: !_dialogOpen,
+      onScan: _addByBarcode,
+      child: Column(
       children: [
         Expanded(
           child: Card(
@@ -475,6 +524,12 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
           padding: const EdgeInsets.fromLTRB(0, 8, 12, 12),
           child: Row(
             children: [
+              IconButton.filledTonal(
+                tooltip: 'Scan barcode (camera)',
+                onPressed: _scanWithCamera,
+                icon: const Icon(Icons.qr_code_scanner),
+              ),
+              const SizedBox(width: 8),
               FilledButton.icon(
                 onPressed: () => _showAddItemDialog(context, ref),
                 icon: const Icon(Icons.add_shopping_cart_rounded),
@@ -492,7 +547,8 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
             ],
           ),
         ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -544,6 +600,7 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
 
     if (!context.mounted) return;
 
+    setState(() => _dialogOpen = true);
     final confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -691,6 +748,7 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
         ),
       ),
     );
+    if (mounted) setState(() => _dialogOpen = false);
 
     if (confirmed != true || !context.mounted) return;
 
@@ -728,10 +786,29 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
     }
   }
 
+  /// Adds a product to the cart by barcode/product-code from within the
+  /// add-item dialog. Returns true when a matching product was found.
+  Future<bool> _tryAddByCode(BuildContext dialogContext, String code) async {
+    final product = await ref.read(productRepositoryProvider).findByBarcode(code);
+    if (product == null) return false;
+    try {
+      await ref.read(salesRepositoryProvider).addItem(
+            cartId: widget.cartId,
+            productId: product.id,
+          );
+    } catch (e) {
+      if (dialogContext.mounted) {
+        ScaffoldMessenger.of(dialogContext).showSnackBar(SnackBar(content: Text('$e')));
+      }
+    }
+    return true;
+  }
+
   Future<void> _showAddItemDialog(BuildContext context, WidgetRef ref) async {
     final query = TextEditingController();
     final results = ValueNotifier<List<dynamic>>([]);
 
+    setState(() => _dialogOpen = true);
     await showDialog<void>(
       context: context,
       builder: (ctx) {
@@ -751,6 +828,7 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                 TextField(
                   controller: query,
                   autofocus: true,
+                  textInputAction: TextInputAction.search,
                   onChanged: (value) async {
                     if (value.trim().isEmpty) {
                       results.value = [];
@@ -758,10 +836,36 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                     }
                     results.value = await ref.read(productRepositoryProvider).search(value);
                   },
-                  decoration: const InputDecoration(
+                  // Fires when a HID scanner sends its terminating Enter.
+                  onSubmitted: (value) async {
+                    final code = value.trim();
+                    if (code.isEmpty) return;
+                    if (await _tryAddByCode(ctx, code)) {
+                      if (ctx.mounted) Navigator.pop(ctx);
+                    } else {
+                      results.value =
+                          await ref.read(productRepositoryProvider).search(code);
+                    }
+                  },
+                  decoration: InputDecoration(
                     labelText: 'Name / Code / Barcode',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.search),
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: IconButton(
+                      tooltip: 'Scan with camera',
+                      icon: const Icon(Icons.qr_code_scanner),
+                      onPressed: () async {
+                        final code = await scanBarcodeWithCamera(ctx);
+                        if (code == null) return;
+                        if (await _tryAddByCode(ctx, code)) {
+                          if (ctx.mounted) Navigator.pop(ctx);
+                        } else {
+                          query.text = code;
+                          results.value =
+                              await ref.read(productRepositoryProvider).search(code);
+                        }
+                      },
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -821,6 +925,7 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
         );
       },
     );
+    if (mounted) setState(() => _dialogOpen = false);
   }
 }
 

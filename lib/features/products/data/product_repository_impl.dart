@@ -23,6 +23,18 @@ class ProductRepositoryImpl implements ProductRepository {
   }
 
   @override
+  Future<Product?> findByBarcode(String code) {
+    final c = code.trim();
+    if (c.isEmpty) return Future.value(null);
+    return (_db.select(_db.products)
+          ..where((p) =>
+              p.isActive.equals(true) &
+              (p.barcode.equals(c) | p.productCode.equals(c)))
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  @override
   Future<void> add({
     required String name,
     required String productCode,

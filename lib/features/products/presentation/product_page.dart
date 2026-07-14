@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/di/providers.dart';
+import '../../barcode/presentation/barcode_scanner_page.dart';
+import '../../barcode/presentation/hid_scanner_listener.dart';
 
 class ProductPage extends ConsumerStatefulWidget {
   const ProductPage({super.key});
@@ -161,7 +163,9 @@ class _ProductPageState extends ConsumerState<ProductPage> {
 
     await showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => HidScannerListener(
+        onScan: (code) => barcode.text = code,
+        child: AlertDialog(
         title: Text(isEdit ? 'Edit Product' : 'Add Product'),
         content: SizedBox(
           width: 440,
@@ -189,7 +193,23 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                     onChanged: (v) => selectedCategoryId = v,
                   ),
                   const SizedBox(height: 8),
-                  _field(barcode, 'Barcode (optional)'),
+                  TextFormField(
+                    controller: barcode,
+                    decoration: InputDecoration(
+                      labelText: 'Barcode (optional)',
+                      isDense: true,
+                      border: const OutlineInputBorder(),
+                      helperText: 'Scan with camera, or a USB/Bluetooth (HID) scanner',
+                      suffixIcon: IconButton(
+                        tooltip: 'Scan with camera',
+                        icon: const Icon(Icons.qr_code_scanner),
+                        onPressed: () async {
+                          final code = await scanBarcodeWithCamera(ctx);
+                          if (code != null) barcode.text = code;
+                        },
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Row(children: [
                     Expanded(child: _field(purchase, 'Purchase Price *', numeric: true, required: true)),
@@ -243,6 +263,7 @@ class _ProductPageState extends ConsumerState<ProductPage> {
             child: Text(isEdit ? 'Update' : 'Save'),
           ),
         ],
+        ),
       ),
     );
   }
