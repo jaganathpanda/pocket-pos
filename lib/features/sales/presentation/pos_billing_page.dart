@@ -520,31 +520,34 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(0, 8, 12, 12),
-          child: Row(
-            children: [
-              IconButton.filledTonal(
-                tooltip: 'Scan barcode (camera)',
-                onPressed: _scanWithCamera,
-                icon: const Icon(Icons.qr_code_scanner),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: () => _showAddItemDialog(context, ref),
-                icon: const Icon(Icons.add_shopping_cart_rounded),
-                label: const Text('Add Item'),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(backgroundColor: Colors.green.shade700),
-                  onPressed: () => _showCheckoutDialog(context, ref),
-                  icon: const Icon(Icons.receipt_long_rounded),
-                  label: const Text('Checkout & Pay'),
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
+            child: Row(
+              children: [
+                IconButton.filledTonal(
+                  tooltip: 'Scan barcode (camera)',
+                  onPressed: _scanWithCamera,
+                  icon: const Icon(Icons.qr_code_scanner),
                 ),
-              ),
-            ],
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  onPressed: () => _showAddItemDialog(context, ref),
+                  icon: const Icon(Icons.add_shopping_cart_rounded),
+                  label: const Text('Add Item'),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(backgroundColor: Colors.green.shade700),
+                    onPressed: () => _showCheckoutDialog(context, ref),
+                    icon: const Icon(Icons.receipt_long_rounded),
+                    label: const Text('Checkout & Pay'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         ],

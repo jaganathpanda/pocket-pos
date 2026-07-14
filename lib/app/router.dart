@@ -98,32 +98,120 @@ class _AppShell extends StatelessWidget {
       (route: '/settings', label: 'Settings', icon: Icons.settings_rounded),
     ];
 
-    final selectedIndex = destinations.indexWhere((d) => location.startsWith(d.route));
-    final isNarrow = MediaQuery.sizeOf(context).width < 600;
+    final isWide = MediaQuery.sizeOf(context).width >= 600;
+
+    // ── Tablet / desktop: keep the left navigation rail ──────────────────────
+    if (isWide) {
+      final selectedIndex = destinations.indexWhere((d) => location.startsWith(d.route));
+      return Scaffold(
+        body: Row(
+          children: [
+            NavigationRail(
+              selectedIndex: selectedIndex < 0 ? 0 : selectedIndex,
+              onDestinationSelected: (index) => context.go(destinations[index].route),
+              labelType: NavigationRailLabelType.all,
+              scrollable: true,
+              destinations: [
+                for (final d in destinations)
+                  NavigationRailDestination(
+                    icon: Icon(d.icon),
+                    label: Text(d.label),
+                  ),
+              ],
+            ),
+            const VerticalDivider(width: 1),
+            Expanded(child: child),
+          ],
+        ),
+      );
+    }
+
+    // ── Phones: bottom tab bar with the most-used screens + a "Menu" sheet ───
+    const primary = <({String route, String label, IconData icon})>[
+      (route: '/dashboard', label: 'Home', icon: Icons.home_rounded),
+      (route: '/billing', label: 'Billing', icon: Icons.point_of_sale_rounded),
+      (route: '/products', label: 'Items', icon: Icons.inventory_2_rounded),
+      (route: '/customers', label: 'Parties', icon: Icons.people_alt_rounded),
+    ];
+
+    var currentIndex = primary.indexWhere((d) => location.startsWith(d.route));
+    if (currentIndex < 0) currentIndex = primary.length; // highlight "Menu"
 
     return Scaffold(
-      body: Row(
-        children: [
-          NavigationRail(
-            selectedIndex: selectedIndex < 0 ? 0 : selectedIndex,
-            onDestinationSelected: (index) => context.go(destinations[index].route),
-            labelType: isNarrow
-                ? NavigationRailLabelType.none
-                : NavigationRailLabelType.all,
-            minWidth: isNarrow ? 56 : 72,
-            scrollable: true,
-            destinations: [
-              for (final d in destinations)
-                NavigationRailDestination(
-                  icon: Icon(d.icon),
-                  label: Text(d.label),
-                ),
-            ],
-          ),
-          const VerticalDivider(width: 1),
-          Expanded(child: child),
+      body: child,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: currentIndex,
+        onDestinationSelected: (index) {
+          if (index < primary.length) {
+            context.go(primary[index].route);
+          } else {
+            _showMenuSheet(context, destinations);
+          }
+        },
+        destinations: [
+          for (final d in primary)
+            NavigationDestination(icon: Icon(d.icon), label: d.label),
+          const NavigationDestination(icon: Icon(Icons.menu_rounded), label: 'Menu'),
         ],
       ),
+    );
+  }
+
+  void _showMenuSheet(
+    BuildContext context,
+    List<({String route, String label, IconData icon})> destinations,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(left: 4, bottom: 12),
+                  child: Text('All Sections',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ),
+                GridView.count(
+                  crossAxisCount: 4,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 0.85,
+                  children: [
+                    for (final d in destinations)
+                      InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          Navigator.pop(sheetContext);
+                          context.go(d.route);
+                        },
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircleAvatar(radius: 24, child: Icon(d.icon, size: 22)),
+                            const SizedBox(height: 6),
+                            Text(d.label,
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
