@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/auth/domain/auth_models.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/categories/presentation/category_page.dart';
 import '../features/customers/presentation/customer_details_page.dart';
@@ -121,6 +122,26 @@ class _AppShell extends ConsumerWidget {
               onDestinationSelected: (index) => context.go(destinations[index].route),
               labelType: NavigationRailLabelType.all,
               scrollable: true,
+              trailing: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (user?.posCounterName != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(user!.posCounterName!,
+                            style: const TextStyle(
+                                fontSize: 11, fontWeight: FontWeight.bold)),
+                      ),
+                    IconButton(
+                      tooltip: 'Logout',
+                      icon: const Icon(Icons.logout),
+                      onPressed: () => _logout(context, ref),
+                    ),
+                  ],
+                ),
+              ),
               destinations: [
                 for (final d in destinations)
                   NavigationRailDestination(
@@ -155,7 +176,7 @@ class _AppShell extends ConsumerWidget {
           if (index < primary.length) {
             context.go(primary[index].route);
           } else {
-            _showMenuSheet(context, destinations);
+            _showMenuSheet(context, ref, destinations, user);
           }
         },
         destinations: [
@@ -167,9 +188,16 @@ class _AppShell extends ConsumerWidget {
     );
   }
 
+  void _logout(BuildContext context, WidgetRef ref) {
+    ref.read(authControllerProvider.notifier).logout();
+    context.go('/login');
+  }
+
   void _showMenuSheet(
     BuildContext context,
+    WidgetRef ref,
     List<({String route, String label, IconData icon})> destinations,
+    AppUser? user,
   ) {
     showModalBottomSheet<void>(
       context: context,
@@ -184,6 +212,23 @@ class _AppShell extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const CircleAvatar(child: Icon(Icons.person)),
+                  title: Text(user?.username ?? 'User'),
+                  subtitle: Text(user?.posCounterName != null
+                      ? 'Counter: ${user!.posCounterName}'
+                      : 'All counters'),
+                  trailing: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(sheetContext);
+                      _logout(context, ref);
+                    },
+                    icon: const Icon(Icons.logout, size: 18),
+                    label: const Text('Logout'),
+                  ),
+                ),
+                const Divider(),
                 const Padding(
                   padding: EdgeInsets.only(left: 4, bottom: 12),
                   child: Text('All Sections',

@@ -46,10 +46,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     onPressed: auth.isLoading
                         ? null
                         : () async {
+                            final messenger = ScaffoldMessenger.of(context);
                             final ok = await ref.read(authControllerProvider.notifier).login(_username.text.trim(), _pin.text.trim());
                             if (!context.mounted) return;
                             if (ok) {
+                              final user = ref.read(currentUserProvider);
+                              final where = user?.posCounterName ?? 'All counters';
                               context.go('/dashboard');
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text('Signed in as ${user?.username ?? ''}  ·  $where'),
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
                             } else {
                               final authState = ref.read(authControllerProvider);
                               final message = authState.hasError
