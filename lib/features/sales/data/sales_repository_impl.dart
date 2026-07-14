@@ -94,6 +94,16 @@ class SalesRepositoryImpl implements SalesRepository {
   }
 
   @override
+  Future<void> setCartCounter(int cartId, int posCounterId) {
+    return (_db.update(_db.carts)..where((c) => c.id.equals(cartId))).write(
+      CartsCompanion(
+        posCounterId: Value(posCounterId),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  @override
   Future<void> deleteCart(int cartId) async {
     await (_db.delete(_db.cartItems)..where((i) => i.cartId.equals(cartId))).go();
     await (_db.delete(_db.carts)..where((c) => c.id.equals(cartId))).go();

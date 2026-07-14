@@ -189,6 +189,9 @@ class _AppShell extends ConsumerWidget {
   }
 
   void _logout(BuildContext context, WidgetRef ref) {
+    // Clear any in-memory POS selection so the next user never inherits the
+    // previous user's open cart.
+    ref.read(selectedCartIdProvider.notifier).state = null;
     ref.read(authControllerProvider.notifier).logout();
     context.go('/login');
   }

@@ -7,6 +7,7 @@ abstract class SalesRepository {
   Future<int> createCartWithCustomer(String name, int customerId,
       {int? posCounterId});
   Future<void> setCartStatus(int cartId, String status);
+  Future<void> setCartCounter(int cartId, int posCounterId);
   Future<void> renameCart(int cartId, String name);
   Future<void> deleteCart(int cartId);
   Future<void> updateCartCustomer(int cartId, int customerId);

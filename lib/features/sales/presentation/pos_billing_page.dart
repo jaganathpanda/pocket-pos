@@ -14,8 +14,26 @@ class PosBillingPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final carts = ref.watch(activeCartsProvider);
-    final selectedCartId = ref.watch(selectedCartIdProvider);
+    final rawSelectedCartId = ref.watch(selectedCartIdProvider);
     final counterName = ref.watch(currentUserProvider)?.posCounterName;
+
+    // Only honor a selection that belongs to the current (counter-scoped)
+    // active carts, so a lingering selection from a previous user/counter is
+    // never shown. While the list is still loading we keep the raw value.
+    final cartList0 = carts.valueOrNull;
+    final selectedCartId = rawSelectedCartId == null
+        ? null
+        : (cartList0 == null
+            ? rawSelectedCartId
+            : (cartList0.any((c) => c.id == rawSelectedCartId)
+                ? rawSelectedCartId
+                : null));
+
+    // Counter id -> name, so each cart tile can show which POS owns it.
+    final counterNameById = {
+      for (final c in (ref.watch(countersProvider).valueOrNull ?? const []))
+        c.id: c.name,
+    };
 
     return Scaffold(
       appBar: AppBar(
@@ -66,7 +84,10 @@ class PosBillingPage extends ConsumerWidget {
                                 selectedTileColor: Theme.of(context).colorScheme.primaryContainer,
                                 leading: const Icon(Icons.shopping_cart_outlined, size: 18),
                                 title: Text(cart.name, style: const TextStyle(fontSize: 13)),
-                                subtitle: _CartMetaText(cart: cart),
+                                subtitle: _CartMetaText(
+                                  cart: cart,
+                                  counterName: counterNameById[cart.posCounterId],
+                                ),
                                 onTap: () =>
                                     ref.read(selectedCartIdProvider.notifier).state = cart.id,
                                 trailing: PopupMenuButton<String>(
@@ -74,6 +95,11 @@ class PosBillingPage extends ConsumerWidget {
                                   onSelected: (value) async {
                                     if (value == 'rename') {
                                       await _showRenameCartDialog(context, ref, cart);
+                                      return;
+                                    }
+
+                                    if (value == 'transfer') {
+                                      await _showTransferCartDialog(context, ref, cart);
                                       return;
                                     }
 
@@ -96,6 +122,10 @@ class PosBillingPage extends ConsumerWidget {
                                     const PopupMenuItem(
                                       value: 'rename',
                                       child: Text('Rename Cart'),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'transfer',
+                                      child: Text('Transfer to POS…'),
                                     ),
                                     PopupMenuItem(
                                       value: 'toggle_hold',
@@ -322,6 +352,77 @@ class PosBillingPage extends ConsumerWidget {
 
     await ref.read(salesRepositoryProvider).renameCart(cart.id, newName);
     ref.invalidate(dashboardMetricsProvider);
+  }
+
+  Future<void> _showTransferCartDialog(
+      BuildContext context, WidgetRef ref, Cart cart) async {
+    final counters =
+        (ref.read(countersProvider).valueOrNull ?? const <PosCounter>[])
+            .where((c) => c.isActive)
+            .toList();
+    if (counters.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('No POS counters yet. Ask the owner to add one.')),
+      );
+      return;
+    }
+
+    int selected = cart.posCounterId ?? counters.first.id;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text('Transfer Cart #${cart.id}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Move "${cart.name}" to another POS counter.'),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<int>(
+                initialValue: selected,
+                decoration: const InputDecoration(
+                  labelText: 'Target counter',
+                  border: OutlineInputBorder(),
+                ),
+                items: [
+                  for (final c in counters)
+                    DropdownMenuItem(value: c.id, child: Text(c.name)),
+                ],
+                onChanged: (v) => setDialogState(() => selected = v ?? selected),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel')),
+            FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Transfer')),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true) return;
+
+    await ref.read(salesRepositoryProvider).setCartCounter(cart.id, selected);
+
+    // If the cart just left the current user's counter, drop the selection.
+    final myCounter = ref.read(activeCounterIdProvider);
+    if (myCounter != null &&
+        myCounter != selected &&
+        ref.read(selectedCartIdProvider) == cart.id) {
+      ref.read(selectedCartIdProvider.notifier).state = null;
+    }
+    ref.invalidate(dashboardMetricsProvider);
+
+    if (context.mounted) {
+      final name = counters.firstWhere((c) => c.id == selected).name;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Cart #${cart.id} transferred to $name')),
+      );
+    }
   }
 }
 
@@ -1014,33 +1115,61 @@ class _QtyControl extends StatelessWidget {
 }
 
 class _CartMetaText extends ConsumerWidget {
-  const _CartMetaText({required this.cart});
+  const _CartMetaText({required this.cart, this.counterName});
 
   final Cart cart;
+  final String? counterName;
+
+  Widget _wrap({String? mobile}) {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        if (counterName != null) _CounterChip(name: counterName!),
+        if (mobile != null && mobile.isNotEmpty)
+          Text(mobile, style: const TextStyle(fontSize: 11)),
+        _CartStatusChip(status: cart.status),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (cart.customerId == null) {
-      return _CartStatusChip(status: cart.status);
+      return _wrap();
     }
 
     final db = ref.read(appDatabaseProvider);
     return FutureBuilder<Customer?>(
       future: (db.select(db.customers)..where((c) => c.id.equals(cart.customerId!))).getSingleOrNull(),
-      builder: (_, snap) {
-        final mobile = snap.data?.mobile;
-        if (mobile == null || mobile.isEmpty) {
-          return _CartStatusChip(status: cart.status);
-        }
-        return Wrap(
-          spacing: 6,
-          runSpacing: 4,
-          children: [
-            Text(mobile, style: const TextStyle(fontSize: 11)),
-            _CartStatusChip(status: cart.status),
-          ],
-        );
-      },
+      builder: (_, snap) => _wrap(mobile: snap.data?.mobile),
+    );
+  }
+}
+
+class _CounterChip extends StatelessWidget {
+  const _CounterChip({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.indigo.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.indigo.shade200),
+      ),
+      child: Text(
+        name,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: Colors.indigo.shade700,
+        ),
+      ),
     );
   }
 }
