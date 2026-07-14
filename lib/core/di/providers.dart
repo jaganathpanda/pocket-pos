@@ -21,6 +21,8 @@ import '../../features/suppliers/data/supplier_repository_impl.dart';
 import '../../features/suppliers/domain/supplier_repository.dart';
 import '../../features/purchases/data/purchase_repository_impl.dart';
 import '../../features/purchases/domain/purchase_repository.dart';
+import '../../features/pos_counters/data/pos_counter_repository_impl.dart';
+import '../../features/pos_counters/domain/pos_counter_repository.dart';
 import '../database/app_database.dart';
 import '../database/database_provider.dart';
 
@@ -31,6 +33,31 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 final authControllerProvider =
     StateNotifierProvider<AuthController, AsyncValue<AppUser?>>((ref) {
   return AuthController(ref.watch(authRepositoryProvider));
+});
+
+/// The currently signed-in user (null when logged out).
+final currentUserProvider = Provider<AppUser?>((ref) {
+  return ref.watch(authControllerProvider).valueOrNull;
+});
+
+/// The counter the current user is locked to. Null = owner/manager who can see
+/// every counter's data.
+final activeCounterIdProvider = Provider<int?>((ref) {
+  return ref.watch(currentUserProvider)?.posCounterId;
+});
+
+// ── POS counters & POS users ────────────────────────────────────────────────
+
+final posCounterRepositoryProvider = Provider<PosCounterRepository>((ref) {
+  return PosCounterRepositoryImpl(ref.watch(appDatabaseProvider));
+});
+
+final countersProvider = StreamProvider<List<PosCounter>>((ref) {
+  return ref.watch(posCounterRepositoryProvider).watchCounters();
+});
+
+final posUsersProvider = StreamProvider<List<PosUserRow>>((ref) {
+  return ref.watch(posCounterRepositoryProvider).watchPosUsers();
 });
 
 final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
@@ -101,7 +128,8 @@ final salesRepositoryProvider = Provider<SalesRepository>((ref) {
 final selectedCartIdProvider = StateProvider<int?>((ref) => null);
 
 final activeCartsProvider = StreamProvider<List<Cart>>((ref) {
-  return ref.watch(salesRepositoryProvider).watchActiveCarts();
+  final counterId = ref.watch(activeCounterIdProvider);
+  return ref.watch(salesRepositoryProvider).watchActiveCarts(counterId);
 });
 
 final cartItemsProvider =
@@ -171,10 +199,15 @@ class DashboardMetrics {
 
 final dashboardMetricsProvider = FutureProvider<DashboardMetrics>((ref) async {
   final db = ref.watch(appDatabaseProvider);
+  final counterId = ref.watch(activeCounterIdProvider);
   final now = DateTime.now();
   final dayStart = DateTime(now.year, now.month, now.day);
 
-  final allSales = await db.select(db.sales).get();
+  final salesQuery = db.select(db.sales);
+  if (counterId != null) {
+    salesQuery.where((s) => s.posCounterId.equals(counterId));
+  }
+  final allSales = await salesQuery.get();
   final todaySales =
       allSales.where((s) => !s.soldAt.isBefore(dayStart)).toList();
   final todayRevenue =
@@ -184,10 +217,13 @@ final dashboardMetricsProvider = FutureProvider<DashboardMetrics>((ref) async {
   final totalDiscount =
       allSales.fold<double>(0, (sum, s) => sum + s.discountTotal);
 
-  final activeCarts = await (db.select(db.carts)
-        ..where((c) => Expression.or(
-            [c.status.equals('active'), c.status.equals('hold')])))
-      .get();
+  final activeCartsQuery = db.select(db.carts)
+    ..where((c) =>
+        Expression.or([c.status.equals('active'), c.status.equals('hold')]));
+  if (counterId != null) {
+    activeCartsQuery.where((c) => c.posCounterId.equals(counterId));
+  }
+  final activeCarts = await activeCartsQuery.get();
   final allInventory = await db.select(db.inventory).get();
   final allProducts = await db.select(db.products).get();
   final allCustomers = await db.select(db.customers).get();
@@ -195,12 +231,15 @@ final dashboardMetricsProvider = FutureProvider<DashboardMetrics>((ref) async {
       allInventory.where((i) => i.availableStock <= i.lowStockThreshold).length;
   final out = allInventory.where((i) => i.availableStock <= 0).length;
 
-  final creditSales = await (db.select(db.sales)
-        ..where((s) => Expression.or([
-              s.paymentStatus.equals('partial'),
-              s.paymentStatus.equals('credit')
-            ])))
-      .get();
+  final creditSalesQuery = db.select(db.sales)
+    ..where((s) => Expression.or([
+          s.paymentStatus.equals('partial'),
+          s.paymentStatus.equals('credit')
+        ]));
+  if (counterId != null) {
+    creditSalesQuery.where((s) => s.posCounterId.equals(counterId));
+  }
+  final creditSales = await creditSalesQuery.get();
   final pending = creditSales.fold<double>(0, (sum, s) => sum + s.grandTotal);
 
   return DashboardMetrics(
@@ -302,15 +341,19 @@ final salesReportRangeProvider = StateProvider<DateTimeRange>((ref) {
 
 final salesReportProvider = FutureProvider<SalesReportData>((ref) async {
   final db = ref.watch(appDatabaseProvider);
+  final counterId = ref.watch(activeCounterIdProvider);
   final range = ref.watch(salesReportRangeProvider);
   final start = DateTime(range.start.year, range.start.month, range.start.day);
   final end =
       DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59, 999);
 
-  final salesInRange = await (db.select(db.sales)
-        ..where((s) => s.soldAt.isBetweenValues(start, end))
-        ..orderBy([(s) => OrderingTerm.desc(s.soldAt)]))
-      .get();
+  final salesInRangeQuery = db.select(db.sales)
+    ..where((s) => s.soldAt.isBetweenValues(start, end))
+    ..orderBy([(s) => OrderingTerm.desc(s.soldAt)]);
+  if (counterId != null) {
+    salesInRangeQuery.where((s) => s.posCounterId.equals(counterId));
+  }
+  final salesInRange = await salesInRangeQuery.get();
 
   if (salesInRange.isEmpty) {
     return SalesReportData(
@@ -462,10 +505,14 @@ class CreditLedgerRow {
 
 final creditLedgerProvider = FutureProvider<List<CreditLedgerRow>>((ref) async {
   final db = ref.watch(appDatabaseProvider);
+  final counterId = ref.watch(activeCounterIdProvider);
 
-  final sales = await (db.select(db.sales)
-        ..orderBy([(s) => OrderingTerm.desc(s.soldAt)]))
-      .get();
+  final salesQuery = db.select(db.sales)
+    ..orderBy([(s) => OrderingTerm.desc(s.soldAt)]);
+  if (counterId != null) {
+    salesQuery.where((s) => s.posCounterId.equals(counterId));
+  }
+  final sales = await salesQuery.get();
   if (sales.isEmpty) return const [];
 
   final saleIds = sales.map((s) => s.id).toList(growable: false);

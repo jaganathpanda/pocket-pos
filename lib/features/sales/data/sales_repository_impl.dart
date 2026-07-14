@@ -9,11 +9,14 @@ class SalesRepositoryImpl implements SalesRepository {
   final AppDatabase _db;
 
   @override
-  Stream<List<Cart>> watchActiveCarts() {
-    return (_db.select(_db.carts)
-          ..where((c) => Expression.or([c.status.equals('active'), c.status.equals('hold')]))
-          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
-        .watch();
+  Stream<List<Cart>> watchActiveCarts(int? posCounterId) {
+    final query = _db.select(_db.carts)
+      ..where((c) => Expression.or([c.status.equals('active'), c.status.equals('hold')]))
+      ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]);
+    if (posCounterId != null) {
+      query.where((c) => c.posCounterId.equals(posCounterId));
+    }
+    return query.watch();
   }
 
   @override
@@ -36,18 +39,23 @@ class SalesRepositoryImpl implements SalesRepository {
   }
 
   @override
-  Future<int> createCart(String name) {
+  Future<int> createCart(String name, {int? posCounterId}) {
     return _db.into(_db.carts).insert(
-          CartsCompanion.insert(name: name),
+          CartsCompanion.insert(
+            name: name,
+            posCounterId: Value(posCounterId),
+          ),
         );
   }
 
   @override
-  Future<int> createCartWithCustomer(String name, int customerId) {
+  Future<int> createCartWithCustomer(String name, int customerId,
+      {int? posCounterId}) {
     return _db.into(_db.carts).insert(
           CartsCompanion.insert(
             name: name,
             customerId: Value(customerId),
+            posCounterId: Value(posCounterId),
           ),
         );
   }
@@ -270,6 +278,7 @@ class SalesRepositoryImpl implements SalesRepository {
               cartId: Value(cartId),
               invoiceNo: invoiceNo,
               customerId: Value(customerId),
+              posCounterId: Value(cart.posCounterId),
               subTotal: subTotal,
               discountTotal: discountTotal,
               taxTotal: taxTotal,

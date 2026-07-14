@@ -8,8 +8,10 @@ import '../features/customers/presentation/customer_details_page.dart';
 import '../features/customers/presentation/customer_invoice_detail_page.dart';
 import '../features/customers/presentation/customer_list_page.dart';
 import '../features/customers/presentation/customer_orders_page.dart';
+import '../core/di/providers.dart';
 import '../features/dashboard/presentation/dashboard_page.dart';
 import '../features/inventory/presentation/inventory_page.dart';
+import '../features/pos_counters/presentation/pos_counters_page.dart';
 import '../features/products/presentation/product_page.dart';
 import '../features/purchases/presentation/purchase_page.dart';
 import '../features/ledger/presentation/credit_ledger_page.dart';
@@ -67,6 +69,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/reports', builder: (context, state) => const SalesReportPage()),
           GoRoute(path: '/ledger', builder: (context, state) => const CreditLedgerPage()),
           GoRoute(path: '/expenses', builder: (context, state) => const ExpensePage()),
+          GoRoute(path: '/counters', builder: (context, state) => const PosCountersPage()),
           GoRoute(path: '/settings', builder: (context, state) => const SettingsPage()),
         ],
       ),
@@ -74,28 +77,35 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
 });
 
-class _AppShell extends StatelessWidget {
+class _AppShell extends ConsumerWidget {
   const _AppShell({required this.child});
 
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final location = GoRouterState.of(context).matchedLocation;
+    final user = ref.watch(currentUserProvider);
+
+    // POS users (locked to a counter) only see POS-related sections. Owners see
+    // everything plus the Counters/Users management screen.
+    final scoped = user?.isCounterScoped ?? false;
+    final canManage = user?.canManagePos ?? false;
 
     final destinations = <({String route, String label, IconData icon})>[
       (route: '/dashboard', label: 'Dashboard', icon: Icons.dashboard_rounded),
-      (route: '/categories', label: 'Categories', icon: Icons.category_rounded),
+      if (!scoped) (route: '/categories', label: 'Categories', icon: Icons.category_rounded),
       (route: '/products', label: 'Products', icon: Icons.inventory_2_rounded),
-      (route: '/inventory', label: 'Inventory', icon: Icons.warehouse_rounded),
+      if (!scoped) (route: '/inventory', label: 'Inventory', icon: Icons.warehouse_rounded),
       (route: '/billing', label: 'POS', icon: Icons.point_of_sale_rounded),
       (route: '/customers', label: 'Customers', icon: Icons.person_rounded),
-      (route: '/suppliers', label: 'Vendors', icon: Icons.storefront_rounded),
-      (route: '/purchases', label: 'Purchases', icon: Icons.shopping_bag_rounded),
+      if (!scoped) (route: '/suppliers', label: 'Vendors', icon: Icons.storefront_rounded),
+      if (!scoped) (route: '/purchases', label: 'Purchases', icon: Icons.shopping_bag_rounded),
       (route: '/reports', label: 'Reports', icon: Icons.analytics_rounded),
       (route: '/ledger', label: 'Udhar', icon: Icons.account_balance_wallet_rounded),
-      (route: '/expenses', label: 'Expenses', icon: Icons.receipt_long_rounded),
-      (route: '/settings', label: 'Settings', icon: Icons.settings_rounded),
+      if (!scoped) (route: '/expenses', label: 'Expenses', icon: Icons.receipt_long_rounded),
+      if (!scoped) (route: '/settings', label: 'Settings', icon: Icons.settings_rounded),
+      if (canManage) (route: '/counters', label: 'Counters', icon: Icons.storefront_rounded),
     ];
 
     final isWide = MediaQuery.sizeOf(context).width >= 600;
@@ -164,9 +174,11 @@ class _AppShell extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (sheetContext) {
         return SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
+            child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -209,6 +221,7 @@ class _AppShell extends StatelessWidget {
                 ),
               ],
             ),
+          ),
           ),
         );
       },

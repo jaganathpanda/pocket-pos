@@ -16,6 +16,15 @@ class Users extends Table {
   TextColumn get passwordHash => text()();
   TextColumn get pinHash => text()();
   IntColumn get roleId => integer().references(Roles, #id)();
+  // POS counter this user is locked to. Null = owner/manager (sees all counters).
+  IntColumn get posCounterId => integer().nullable().references(PosCounters, #id)();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+class PosCounters extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text().withLength(min: 1, max: 50).unique()();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -110,6 +119,7 @@ class Carts extends Table {
   TextColumn get name => text()();
   TextColumn get status => text().withDefault(const Constant('active'))(); // active, hold, completed
   IntColumn get customerId => integer().nullable().references(Customers, #id)();
+  IntColumn get posCounterId => integer().nullable().references(PosCounters, #id)();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -131,6 +141,7 @@ class Sales extends Table {
   IntColumn get cartId => integer().nullable().references(Carts, #id)();
   TextColumn get invoiceNo => text().unique()();
   IntColumn get customerId => integer().nullable().references(Customers, #id)();
+  IntColumn get posCounterId => integer().nullable().references(PosCounters, #id)();
   RealColumn get subTotal => real()();
   RealColumn get discountTotal => real()();
   RealColumn get taxTotal => real()();
@@ -229,6 +240,7 @@ class AuditLogs extends Table {
   tables: [
     Roles,
     Users,
+    PosCounters,
     Shops,
     Categories,
     Products,
@@ -253,7 +265,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -263,6 +275,12 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(suppliers);
             await m.createTable(purchases);
             await m.createTable(purchaseItems);
+          }
+          if (from < 3) {
+            await m.createTable(posCounters);
+            await m.addColumn(users, users.posCounterId);
+            await m.addColumn(carts, carts.posCounterId);
+            await m.addColumn(sales, sales.posCounterId);
           }
         },
         beforeOpen: (details) async {
@@ -305,6 +323,7 @@ class AppDatabase extends _$AppDatabase {
       await customStatement('DELETE FROM customers');
       await customStatement('DELETE FROM shops');
       await customStatement('DELETE FROM users');
+      await customStatement('DELETE FROM pos_counters');
       await customStatement('DELETE FROM roles');
       await customStatement('DELETE FROM sqlite_sequence');
       await customStatement('PRAGMA foreign_keys = ON');
@@ -364,12 +383,20 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
 
+    final pos1Id = await into(posCounters).insert(
+      PosCountersCompanion.insert(name: 'POS1'),
+    );
+    await into(posCounters).insert(
+      PosCountersCompanion.insert(name: 'POS2'),
+    );
+
     await into(users).insert(
       UsersCompanion.insert(
         username: 'cashier',
         passwordHash: '1234',
         pinHash: '1234',
         roleId: cashierRoleId,
+        posCounterId: Value(pos1Id),
       ),
     );
 

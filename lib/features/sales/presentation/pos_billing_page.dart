@@ -15,10 +15,12 @@ class PosBillingPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final carts = ref.watch(activeCartsProvider);
     final selectedCartId = ref.watch(selectedCartIdProvider);
+    final counterName = ref.watch(currentUserProvider)?.posCounterName;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('POS Billing'),
+        title: Text(
+            counterName == null ? 'POS Billing' : 'POS Billing · $counterName'),
         actions: [
           FilledButton.tonalIcon(
             onPressed: () async {
@@ -263,6 +265,7 @@ class PosBillingPage extends ConsumerWidget {
 
     try {
       int id;
+      final counterId = ref.read(activeCounterIdProvider);
 
       if (mobile.isNotEmpty) {
         // Link cart to customer by mobile and update name when provided.
@@ -271,10 +274,16 @@ class PosBillingPage extends ConsumerWidget {
           name: name.isNotEmpty ? name : 'Customer $mobile',
         );
 
-        id = await ref.read(salesRepositoryProvider).createCartWithCustomer(cartLabel, customerId);
+        id = await ref.read(salesRepositoryProvider).createCartWithCustomer(
+              cartLabel,
+              customerId,
+              posCounterId: counterId,
+            );
       } else {
         // Name-only carts are allowed; keep cart unlinked from customers table.
-        id = await ref.read(salesRepositoryProvider).createCart(cartLabel);
+        id = await ref
+            .read(salesRepositoryProvider)
+            .createCart(cartLabel, posCounterId: counterId);
       }
 
       ref.read(selectedCartIdProvider.notifier).state = id;

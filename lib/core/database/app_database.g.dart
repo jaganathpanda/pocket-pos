@@ -181,6 +181,267 @@ class RolesCompanion extends UpdateCompanion<Role> {
   }
 }
 
+class $PosCountersTable extends PosCounters
+    with TableInfo<$PosCountersTable, PosCounter> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PosCountersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 50),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'));
+  static const VerificationMeta _isActiveMeta =
+      const VerificationMeta('isActive');
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+      'is_active', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns => [id, name, isActive, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pos_counters';
+  @override
+  VerificationContext validateIntegrity(Insertable<PosCounter> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(_isActiveMeta,
+          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PosCounter map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PosCounter(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      isActive: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+    );
+  }
+
+  @override
+  $PosCountersTable createAlias(String alias) {
+    return $PosCountersTable(attachedDatabase, alias);
+  }
+}
+
+class PosCounter extends DataClass implements Insertable<PosCounter> {
+  final int id;
+  final String name;
+  final bool isActive;
+  final DateTime createdAt;
+  const PosCounter(
+      {required this.id,
+      required this.name,
+      required this.isActive,
+      required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['is_active'] = Variable<bool>(isActive);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  PosCountersCompanion toCompanion(bool nullToAbsent) {
+    return PosCountersCompanion(
+      id: Value(id),
+      name: Value(name),
+      isActive: Value(isActive),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory PosCounter.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PosCounter(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'isActive': serializer.toJson<bool>(isActive),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  PosCounter copyWith(
+          {int? id, String? name, bool? isActive, DateTime? createdAt}) =>
+      PosCounter(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        isActive: isActive ?? this.isActive,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  PosCounter copyWithCompanion(PosCountersCompanion data) {
+    return PosCounter(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PosCounter(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('isActive: $isActive, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, isActive, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PosCounter &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.isActive == this.isActive &&
+          other.createdAt == this.createdAt);
+}
+
+class PosCountersCompanion extends UpdateCompanion<PosCounter> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<bool> isActive;
+  final Value<DateTime> createdAt;
+  const PosCountersCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  PosCountersCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    this.isActive = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : name = Value(name);
+  static Insertable<PosCounter> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<bool>? isActive,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (isActive != null) 'is_active': isActive,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  PosCountersCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? name,
+      Value<bool>? isActive,
+      Value<DateTime>? createdAt}) {
+    return PosCountersCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PosCountersCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('isActive: $isActive, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $UsersTable extends Users with TableInfo<$UsersTable, User> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -225,6 +486,15 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
       requiredDuringInsert: true,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('REFERENCES roles (id)'));
+  static const VerificationMeta _posCounterIdMeta =
+      const VerificationMeta('posCounterId');
+  @override
+  late final GeneratedColumn<int> posCounterId = GeneratedColumn<int>(
+      'pos_counter_id', aliasedName, true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES pos_counters (id)'));
   static const VerificationMeta _isActiveMeta =
       const VerificationMeta('isActive');
   @override
@@ -244,8 +514,16 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
       requiredDuringInsert: false,
       defaultValue: currentDateAndTime);
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, username, passwordHash, pinHash, roleId, isActive, createdAt];
+  List<GeneratedColumn> get $columns => [
+        id,
+        username,
+        passwordHash,
+        pinHash,
+        roleId,
+        posCounterId,
+        isActive,
+        createdAt
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -285,6 +563,12 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     } else if (isInserting) {
       context.missing(_roleIdMeta);
     }
+    if (data.containsKey('pos_counter_id')) {
+      context.handle(
+          _posCounterIdMeta,
+          posCounterId.isAcceptableOrUnknown(
+              data['pos_counter_id']!, _posCounterIdMeta));
+    }
     if (data.containsKey('is_active')) {
       context.handle(_isActiveMeta,
           isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
@@ -312,6 +596,8 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
           .read(DriftSqlType.string, data['${effectivePrefix}pin_hash'])!,
       roleId: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}role_id'])!,
+      posCounterId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}pos_counter_id']),
       isActive: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
       createdAt: attachedDatabase.typeMapping
@@ -331,6 +617,7 @@ class User extends DataClass implements Insertable<User> {
   final String passwordHash;
   final String pinHash;
   final int roleId;
+  final int? posCounterId;
   final bool isActive;
   final DateTime createdAt;
   const User(
@@ -339,6 +626,7 @@ class User extends DataClass implements Insertable<User> {
       required this.passwordHash,
       required this.pinHash,
       required this.roleId,
+      this.posCounterId,
       required this.isActive,
       required this.createdAt});
   @override
@@ -349,6 +637,9 @@ class User extends DataClass implements Insertable<User> {
     map['password_hash'] = Variable<String>(passwordHash);
     map['pin_hash'] = Variable<String>(pinHash);
     map['role_id'] = Variable<int>(roleId);
+    if (!nullToAbsent || posCounterId != null) {
+      map['pos_counter_id'] = Variable<int>(posCounterId);
+    }
     map['is_active'] = Variable<bool>(isActive);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -361,6 +652,9 @@ class User extends DataClass implements Insertable<User> {
       passwordHash: Value(passwordHash),
       pinHash: Value(pinHash),
       roleId: Value(roleId),
+      posCounterId: posCounterId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(posCounterId),
       isActive: Value(isActive),
       createdAt: Value(createdAt),
     );
@@ -375,6 +669,7 @@ class User extends DataClass implements Insertable<User> {
       passwordHash: serializer.fromJson<String>(json['passwordHash']),
       pinHash: serializer.fromJson<String>(json['pinHash']),
       roleId: serializer.fromJson<int>(json['roleId']),
+      posCounterId: serializer.fromJson<int?>(json['posCounterId']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -388,6 +683,7 @@ class User extends DataClass implements Insertable<User> {
       'passwordHash': serializer.toJson<String>(passwordHash),
       'pinHash': serializer.toJson<String>(pinHash),
       'roleId': serializer.toJson<int>(roleId),
+      'posCounterId': serializer.toJson<int?>(posCounterId),
       'isActive': serializer.toJson<bool>(isActive),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -399,6 +695,7 @@ class User extends DataClass implements Insertable<User> {
           String? passwordHash,
           String? pinHash,
           int? roleId,
+          Value<int?> posCounterId = const Value.absent(),
           bool? isActive,
           DateTime? createdAt}) =>
       User(
@@ -407,6 +704,8 @@ class User extends DataClass implements Insertable<User> {
         passwordHash: passwordHash ?? this.passwordHash,
         pinHash: pinHash ?? this.pinHash,
         roleId: roleId ?? this.roleId,
+        posCounterId:
+            posCounterId.present ? posCounterId.value : this.posCounterId,
         isActive: isActive ?? this.isActive,
         createdAt: createdAt ?? this.createdAt,
       );
@@ -419,6 +718,9 @@ class User extends DataClass implements Insertable<User> {
           : this.passwordHash,
       pinHash: data.pinHash.present ? data.pinHash.value : this.pinHash,
       roleId: data.roleId.present ? data.roleId.value : this.roleId,
+      posCounterId: data.posCounterId.present
+          ? data.posCounterId.value
+          : this.posCounterId,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -432,6 +734,7 @@ class User extends DataClass implements Insertable<User> {
           ..write('passwordHash: $passwordHash, ')
           ..write('pinHash: $pinHash, ')
           ..write('roleId: $roleId, ')
+          ..write('posCounterId: $posCounterId, ')
           ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -439,8 +742,8 @@ class User extends DataClass implements Insertable<User> {
   }
 
   @override
-  int get hashCode => Object.hash(
-      id, username, passwordHash, pinHash, roleId, isActive, createdAt);
+  int get hashCode => Object.hash(id, username, passwordHash, pinHash, roleId,
+      posCounterId, isActive, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -450,6 +753,7 @@ class User extends DataClass implements Insertable<User> {
           other.passwordHash == this.passwordHash &&
           other.pinHash == this.pinHash &&
           other.roleId == this.roleId &&
+          other.posCounterId == this.posCounterId &&
           other.isActive == this.isActive &&
           other.createdAt == this.createdAt);
 }
@@ -460,6 +764,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   final Value<String> passwordHash;
   final Value<String> pinHash;
   final Value<int> roleId;
+  final Value<int?> posCounterId;
   final Value<bool> isActive;
   final Value<DateTime> createdAt;
   const UsersCompanion({
@@ -468,6 +773,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     this.passwordHash = const Value.absent(),
     this.pinHash = const Value.absent(),
     this.roleId = const Value.absent(),
+    this.posCounterId = const Value.absent(),
     this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
@@ -477,6 +783,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     required String passwordHash,
     required String pinHash,
     required int roleId,
+    this.posCounterId = const Value.absent(),
     this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
   })  : username = Value(username),
@@ -489,6 +796,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     Expression<String>? passwordHash,
     Expression<String>? pinHash,
     Expression<int>? roleId,
+    Expression<int>? posCounterId,
     Expression<bool>? isActive,
     Expression<DateTime>? createdAt,
   }) {
@@ -498,6 +806,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       if (passwordHash != null) 'password_hash': passwordHash,
       if (pinHash != null) 'pin_hash': pinHash,
       if (roleId != null) 'role_id': roleId,
+      if (posCounterId != null) 'pos_counter_id': posCounterId,
       if (isActive != null) 'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt,
     });
@@ -509,6 +818,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       Value<String>? passwordHash,
       Value<String>? pinHash,
       Value<int>? roleId,
+      Value<int?>? posCounterId,
       Value<bool>? isActive,
       Value<DateTime>? createdAt}) {
     return UsersCompanion(
@@ -517,6 +827,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       passwordHash: passwordHash ?? this.passwordHash,
       pinHash: pinHash ?? this.pinHash,
       roleId: roleId ?? this.roleId,
+      posCounterId: posCounterId ?? this.posCounterId,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -540,6 +851,9 @@ class UsersCompanion extends UpdateCompanion<User> {
     if (roleId.present) {
       map['role_id'] = Variable<int>(roleId.value);
     }
+    if (posCounterId.present) {
+      map['pos_counter_id'] = Variable<int>(posCounterId.value);
+    }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
@@ -557,6 +871,7 @@ class UsersCompanion extends UpdateCompanion<User> {
           ..write('passwordHash: $passwordHash, ')
           ..write('pinHash: $pinHash, ')
           ..write('roleId: $roleId, ')
+          ..write('posCounterId: $posCounterId, ')
           ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -5185,6 +5500,15 @@ class $CartsTable extends Carts with TableInfo<$CartsTable, Cart> {
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('REFERENCES customers (id)'));
+  static const VerificationMeta _posCounterIdMeta =
+      const VerificationMeta('posCounterId');
+  @override
+  late final GeneratedColumn<int> posCounterId = GeneratedColumn<int>(
+      'pos_counter_id', aliasedName, true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES pos_counters (id)'));
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -5203,7 +5527,7 @@ class $CartsTable extends Carts with TableInfo<$CartsTable, Cart> {
       defaultValue: currentDateAndTime);
   @override
   List<GeneratedColumn> get $columns =>
-      [id, name, status, customerId, createdAt, updatedAt];
+      [id, name, status, customerId, posCounterId, createdAt, updatedAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -5233,6 +5557,12 @@ class $CartsTable extends Carts with TableInfo<$CartsTable, Cart> {
           customerId.isAcceptableOrUnknown(
               data['customer_id']!, _customerIdMeta));
     }
+    if (data.containsKey('pos_counter_id')) {
+      context.handle(
+          _posCounterIdMeta,
+          posCounterId.isAcceptableOrUnknown(
+              data['pos_counter_id']!, _posCounterIdMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -5258,6 +5588,8 @@ class $CartsTable extends Carts with TableInfo<$CartsTable, Cart> {
           .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
       customerId: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}customer_id']),
+      posCounterId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}pos_counter_id']),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       updatedAt: attachedDatabase.typeMapping
@@ -5276,6 +5608,7 @@ class Cart extends DataClass implements Insertable<Cart> {
   final String name;
   final String status;
   final int? customerId;
+  final int? posCounterId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const Cart(
@@ -5283,6 +5616,7 @@ class Cart extends DataClass implements Insertable<Cart> {
       required this.name,
       required this.status,
       this.customerId,
+      this.posCounterId,
       required this.createdAt,
       required this.updatedAt});
   @override
@@ -5293,6 +5627,9 @@ class Cart extends DataClass implements Insertable<Cart> {
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || customerId != null) {
       map['customer_id'] = Variable<int>(customerId);
+    }
+    if (!nullToAbsent || posCounterId != null) {
+      map['pos_counter_id'] = Variable<int>(posCounterId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -5307,6 +5644,9 @@ class Cart extends DataClass implements Insertable<Cart> {
       customerId: customerId == null && nullToAbsent
           ? const Value.absent()
           : Value(customerId),
+      posCounterId: posCounterId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(posCounterId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -5320,6 +5660,7 @@ class Cart extends DataClass implements Insertable<Cart> {
       name: serializer.fromJson<String>(json['name']),
       status: serializer.fromJson<String>(json['status']),
       customerId: serializer.fromJson<int?>(json['customerId']),
+      posCounterId: serializer.fromJson<int?>(json['posCounterId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -5332,6 +5673,7 @@ class Cart extends DataClass implements Insertable<Cart> {
       'name': serializer.toJson<String>(name),
       'status': serializer.toJson<String>(status),
       'customerId': serializer.toJson<int?>(customerId),
+      'posCounterId': serializer.toJson<int?>(posCounterId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -5342,6 +5684,7 @@ class Cart extends DataClass implements Insertable<Cart> {
           String? name,
           String? status,
           Value<int?> customerId = const Value.absent(),
+          Value<int?> posCounterId = const Value.absent(),
           DateTime? createdAt,
           DateTime? updatedAt}) =>
       Cart(
@@ -5349,6 +5692,8 @@ class Cart extends DataClass implements Insertable<Cart> {
         name: name ?? this.name,
         status: status ?? this.status,
         customerId: customerId.present ? customerId.value : this.customerId,
+        posCounterId:
+            posCounterId.present ? posCounterId.value : this.posCounterId,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );
@@ -5359,6 +5704,9 @@ class Cart extends DataClass implements Insertable<Cart> {
       status: data.status.present ? data.status.value : this.status,
       customerId:
           data.customerId.present ? data.customerId.value : this.customerId,
+      posCounterId: data.posCounterId.present
+          ? data.posCounterId.value
+          : this.posCounterId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -5371,6 +5719,7 @@ class Cart extends DataClass implements Insertable<Cart> {
           ..write('name: $name, ')
           ..write('status: $status, ')
           ..write('customerId: $customerId, ')
+          ..write('posCounterId: $posCounterId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -5378,8 +5727,8 @@ class Cart extends DataClass implements Insertable<Cart> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, status, customerId, createdAt, updatedAt);
+  int get hashCode => Object.hash(
+      id, name, status, customerId, posCounterId, createdAt, updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5388,6 +5737,7 @@ class Cart extends DataClass implements Insertable<Cart> {
           other.name == this.name &&
           other.status == this.status &&
           other.customerId == this.customerId &&
+          other.posCounterId == this.posCounterId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -5397,6 +5747,7 @@ class CartsCompanion extends UpdateCompanion<Cart> {
   final Value<String> name;
   final Value<String> status;
   final Value<int?> customerId;
+  final Value<int?> posCounterId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   const CartsCompanion({
@@ -5404,6 +5755,7 @@ class CartsCompanion extends UpdateCompanion<Cart> {
     this.name = const Value.absent(),
     this.status = const Value.absent(),
     this.customerId = const Value.absent(),
+    this.posCounterId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -5412,6 +5764,7 @@ class CartsCompanion extends UpdateCompanion<Cart> {
     required String name,
     this.status = const Value.absent(),
     this.customerId = const Value.absent(),
+    this.posCounterId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   }) : name = Value(name);
@@ -5420,6 +5773,7 @@ class CartsCompanion extends UpdateCompanion<Cart> {
     Expression<String>? name,
     Expression<String>? status,
     Expression<int>? customerId,
+    Expression<int>? posCounterId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
   }) {
@@ -5428,6 +5782,7 @@ class CartsCompanion extends UpdateCompanion<Cart> {
       if (name != null) 'name': name,
       if (status != null) 'status': status,
       if (customerId != null) 'customer_id': customerId,
+      if (posCounterId != null) 'pos_counter_id': posCounterId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -5438,6 +5793,7 @@ class CartsCompanion extends UpdateCompanion<Cart> {
       Value<String>? name,
       Value<String>? status,
       Value<int?>? customerId,
+      Value<int?>? posCounterId,
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt}) {
     return CartsCompanion(
@@ -5445,6 +5801,7 @@ class CartsCompanion extends UpdateCompanion<Cart> {
       name: name ?? this.name,
       status: status ?? this.status,
       customerId: customerId ?? this.customerId,
+      posCounterId: posCounterId ?? this.posCounterId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -5465,6 +5822,9 @@ class CartsCompanion extends UpdateCompanion<Cart> {
     if (customerId.present) {
       map['customer_id'] = Variable<int>(customerId.value);
     }
+    if (posCounterId.present) {
+      map['pos_counter_id'] = Variable<int>(posCounterId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -5481,6 +5841,7 @@ class CartsCompanion extends UpdateCompanion<Cart> {
           ..write('name: $name, ')
           ..write('status: $status, ')
           ..write('customerId: $customerId, ')
+          ..write('posCounterId: $posCounterId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -5994,6 +6355,15 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('REFERENCES customers (id)'));
+  static const VerificationMeta _posCounterIdMeta =
+      const VerificationMeta('posCounterId');
+  @override
+  late final GeneratedColumn<int> posCounterId = GeneratedColumn<int>(
+      'pos_counter_id', aliasedName, true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES pos_counters (id)'));
   static const VerificationMeta _subTotalMeta =
       const VerificationMeta('subTotal');
   @override
@@ -6039,6 +6409,7 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
         cartId,
         invoiceNo,
         customerId,
+        posCounterId,
         subTotal,
         discountTotal,
         taxTotal,
@@ -6074,6 +6445,12 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
           _customerIdMeta,
           customerId.isAcceptableOrUnknown(
               data['customer_id']!, _customerIdMeta));
+    }
+    if (data.containsKey('pos_counter_id')) {
+      context.handle(
+          _posCounterIdMeta,
+          posCounterId.isAcceptableOrUnknown(
+              data['pos_counter_id']!, _posCounterIdMeta));
     }
     if (data.containsKey('sub_total')) {
       context.handle(_subTotalMeta,
@@ -6130,6 +6507,8 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
           .read(DriftSqlType.string, data['${effectivePrefix}invoice_no'])!,
       customerId: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}customer_id']),
+      posCounterId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}pos_counter_id']),
       subTotal: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}sub_total'])!,
       discountTotal: attachedDatabase.typeMapping
@@ -6156,6 +6535,7 @@ class Sale extends DataClass implements Insertable<Sale> {
   final int? cartId;
   final String invoiceNo;
   final int? customerId;
+  final int? posCounterId;
   final double subTotal;
   final double discountTotal;
   final double taxTotal;
@@ -6167,6 +6547,7 @@ class Sale extends DataClass implements Insertable<Sale> {
       this.cartId,
       required this.invoiceNo,
       this.customerId,
+      this.posCounterId,
       required this.subTotal,
       required this.discountTotal,
       required this.taxTotal,
@@ -6183,6 +6564,9 @@ class Sale extends DataClass implements Insertable<Sale> {
     map['invoice_no'] = Variable<String>(invoiceNo);
     if (!nullToAbsent || customerId != null) {
       map['customer_id'] = Variable<int>(customerId);
+    }
+    if (!nullToAbsent || posCounterId != null) {
+      map['pos_counter_id'] = Variable<int>(posCounterId);
     }
     map['sub_total'] = Variable<double>(subTotal);
     map['discount_total'] = Variable<double>(discountTotal);
@@ -6202,6 +6586,9 @@ class Sale extends DataClass implements Insertable<Sale> {
       customerId: customerId == null && nullToAbsent
           ? const Value.absent()
           : Value(customerId),
+      posCounterId: posCounterId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(posCounterId),
       subTotal: Value(subTotal),
       discountTotal: Value(discountTotal),
       taxTotal: Value(taxTotal),
@@ -6219,6 +6606,7 @@ class Sale extends DataClass implements Insertable<Sale> {
       cartId: serializer.fromJson<int?>(json['cartId']),
       invoiceNo: serializer.fromJson<String>(json['invoiceNo']),
       customerId: serializer.fromJson<int?>(json['customerId']),
+      posCounterId: serializer.fromJson<int?>(json['posCounterId']),
       subTotal: serializer.fromJson<double>(json['subTotal']),
       discountTotal: serializer.fromJson<double>(json['discountTotal']),
       taxTotal: serializer.fromJson<double>(json['taxTotal']),
@@ -6235,6 +6623,7 @@ class Sale extends DataClass implements Insertable<Sale> {
       'cartId': serializer.toJson<int?>(cartId),
       'invoiceNo': serializer.toJson<String>(invoiceNo),
       'customerId': serializer.toJson<int?>(customerId),
+      'posCounterId': serializer.toJson<int?>(posCounterId),
       'subTotal': serializer.toJson<double>(subTotal),
       'discountTotal': serializer.toJson<double>(discountTotal),
       'taxTotal': serializer.toJson<double>(taxTotal),
@@ -6249,6 +6638,7 @@ class Sale extends DataClass implements Insertable<Sale> {
           Value<int?> cartId = const Value.absent(),
           String? invoiceNo,
           Value<int?> customerId = const Value.absent(),
+          Value<int?> posCounterId = const Value.absent(),
           double? subTotal,
           double? discountTotal,
           double? taxTotal,
@@ -6260,6 +6650,8 @@ class Sale extends DataClass implements Insertable<Sale> {
         cartId: cartId.present ? cartId.value : this.cartId,
         invoiceNo: invoiceNo ?? this.invoiceNo,
         customerId: customerId.present ? customerId.value : this.customerId,
+        posCounterId:
+            posCounterId.present ? posCounterId.value : this.posCounterId,
         subTotal: subTotal ?? this.subTotal,
         discountTotal: discountTotal ?? this.discountTotal,
         taxTotal: taxTotal ?? this.taxTotal,
@@ -6274,6 +6666,9 @@ class Sale extends DataClass implements Insertable<Sale> {
       invoiceNo: data.invoiceNo.present ? data.invoiceNo.value : this.invoiceNo,
       customerId:
           data.customerId.present ? data.customerId.value : this.customerId,
+      posCounterId: data.posCounterId.present
+          ? data.posCounterId.value
+          : this.posCounterId,
       subTotal: data.subTotal.present ? data.subTotal.value : this.subTotal,
       discountTotal: data.discountTotal.present
           ? data.discountTotal.value
@@ -6295,6 +6690,7 @@ class Sale extends DataClass implements Insertable<Sale> {
           ..write('cartId: $cartId, ')
           ..write('invoiceNo: $invoiceNo, ')
           ..write('customerId: $customerId, ')
+          ..write('posCounterId: $posCounterId, ')
           ..write('subTotal: $subTotal, ')
           ..write('discountTotal: $discountTotal, ')
           ..write('taxTotal: $taxTotal, ')
@@ -6306,8 +6702,18 @@ class Sale extends DataClass implements Insertable<Sale> {
   }
 
   @override
-  int get hashCode => Object.hash(id, cartId, invoiceNo, customerId, subTotal,
-      discountTotal, taxTotal, grandTotal, paymentStatus, soldAt);
+  int get hashCode => Object.hash(
+      id,
+      cartId,
+      invoiceNo,
+      customerId,
+      posCounterId,
+      subTotal,
+      discountTotal,
+      taxTotal,
+      grandTotal,
+      paymentStatus,
+      soldAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -6316,6 +6722,7 @@ class Sale extends DataClass implements Insertable<Sale> {
           other.cartId == this.cartId &&
           other.invoiceNo == this.invoiceNo &&
           other.customerId == this.customerId &&
+          other.posCounterId == this.posCounterId &&
           other.subTotal == this.subTotal &&
           other.discountTotal == this.discountTotal &&
           other.taxTotal == this.taxTotal &&
@@ -6329,6 +6736,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
   final Value<int?> cartId;
   final Value<String> invoiceNo;
   final Value<int?> customerId;
+  final Value<int?> posCounterId;
   final Value<double> subTotal;
   final Value<double> discountTotal;
   final Value<double> taxTotal;
@@ -6340,6 +6748,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     this.cartId = const Value.absent(),
     this.invoiceNo = const Value.absent(),
     this.customerId = const Value.absent(),
+    this.posCounterId = const Value.absent(),
     this.subTotal = const Value.absent(),
     this.discountTotal = const Value.absent(),
     this.taxTotal = const Value.absent(),
@@ -6352,6 +6761,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     this.cartId = const Value.absent(),
     required String invoiceNo,
     this.customerId = const Value.absent(),
+    this.posCounterId = const Value.absent(),
     required double subTotal,
     required double discountTotal,
     required double taxTotal,
@@ -6368,6 +6778,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     Expression<int>? cartId,
     Expression<String>? invoiceNo,
     Expression<int>? customerId,
+    Expression<int>? posCounterId,
     Expression<double>? subTotal,
     Expression<double>? discountTotal,
     Expression<double>? taxTotal,
@@ -6380,6 +6791,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       if (cartId != null) 'cart_id': cartId,
       if (invoiceNo != null) 'invoice_no': invoiceNo,
       if (customerId != null) 'customer_id': customerId,
+      if (posCounterId != null) 'pos_counter_id': posCounterId,
       if (subTotal != null) 'sub_total': subTotal,
       if (discountTotal != null) 'discount_total': discountTotal,
       if (taxTotal != null) 'tax_total': taxTotal,
@@ -6394,6 +6806,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       Value<int?>? cartId,
       Value<String>? invoiceNo,
       Value<int?>? customerId,
+      Value<int?>? posCounterId,
       Value<double>? subTotal,
       Value<double>? discountTotal,
       Value<double>? taxTotal,
@@ -6405,6 +6818,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       cartId: cartId ?? this.cartId,
       invoiceNo: invoiceNo ?? this.invoiceNo,
       customerId: customerId ?? this.customerId,
+      posCounterId: posCounterId ?? this.posCounterId,
       subTotal: subTotal ?? this.subTotal,
       discountTotal: discountTotal ?? this.discountTotal,
       taxTotal: taxTotal ?? this.taxTotal,
@@ -6428,6 +6842,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     }
     if (customerId.present) {
       map['customer_id'] = Variable<int>(customerId.value);
+    }
+    if (posCounterId.present) {
+      map['pos_counter_id'] = Variable<int>(posCounterId.value);
     }
     if (subTotal.present) {
       map['sub_total'] = Variable<double>(subTotal.value);
@@ -6457,6 +6874,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
           ..write('cartId: $cartId, ')
           ..write('invoiceNo: $invoiceNo, ')
           ..write('customerId: $customerId, ')
+          ..write('posCounterId: $posCounterId, ')
           ..write('subTotal: $subTotal, ')
           ..write('discountTotal: $discountTotal, ')
           ..write('taxTotal: $taxTotal, ')
@@ -8282,6 +8700,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $RolesTable roles = $RolesTable(this);
+  late final $PosCountersTable posCounters = $PosCountersTable(this);
   late final $UsersTable users = $UsersTable(this);
   late final $ShopsTable shops = $ShopsTable(this);
   late final $CategoriesTable categories = $CategoriesTable(this);
@@ -8309,6 +8728,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
         roles,
+        posCounters,
         users,
         shops,
         categories,
@@ -8527,12 +8947,392 @@ typedef $$RolesTableProcessedTableManager = ProcessedTableManager<
     (Role, $$RolesTableReferences),
     Role,
     PrefetchHooks Function({bool usersRefs})>;
+typedef $$PosCountersTableCreateCompanionBuilder = PosCountersCompanion
+    Function({
+  Value<int> id,
+  required String name,
+  Value<bool> isActive,
+  Value<DateTime> createdAt,
+});
+typedef $$PosCountersTableUpdateCompanionBuilder = PosCountersCompanion
+    Function({
+  Value<int> id,
+  Value<String> name,
+  Value<bool> isActive,
+  Value<DateTime> createdAt,
+});
+
+final class $$PosCountersTableReferences
+    extends BaseReferences<_$AppDatabase, $PosCountersTable, PosCounter> {
+  $$PosCountersTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$UsersTable, List<User>> _usersRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.users,
+          aliasName:
+              $_aliasNameGenerator(db.posCounters.id, db.users.posCounterId));
+
+  $$UsersTableProcessedTableManager get usersRefs {
+    final manager = $$UsersTableTableManager($_db, $_db.users)
+        .filter((f) => f.posCounterId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_usersRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$CartsTable, List<Cart>> _cartsRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.carts,
+          aliasName:
+              $_aliasNameGenerator(db.posCounters.id, db.carts.posCounterId));
+
+  $$CartsTableProcessedTableManager get cartsRefs {
+    final manager = $$CartsTableTableManager($_db, $_db.carts)
+        .filter((f) => f.posCounterId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_cartsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$SalesTable, List<Sale>> _salesRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.sales,
+          aliasName:
+              $_aliasNameGenerator(db.posCounters.id, db.sales.posCounterId));
+
+  $$SalesTableProcessedTableManager get salesRefs {
+    final manager = $$SalesTableTableManager($_db, $_db.sales)
+        .filter((f) => f.posCounterId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_salesRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+}
+
+class $$PosCountersTableFilterComposer
+    extends Composer<_$AppDatabase, $PosCountersTable> {
+  $$PosCountersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  Expression<bool> usersRefs(
+      Expression<bool> Function($$UsersTableFilterComposer f) f) {
+    final $$UsersTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.users,
+        getReferencedColumn: (t) => t.posCounterId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$UsersTableFilterComposer(
+              $db: $db,
+              $table: $db.users,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> cartsRefs(
+      Expression<bool> Function($$CartsTableFilterComposer f) f) {
+    final $$CartsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.carts,
+        getReferencedColumn: (t) => t.posCounterId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CartsTableFilterComposer(
+              $db: $db,
+              $table: $db.carts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> salesRefs(
+      Expression<bool> Function($$SalesTableFilterComposer f) f) {
+    final $$SalesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.sales,
+        getReferencedColumn: (t) => t.posCounterId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SalesTableFilterComposer(
+              $db: $db,
+              $table: $db.sales,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+}
+
+class $$PosCountersTableOrderingComposer
+    extends Composer<_$AppDatabase, $PosCountersTable> {
+  $$PosCountersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$PosCountersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PosCountersTable> {
+  $$PosCountersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> usersRefs<T extends Object>(
+      Expression<T> Function($$UsersTableAnnotationComposer a) f) {
+    final $$UsersTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.users,
+        getReferencedColumn: (t) => t.posCounterId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$UsersTableAnnotationComposer(
+              $db: $db,
+              $table: $db.users,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<T> cartsRefs<T extends Object>(
+      Expression<T> Function($$CartsTableAnnotationComposer a) f) {
+    final $$CartsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.carts,
+        getReferencedColumn: (t) => t.posCounterId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CartsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.carts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<T> salesRefs<T extends Object>(
+      Expression<T> Function($$SalesTableAnnotationComposer a) f) {
+    final $$SalesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.sales,
+        getReferencedColumn: (t) => t.posCounterId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SalesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.sales,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+}
+
+class $$PosCountersTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $PosCountersTable,
+    PosCounter,
+    $$PosCountersTableFilterComposer,
+    $$PosCountersTableOrderingComposer,
+    $$PosCountersTableAnnotationComposer,
+    $$PosCountersTableCreateCompanionBuilder,
+    $$PosCountersTableUpdateCompanionBuilder,
+    (PosCounter, $$PosCountersTableReferences),
+    PosCounter,
+    PrefetchHooks Function({bool usersRefs, bool cartsRefs, bool salesRefs})> {
+  $$PosCountersTableTableManager(_$AppDatabase db, $PosCountersTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PosCountersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PosCountersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PosCountersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<bool> isActive = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+          }) =>
+              PosCountersCompanion(
+            id: id,
+            name: name,
+            isActive: isActive,
+            createdAt: createdAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String name,
+            Value<bool> isActive = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+          }) =>
+              PosCountersCompanion.insert(
+            id: id,
+            name: name,
+            isActive: isActive,
+            createdAt: createdAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$PosCountersTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: (
+              {usersRefs = false, cartsRefs = false, salesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (usersRefs) db.users,
+                if (cartsRefs) db.carts,
+                if (salesRefs) db.sales
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (usersRefs)
+                    await $_getPrefetchedData<PosCounter, $PosCountersTable,
+                            User>(
+                        currentTable: table,
+                        referencedTable:
+                            $$PosCountersTableReferences._usersRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$PosCountersTableReferences(db, table, p0)
+                                .usersRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.posCounterId == item.id),
+                        typedResults: items),
+                  if (cartsRefs)
+                    await $_getPrefetchedData<PosCounter, $PosCountersTable,
+                            Cart>(
+                        currentTable: table,
+                        referencedTable:
+                            $$PosCountersTableReferences._cartsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$PosCountersTableReferences(db, table, p0)
+                                .cartsRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.posCounterId == item.id),
+                        typedResults: items),
+                  if (salesRefs)
+                    await $_getPrefetchedData<PosCounter, $PosCountersTable,
+                            Sale>(
+                        currentTable: table,
+                        referencedTable:
+                            $$PosCountersTableReferences._salesRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$PosCountersTableReferences(db, table, p0)
+                                .salesRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.posCounterId == item.id),
+                        typedResults: items)
+                ];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$PosCountersTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $PosCountersTable,
+    PosCounter,
+    $$PosCountersTableFilterComposer,
+    $$PosCountersTableOrderingComposer,
+    $$PosCountersTableAnnotationComposer,
+    $$PosCountersTableCreateCompanionBuilder,
+    $$PosCountersTableUpdateCompanionBuilder,
+    (PosCounter, $$PosCountersTableReferences),
+    PosCounter,
+    PrefetchHooks Function({bool usersRefs, bool cartsRefs, bool salesRefs})>;
 typedef $$UsersTableCreateCompanionBuilder = UsersCompanion Function({
   Value<int> id,
   required String username,
   required String passwordHash,
   required String pinHash,
   required int roleId,
+  Value<int?> posCounterId,
   Value<bool> isActive,
   Value<DateTime> createdAt,
 });
@@ -8542,6 +9342,7 @@ typedef $$UsersTableUpdateCompanionBuilder = UsersCompanion Function({
   Value<String> passwordHash,
   Value<String> pinHash,
   Value<int> roleId,
+  Value<int?> posCounterId,
   Value<bool> isActive,
   Value<DateTime> createdAt,
 });
@@ -8559,6 +9360,21 @@ final class $$UsersTableReferences
     final manager = $$RolesTableTableManager($_db, $_db.roles)
         .filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_roleIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $PosCountersTable _posCounterIdTable(_$AppDatabase db) =>
+      db.posCounters.createAlias(
+          $_aliasNameGenerator(db.users.posCounterId, db.posCounters.id));
+
+  $$PosCountersTableProcessedTableManager? get posCounterId {
+    final $_column = $_itemColumn<int>('pos_counter_id');
+    if ($_column == null) return null;
+    final manager = $$PosCountersTableTableManager($_db, $_db.posCounters)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_posCounterIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: [item]));
@@ -8617,6 +9433,26 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
             $$RolesTableFilterComposer(
               $db: $db,
               $table: $db.roles,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$PosCountersTableFilterComposer get posCounterId {
+    final $$PosCountersTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.posCounterId,
+        referencedTable: $db.posCounters,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$PosCountersTableFilterComposer(
+              $db: $db,
+              $table: $db.posCounters,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -8694,6 +9530,26 @@ class $$UsersTableOrderingComposer
             ));
     return composer;
   }
+
+  $$PosCountersTableOrderingComposer get posCounterId {
+    final $$PosCountersTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.posCounterId,
+        referencedTable: $db.posCounters,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$PosCountersTableOrderingComposer(
+              $db: $db,
+              $table: $db.posCounters,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
 }
 
 class $$UsersTableAnnotationComposer
@@ -8743,6 +9599,26 @@ class $$UsersTableAnnotationComposer
     return composer;
   }
 
+  $$PosCountersTableAnnotationComposer get posCounterId {
+    final $$PosCountersTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.posCounterId,
+        referencedTable: $db.posCounters,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$PosCountersTableAnnotationComposer(
+              $db: $db,
+              $table: $db.posCounters,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
   Expression<T> auditLogsRefs<T extends Object>(
       Expression<T> Function($$AuditLogsTableAnnotationComposer a) f) {
     final $$AuditLogsTableAnnotationComposer composer = $composerBuilder(
@@ -8776,7 +9652,8 @@ class $$UsersTableTableManager extends RootTableManager<
     $$UsersTableUpdateCompanionBuilder,
     (User, $$UsersTableReferences),
     User,
-    PrefetchHooks Function({bool roleId, bool auditLogsRefs})> {
+    PrefetchHooks Function(
+        {bool roleId, bool posCounterId, bool auditLogsRefs})> {
   $$UsersTableTableManager(_$AppDatabase db, $UsersTable table)
       : super(TableManagerState(
           db: db,
@@ -8793,6 +9670,7 @@ class $$UsersTableTableManager extends RootTableManager<
             Value<String> passwordHash = const Value.absent(),
             Value<String> pinHash = const Value.absent(),
             Value<int> roleId = const Value.absent(),
+            Value<int?> posCounterId = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
@@ -8802,6 +9680,7 @@ class $$UsersTableTableManager extends RootTableManager<
             passwordHash: passwordHash,
             pinHash: pinHash,
             roleId: roleId,
+            posCounterId: posCounterId,
             isActive: isActive,
             createdAt: createdAt,
           ),
@@ -8811,6 +9690,7 @@ class $$UsersTableTableManager extends RootTableManager<
             required String passwordHash,
             required String pinHash,
             required int roleId,
+            Value<int?> posCounterId = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
@@ -8820,6 +9700,7 @@ class $$UsersTableTableManager extends RootTableManager<
             passwordHash: passwordHash,
             pinHash: pinHash,
             roleId: roleId,
+            posCounterId: posCounterId,
             isActive: isActive,
             createdAt: createdAt,
           ),
@@ -8827,7 +9708,8 @@ class $$UsersTableTableManager extends RootTableManager<
               .map((e) =>
                   (e.readTable(table), $$UsersTableReferences(db, table, e)))
               .toList(),
-          prefetchHooksCallback: ({roleId = false, auditLogsRefs = false}) {
+          prefetchHooksCallback: (
+              {roleId = false, posCounterId = false, auditLogsRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [if (auditLogsRefs) db.auditLogs],
@@ -8851,6 +9733,16 @@ class $$UsersTableTableManager extends RootTableManager<
                     referencedTable: $$UsersTableReferences._roleIdTable(db),
                     referencedColumn:
                         $$UsersTableReferences._roleIdTable(db).id,
+                  ) as T;
+                }
+                if (posCounterId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.posCounterId,
+                    referencedTable:
+                        $$UsersTableReferences._posCounterIdTable(db),
+                    referencedColumn:
+                        $$UsersTableReferences._posCounterIdTable(db).id,
                   ) as T;
                 }
 
@@ -8887,7 +9779,8 @@ typedef $$UsersTableProcessedTableManager = ProcessedTableManager<
     $$UsersTableUpdateCompanionBuilder,
     (User, $$UsersTableReferences),
     User,
-    PrefetchHooks Function({bool roleId, bool auditLogsRefs})>;
+    PrefetchHooks Function(
+        {bool roleId, bool posCounterId, bool auditLogsRefs})>;
 typedef $$ShopsTableCreateCompanionBuilder = ShopsCompanion Function({
   Value<int> id,
   required String name,
@@ -13381,6 +14274,7 @@ typedef $$CartsTableCreateCompanionBuilder = CartsCompanion Function({
   required String name,
   Value<String> status,
   Value<int?> customerId,
+  Value<int?> posCounterId,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
 });
@@ -13389,6 +14283,7 @@ typedef $$CartsTableUpdateCompanionBuilder = CartsCompanion Function({
   Value<String> name,
   Value<String> status,
   Value<int?> customerId,
+  Value<int?> posCounterId,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
 });
@@ -13406,6 +14301,21 @@ final class $$CartsTableReferences
     final manager = $$CustomersTableTableManager($_db, $_db.customers)
         .filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_customerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $PosCountersTable _posCounterIdTable(_$AppDatabase db) =>
+      db.posCounters.createAlias(
+          $_aliasNameGenerator(db.carts.posCounterId, db.posCounters.id));
+
+  $$PosCountersTableProcessedTableManager? get posCounterId {
+    final $_column = $_itemColumn<int>('pos_counter_id');
+    if ($_column == null) return null;
+    final manager = $$PosCountersTableTableManager($_db, $_db.posCounters)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_posCounterIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: [item]));
@@ -13475,6 +14385,26 @@ class $$CartsTableFilterComposer extends Composer<_$AppDatabase, $CartsTable> {
             $$CustomersTableFilterComposer(
               $db: $db,
               $table: $db.customers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$PosCountersTableFilterComposer get posCounterId {
+    final $$PosCountersTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.posCounterId,
+        referencedTable: $db.posCounters,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$PosCountersTableFilterComposer(
+              $db: $db,
+              $table: $db.posCounters,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -13569,6 +14499,26 @@ class $$CartsTableOrderingComposer
             ));
     return composer;
   }
+
+  $$PosCountersTableOrderingComposer get posCounterId {
+    final $$PosCountersTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.posCounterId,
+        referencedTable: $db.posCounters,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$PosCountersTableOrderingComposer(
+              $db: $db,
+              $table: $db.posCounters,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
 }
 
 class $$CartsTableAnnotationComposer
@@ -13607,6 +14557,26 @@ class $$CartsTableAnnotationComposer
             $$CustomersTableAnnotationComposer(
               $db: $db,
               $table: $db.customers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$PosCountersTableAnnotationComposer get posCounterId {
+    final $$PosCountersTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.posCounterId,
+        referencedTable: $db.posCounters,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$PosCountersTableAnnotationComposer(
+              $db: $db,
+              $table: $db.posCounters,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -13670,7 +14640,10 @@ class $$CartsTableTableManager extends RootTableManager<
     (Cart, $$CartsTableReferences),
     Cart,
     PrefetchHooks Function(
-        {bool customerId, bool cartItemsRefs, bool salesRefs})> {
+        {bool customerId,
+        bool posCounterId,
+        bool cartItemsRefs,
+        bool salesRefs})> {
   $$CartsTableTableManager(_$AppDatabase db, $CartsTable table)
       : super(TableManagerState(
           db: db,
@@ -13686,6 +14659,7 @@ class $$CartsTableTableManager extends RootTableManager<
             Value<String> name = const Value.absent(),
             Value<String> status = const Value.absent(),
             Value<int?> customerId = const Value.absent(),
+            Value<int?> posCounterId = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
           }) =>
@@ -13694,6 +14668,7 @@ class $$CartsTableTableManager extends RootTableManager<
             name: name,
             status: status,
             customerId: customerId,
+            posCounterId: posCounterId,
             createdAt: createdAt,
             updatedAt: updatedAt,
           ),
@@ -13702,6 +14677,7 @@ class $$CartsTableTableManager extends RootTableManager<
             required String name,
             Value<String> status = const Value.absent(),
             Value<int?> customerId = const Value.absent(),
+            Value<int?> posCounterId = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
           }) =>
@@ -13710,6 +14686,7 @@ class $$CartsTableTableManager extends RootTableManager<
             name: name,
             status: status,
             customerId: customerId,
+            posCounterId: posCounterId,
             createdAt: createdAt,
             updatedAt: updatedAt,
           ),
@@ -13718,7 +14695,10 @@ class $$CartsTableTableManager extends RootTableManager<
                   (e.readTable(table), $$CartsTableReferences(db, table, e)))
               .toList(),
           prefetchHooksCallback: (
-              {customerId = false, cartItemsRefs = false, salesRefs = false}) {
+              {customerId = false,
+              posCounterId = false,
+              cartItemsRefs = false,
+              salesRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
@@ -13746,6 +14726,16 @@ class $$CartsTableTableManager extends RootTableManager<
                         $$CartsTableReferences._customerIdTable(db),
                     referencedColumn:
                         $$CartsTableReferences._customerIdTable(db).id,
+                  ) as T;
+                }
+                if (posCounterId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.posCounterId,
+                    referencedTable:
+                        $$CartsTableReferences._posCounterIdTable(db),
+                    referencedColumn:
+                        $$CartsTableReferences._posCounterIdTable(db).id,
                   ) as T;
                 }
 
@@ -13794,7 +14784,10 @@ typedef $$CartsTableProcessedTableManager = ProcessedTableManager<
     (Cart, $$CartsTableReferences),
     Cart,
     PrefetchHooks Function(
-        {bool customerId, bool cartItemsRefs, bool salesRefs})>;
+        {bool customerId,
+        bool posCounterId,
+        bool cartItemsRefs,
+        bool salesRefs})>;
 typedef $$CartItemsTableCreateCompanionBuilder = CartItemsCompanion Function({
   Value<int> id,
   required int cartId,
@@ -14282,6 +15275,7 @@ typedef $$SalesTableCreateCompanionBuilder = SalesCompanion Function({
   Value<int?> cartId,
   required String invoiceNo,
   Value<int?> customerId,
+  Value<int?> posCounterId,
   required double subTotal,
   required double discountTotal,
   required double taxTotal,
@@ -14294,6 +15288,7 @@ typedef $$SalesTableUpdateCompanionBuilder = SalesCompanion Function({
   Value<int?> cartId,
   Value<String> invoiceNo,
   Value<int?> customerId,
+  Value<int?> posCounterId,
   Value<double> subTotal,
   Value<double> discountTotal,
   Value<double> taxTotal,
@@ -14329,6 +15324,21 @@ final class $$SalesTableReferences
     final manager = $$CustomersTableTableManager($_db, $_db.customers)
         .filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_customerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $PosCountersTable _posCounterIdTable(_$AppDatabase db) =>
+      db.posCounters.createAlias(
+          $_aliasNameGenerator(db.sales.posCounterId, db.posCounters.id));
+
+  $$PosCountersTableProcessedTableManager? get posCounterId {
+    final $_column = $_itemColumn<int>('pos_counter_id');
+    if ($_column == null) return null;
+    final manager = $$PosCountersTableTableManager($_db, $_db.posCounters)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_posCounterIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: [item]));
@@ -14427,6 +15437,26 @@ class $$SalesTableFilterComposer extends Composer<_$AppDatabase, $SalesTable> {
             $$CustomersTableFilterComposer(
               $db: $db,
               $table: $db.customers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$PosCountersTableFilterComposer get posCounterId {
+    final $$PosCountersTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.posCounterId,
+        referencedTable: $db.posCounters,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$PosCountersTableFilterComposer(
+              $db: $db,
+              $table: $db.posCounters,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -14552,6 +15582,26 @@ class $$SalesTableOrderingComposer
             ));
     return composer;
   }
+
+  $$PosCountersTableOrderingComposer get posCounterId {
+    final $$PosCountersTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.posCounterId,
+        referencedTable: $db.posCounters,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$PosCountersTableOrderingComposer(
+              $db: $db,
+              $table: $db.posCounters,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
 }
 
 class $$SalesTableAnnotationComposer
@@ -14627,6 +15677,26 @@ class $$SalesTableAnnotationComposer
     return composer;
   }
 
+  $$PosCountersTableAnnotationComposer get posCounterId {
+    final $$PosCountersTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.posCounterId,
+        referencedTable: $db.posCounters,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$PosCountersTableAnnotationComposer(
+              $db: $db,
+              $table: $db.posCounters,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
   Expression<T> saleItemsRefs<T extends Object>(
       Expression<T> Function($$SaleItemsTableAnnotationComposer a) f) {
     final $$SaleItemsTableAnnotationComposer composer = $composerBuilder(
@@ -14684,6 +15754,7 @@ class $$SalesTableTableManager extends RootTableManager<
     PrefetchHooks Function(
         {bool cartId,
         bool customerId,
+        bool posCounterId,
         bool saleItemsRefs,
         bool paymentsRefs})> {
   $$SalesTableTableManager(_$AppDatabase db, $SalesTable table)
@@ -14701,6 +15772,7 @@ class $$SalesTableTableManager extends RootTableManager<
             Value<int?> cartId = const Value.absent(),
             Value<String> invoiceNo = const Value.absent(),
             Value<int?> customerId = const Value.absent(),
+            Value<int?> posCounterId = const Value.absent(),
             Value<double> subTotal = const Value.absent(),
             Value<double> discountTotal = const Value.absent(),
             Value<double> taxTotal = const Value.absent(),
@@ -14713,6 +15785,7 @@ class $$SalesTableTableManager extends RootTableManager<
             cartId: cartId,
             invoiceNo: invoiceNo,
             customerId: customerId,
+            posCounterId: posCounterId,
             subTotal: subTotal,
             discountTotal: discountTotal,
             taxTotal: taxTotal,
@@ -14725,6 +15798,7 @@ class $$SalesTableTableManager extends RootTableManager<
             Value<int?> cartId = const Value.absent(),
             required String invoiceNo,
             Value<int?> customerId = const Value.absent(),
+            Value<int?> posCounterId = const Value.absent(),
             required double subTotal,
             required double discountTotal,
             required double taxTotal,
@@ -14737,6 +15811,7 @@ class $$SalesTableTableManager extends RootTableManager<
             cartId: cartId,
             invoiceNo: invoiceNo,
             customerId: customerId,
+            posCounterId: posCounterId,
             subTotal: subTotal,
             discountTotal: discountTotal,
             taxTotal: taxTotal,
@@ -14751,6 +15826,7 @@ class $$SalesTableTableManager extends RootTableManager<
           prefetchHooksCallback: (
               {cartId = false,
               customerId = false,
+              posCounterId = false,
               saleItemsRefs = false,
               paymentsRefs = false}) {
             return PrefetchHooks(
@@ -14789,6 +15865,16 @@ class $$SalesTableTableManager extends RootTableManager<
                         $$SalesTableReferences._customerIdTable(db),
                     referencedColumn:
                         $$SalesTableReferences._customerIdTable(db).id,
+                  ) as T;
+                }
+                if (posCounterId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.posCounterId,
+                    referencedTable:
+                        $$SalesTableReferences._posCounterIdTable(db),
+                    referencedColumn:
+                        $$SalesTableReferences._posCounterIdTable(db).id,
                   ) as T;
                 }
 
@@ -14837,7 +15923,11 @@ typedef $$SalesTableProcessedTableManager = ProcessedTableManager<
     (Sale, $$SalesTableReferences),
     Sale,
     PrefetchHooks Function(
-        {bool cartId, bool customerId, bool saleItemsRefs, bool paymentsRefs})>;
+        {bool cartId,
+        bool customerId,
+        bool posCounterId,
+        bool saleItemsRefs,
+        bool paymentsRefs})>;
 typedef $$SaleItemsTableCreateCompanionBuilder = SaleItemsCompanion Function({
   Value<int> id,
   required int saleId,
@@ -16241,6 +17331,8 @@ class $AppDatabaseManager {
   $AppDatabaseManager(this._db);
   $$RolesTableTableManager get roles =>
       $$RolesTableTableManager(_db, _db.roles);
+  $$PosCountersTableTableManager get posCounters =>
+      $$PosCountersTableTableManager(_db, _db.posCounters);
   $$UsersTableTableManager get users =>
       $$UsersTableTableManager(_db, _db.users);
   $$ShopsTableTableManager get shops =>

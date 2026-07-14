@@ -1,10 +1,11 @@
 import '../../../core/database/app_database.dart';
 
 abstract class SalesRepository {
-  Stream<List<Cart>> watchActiveCarts();
+  Stream<List<Cart>> watchActiveCarts(int? posCounterId);
   Stream<List<CartItemWithProduct>> watchCartItems(int cartId);
-  Future<int> createCart(String name);
-  Future<int> createCartWithCustomer(String name, int customerId);
+  Future<int> createCart(String name, {int? posCounterId});
+  Future<int> createCartWithCustomer(String name, int customerId,
+      {int? posCounterId});
   Future<void> setCartStatus(int cartId, String status);
   Future<void> renameCart(int cartId, String name);
   Future<void> deleteCart(int cartId);
