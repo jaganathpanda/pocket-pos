@@ -13,9 +13,13 @@ class AuthRepositoryImpl implements AuthRepository {
   static const _sessionKey = 'active_user_id';
 
   @override
-  Future<AppUser?> login({required String username, required String pin}) async {
+  Future<AppUser?> login(
+      {required String username, required String pin}) async {
     final rows = await (_db.select(_db.users)
-          ..where((u) => u.username.equals(username) & u.pinHash.equals(pin) & u.isActive.equals(true)))
+          ..where((u) =>
+              u.username.equals(username) &
+              u.pinHash.equals(pin) &
+              u.isActive.equals(true)))
         .get();
 
     if (rows.isEmpty) {
@@ -26,7 +30,9 @@ class AuthRepositoryImpl implements AuthRepository {
     }
 
     final user = rows.first;
-    final role = await (_db.select(_db.roles)..where((r) => r.id.equals(user.roleId))).getSingleOrNull();
+    final role = await (_db.select(_db.roles)
+          ..where((r) => r.id.equals(user.roleId)))
+        .getSingleOrNull();
     if (role == null) {
       if (kIsWeb && username == 'owner' && pin == '1234') {
         return _repairAndLoginWebOwner();
@@ -37,32 +43,26 @@ class AuthRepositoryImpl implements AuthRepository {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_sessionKey, user.id);
 
-    return _toAppUser(user, role.name);
-  }
-
-  Future<AppUser> _toAppUser(User user, String roleName) async {
-    String? counterName;
-    if (user.posCounterId != null) {
-      final counter = await (_db.select(_db.posCounters)
-            ..where((c) => c.id.equals(user.posCounterId!)))
-          .getSingleOrNull();
-      counterName = counter?.name;
-    }
     return AppUser(
       id: user.id,
       username: user.username,
-      role: _mapRole(roleName),
+      role: _mapRole(role.name),
       isActive: user.isActive,
-      posCounterId: user.posCounterId,
-      posCounterName: counterName,
     );
   }
 
   Future<AppUser?> _repairAndLoginWebOwner() async {
-    final superAdminRole = await (_db.select(_db.roles)..where((r) => r.name.equals('super_admin'))).getSingleOrNull();
-    final superAdminRoleId = superAdminRole?.id ?? await _db.into(_db.roles).insert(RolesCompanion.insert(name: 'super_admin'));
+    final superAdminRole = await (_db.select(_db.roles)
+          ..where((r) => r.name.equals('super_admin')))
+        .getSingleOrNull();
+    final superAdminRoleId = superAdminRole?.id ??
+        await _db
+            .into(_db.roles)
+            .insert(RolesCompanion.insert(name: 'super_admin'));
 
-    final owner = await (_db.select(_db.users)..where((u) => u.username.equals('owner'))).getSingleOrNull();
+    final owner = await (_db.select(_db.users)
+          ..where((u) => u.username.equals('owner')))
+        .getSingleOrNull();
 
     late final int ownerId;
     if (owner == null) {
@@ -109,13 +109,22 @@ class AuthRepositoryImpl implements AuthRepository {
     final userId = prefs.getInt(_sessionKey);
     if (userId == null) return null;
 
-    final user = await (_db.select(_db.users)..where((u) => u.id.equals(userId))).getSingleOrNull();
+    final user = await (_db.select(_db.users)
+          ..where((u) => u.id.equals(userId)))
+        .getSingleOrNull();
     if (user == null) return null;
 
-    final role = await (_db.select(_db.roles)..where((r) => r.id.equals(user.roleId))).getSingleOrNull();
+    final role = await (_db.select(_db.roles)
+          ..where((r) => r.id.equals(user.roleId)))
+        .getSingleOrNull();
     if (role == null) return null;
 
-    return _toAppUser(user, role.name);
+    return AppUser(
+      id: user.id,
+      username: user.username,
+      role: _mapRole(role.name),
+      isActive: user.isActive,
+    );
   }
 
   UserRole _mapRole(String role) {
