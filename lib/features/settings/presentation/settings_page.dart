@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/database_provider.dart';
 import '../../../core/di/providers.dart';
+import '../../warehouse/domain/inventory_mode.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -67,6 +68,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _InventoryModeCard(),
+          const SizedBox(height: 16),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -100,6 +103,49 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _InventoryModeCard extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current =
+        ref.watch(inventoryModeProvider).valueOrNull ?? InventoryMode.single;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Inventory Mode',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
+            const SizedBox(height: 4),
+            const Text('Controls how stock is tracked across the app.',
+                style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 8),
+            for (final mode in InventoryMode.values)
+              RadioListTile<InventoryMode>(
+                contentPadding: EdgeInsets.zero,
+                value: mode,
+                groupValue: current,
+                title: Text(mode.label),
+                subtitle: Text(mode.description,
+                    style: const TextStyle(fontSize: 12)),
+                onChanged: (v) async {
+                  if (v == null || v == current) return;
+                  await ref.read(warehouseRepositoryProvider).setMode(v);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Inventory mode: ${v.label}')),
+                    );
+                  }
+                },
+              ),
+          ],
+        ),
       ),
     );
   }

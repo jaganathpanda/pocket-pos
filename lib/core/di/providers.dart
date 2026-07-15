@@ -23,6 +23,9 @@ import '../../features/purchases/data/purchase_repository_impl.dart';
 import '../../features/purchases/domain/purchase_repository.dart';
 import '../../features/pos_counters/data/pos_counter_repository_impl.dart';
 import '../../features/pos_counters/domain/pos_counter_repository.dart';
+import '../../features/warehouse/data/warehouse_repository_impl.dart';
+import '../../features/warehouse/domain/inventory_mode.dart';
+import '../../features/warehouse/domain/warehouse_repository.dart';
 import '../database/app_database.dart';
 import '../database/database_provider.dart';
 
@@ -90,8 +93,26 @@ final inventoryRepositoryProvider = Provider<InventoryRepository>((ref) {
   return InventoryRepositoryImpl(ref.watch(appDatabaseProvider));
 });
 
+/// The warehouse whose stock the Inventory screen shows (null = all).
+final selectedInventoryWarehouseProvider = StateProvider<int?>((ref) => null);
+
 final inventoryProvider = StreamProvider((ref) {
-  return ref.watch(inventoryRepositoryProvider).watchInventory();
+  final warehouseId = ref.watch(selectedInventoryWarehouseProvider);
+  return ref.watch(inventoryRepositoryProvider).watchInventory(warehouseId: warehouseId);
+});
+
+// ── Warehouses & inventory mode ─────────────────────────────────────────────
+
+final warehouseRepositoryProvider = Provider<WarehouseRepository>((ref) {
+  return WarehouseRepositoryImpl(ref.watch(appDatabaseProvider));
+});
+
+final inventoryModeProvider = StreamProvider<InventoryMode>((ref) {
+  return ref.watch(warehouseRepositoryProvider).watchMode();
+});
+
+final warehousesProvider = StreamProvider<List<Warehouse>>((ref) {
+  return ref.watch(warehouseRepositoryProvider).watchWarehouses();
 });
 
 // ── Suppliers ─────────────────────────────────────────────────────────────────

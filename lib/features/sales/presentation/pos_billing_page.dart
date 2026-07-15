@@ -7,6 +7,7 @@ import '../../../core/database/database_provider.dart';
 import '../../../core/di/providers.dart';
 import '../../barcode/presentation/barcode_scanner_page.dart';
 import '../../barcode/presentation/hid_scanner_listener.dart';
+import '../../warehouse/domain/inventory_mode.dart';
 
 class PosBillingPage extends ConsumerWidget {
   const PosBillingPage({super.key});
@@ -209,7 +210,20 @@ class PosBillingPage extends ConsumerWidget {
     final nameCtrl = TextEditingController();
     final customers = ref.read(customerRepositoryProvider);
 
-    final result = await showDialog<({String mobile, String name})?>(
+    final mode = ref.read(inventoryModeProvider).valueOrNull ?? InventoryMode.single;
+    final multiple = mode == InventoryMode.multiple;
+    final warehouses = (ref.read(warehousesProvider).valueOrNull ?? const <Warehouse>[])
+        .where((w) => w.isActive)
+        .toList();
+    int? selectedWarehouse = multiple
+        ? (warehouses.isEmpty
+            ? null
+            : warehouses
+                .firstWhere((w) => w.isDefault, orElse: () => warehouses.first)
+                .id)
+        : null;
+
+    final result = await showDialog<({String mobile, String name, int? warehouseId})?>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) {
@@ -260,15 +274,41 @@ class PosBillingPage extends ConsumerWidget {
                     prefixIcon: Icon(Icons.person_outline),
                   ),
                 ),
+                if (multiple) ...[
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<int>(
+                    initialValue: selectedWarehouse,
+                    decoration: const InputDecoration(
+                      labelText: 'Warehouse *',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.warehouse_rounded),
+                    ),
+                    items: [
+                      for (final w in warehouses)
+                        DropdownMenuItem(value: w.id, child: Text(w.name)),
+                    ],
+                    onChanged: (v) => setState(() => selectedWarehouse = v),
+                  ),
+                ],
               ],
             ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
               FilledButton(
                 onPressed: () {
+                  if (multiple && selectedWarehouse == null) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('Select a warehouse for this cart.')),
+                    );
+                    return;
+                  }
                   Navigator.pop(
                     ctx,
-                    (mobile: mobileCtrl.text.trim(), name: nameCtrl.text.trim()),
+                    (
+                      mobile: mobileCtrl.text.trim(),
+                      name: nameCtrl.text.trim(),
+                      warehouseId: selectedWarehouse,
+                    ),
                   );
                 },
                 child: const Text('Create Cart'),
@@ -296,6 +336,7 @@ class PosBillingPage extends ConsumerWidget {
     try {
       int id;
       final counterId = ref.read(activeCounterIdProvider);
+      final warehouseId = result.warehouseId;
 
       if (mobile.isNotEmpty) {
         // Link cart to customer by mobile and update name when provided.
@@ -308,12 +349,15 @@ class PosBillingPage extends ConsumerWidget {
               cartLabel,
               customerId,
               posCounterId: counterId,
+              warehouseId: warehouseId,
             );
       } else {
         // Name-only carts are allowed; keep cart unlinked from customers table.
-        id = await ref
-            .read(salesRepositoryProvider)
-            .createCart(cartLabel, posCounterId: counterId);
+        id = await ref.read(salesRepositoryProvider).createCart(
+              cartLabel,
+              posCounterId: counterId,
+              warehouseId: warehouseId,
+            );
       }
 
       ref.read(selectedCartIdProvider.notifier).state = id;

@@ -3,9 +3,9 @@ import '../../../core/database/app_database.dart';
 abstract class SalesRepository {
   Stream<List<Cart>> watchActiveCarts(int? posCounterId);
   Stream<List<CartItemWithProduct>> watchCartItems(int cartId);
-  Future<int> createCart(String name, {int? posCounterId});
+  Future<int> createCart(String name, {int? posCounterId, int? warehouseId});
   Future<int> createCartWithCustomer(String name, int customerId,
-      {int? posCounterId});
+      {int? posCounterId, int? warehouseId});
   Future<void> setCartStatus(int cartId, String status);
   Future<void> setCartCounter(int cartId, int posCounterId);
   Future<void> renameCart(int cartId, String name);

@@ -29,6 +29,23 @@ class PosCounters extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
+class Warehouses extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text().withLength(min: 1, max: 60).unique()();
+  BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Simple key/value store for app-wide settings (e.g. inventory mode).
+class AppSettings extends Table {
+  TextColumn get key => text()();
+  TextColumn get value => text()();
+
+  @override
+  Set<Column> get primaryKey => {key};
+}
+
 class Shops extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
@@ -84,6 +101,7 @@ class Inventory extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get productId => integer().references(Products, #id)();
   IntColumn get variantId => integer().nullable().references(ProductVariants, #id)();
+  IntColumn get warehouseId => integer().nullable().references(Warehouses, #id)();
   RealColumn get currentStock => real().withDefault(const Constant(0))();
   RealColumn get availableStock => real().withDefault(const Constant(0))();
   RealColumn get lowStockThreshold => real().withDefault(const Constant(5))();
@@ -91,7 +109,7 @@ class Inventory extends Table {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {productId, variantId},
+        {productId, variantId, warehouseId},
       ];
 }
 
@@ -99,7 +117,8 @@ class InventoryTransactions extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get productId => integer().references(Products, #id)();
   IntColumn get variantId => integer().nullable().references(ProductVariants, #id)();
-  TextColumn get type => text()(); // in, out, adjust, damage, return
+  IntColumn get warehouseId => integer().nullable().references(Warehouses, #id)();
+  TextColumn get type => text()(); // in, out, adjust, damage, return, transfer
   RealColumn get quantity => real()();
   RealColumn get unitCost => real().withDefault(const Constant(0))();
   TextColumn get note => text().nullable()();
@@ -120,6 +139,7 @@ class Carts extends Table {
   TextColumn get status => text().withDefault(const Constant('active'))(); // active, hold, completed
   IntColumn get customerId => integer().nullable().references(Customers, #id)();
   IntColumn get posCounterId => integer().nullable().references(PosCounters, #id)();
+  IntColumn get warehouseId => integer().nullable().references(Warehouses, #id)();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -142,6 +162,7 @@ class Sales extends Table {
   TextColumn get invoiceNo => text().unique()();
   IntColumn get customerId => integer().nullable().references(Customers, #id)();
   IntColumn get posCounterId => integer().nullable().references(PosCounters, #id)();
+  IntColumn get warehouseId => integer().nullable().references(Warehouses, #id)();
   RealColumn get subTotal => real()();
   RealColumn get discountTotal => real()();
   RealColumn get taxTotal => real()();
@@ -195,6 +216,7 @@ class Suppliers extends Table {
 class Purchases extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get supplierId => integer().nullable().references(Suppliers, #id)();
+  IntColumn get warehouseId => integer().nullable().references(Warehouses, #id)();
   TextColumn get invoiceNo => text().nullable()();
   TextColumn get status => text().withDefault(const Constant('draft'))();
   RealColumn get subTotal => real().withDefault(const Constant(0))();
@@ -241,6 +263,8 @@ class AuditLogs extends Table {
     Roles,
     Users,
     PosCounters,
+    Warehouses,
+    AppSettings,
     Shops,
     Categories,
     Products,
@@ -265,7 +289,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -282,6 +306,41 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(carts, carts.posCounterId);
             await m.addColumn(sales, sales.posCounterId);
           }
+          if (from < 4) {
+            await m.createTable(warehouses);
+            await m.createTable(appSettings);
+
+            // A default warehouse so existing stock has a home, and default the
+            // mode to single-warehouse to preserve current tracking behaviour.
+            final defaultWarehouseId = await into(warehouses).insert(
+              WarehousesCompanion.insert(
+                name: 'Main Store',
+                isDefault: const Value(true),
+              ),
+            );
+            await into(appSettings).insert(
+              AppSettingsCompanion.insert(
+                  key: 'inventory_mode', value: 'single'),
+            );
+
+            await m.addColumn(
+                inventoryTransactions, inventoryTransactions.warehouseId);
+            await m.addColumn(purchases, purchases.warehouseId);
+            await m.addColumn(carts, carts.warehouseId);
+            await m.addColumn(sales, sales.warehouseId);
+
+            // Rebuild inventory to add warehouseId to the unique key and stamp
+            // existing rows with the default warehouse.
+            await m.alterTable(
+              TableMigration(
+                inventory,
+                columnTransformer: {
+                  inventory.warehouseId: Constant(defaultWarehouseId),
+                },
+                newColumns: [inventory.warehouseId],
+              ),
+            );
+          }
         },
         beforeOpen: (details) async {
           if (details.wasCreated) {
@@ -297,8 +356,44 @@ class AppDatabase extends _$AppDatabase {
           // platform. Without this, native builds open an empty database and
           // the owner/1234 login fails with "Invalid credentials".
           await _seedWebMockDataIfEmpty();
+
+          // Guarantee a default warehouse and an inventory-mode setting exist
+          // regardless of how the database got here.
+          await _ensureInventoryDefaults();
         },
       );
+
+  /// Idempotently ensures there is at least one (default) warehouse and an
+  /// `inventory_mode` setting.
+  Future<void> _ensureInventoryDefaults() async {
+    final anyWarehouse = await (select(warehouses)..limit(1)).getSingleOrNull();
+    if (anyWarehouse == null) {
+      await into(warehouses).insert(
+        WarehousesCompanion.insert(name: 'Main Store', isDefault: const Value(true)),
+      );
+    }
+    final mode = await (select(appSettings)
+          ..where((s) => s.key.equals('inventory_mode')))
+        .getSingleOrNull();
+    if (mode == null) {
+      await into(appSettings).insert(
+        AppSettingsCompanion.insert(key: 'inventory_mode', value: 'single'),
+      );
+    }
+  }
+
+  Future<int> defaultWarehouseId() async {
+    final def = await (select(warehouses)
+          ..where((w) => w.isDefault.equals(true))
+          ..limit(1))
+        .getSingleOrNull();
+    if (def != null) return def.id;
+    final any = await (select(warehouses)..limit(1)).getSingleOrNull();
+    if (any != null) return any.id;
+    return into(warehouses).insert(
+      WarehousesCompanion.insert(name: 'Main Store', isDefault: const Value(true)),
+    );
+  }
 
   Future<void> resetWebDemoData() async {
     if (!kIsWeb) {
@@ -324,6 +419,8 @@ class AppDatabase extends _$AppDatabase {
       await customStatement('DELETE FROM shops');
       await customStatement('DELETE FROM users');
       await customStatement('DELETE FROM pos_counters');
+      await customStatement('DELETE FROM warehouses');
+      await customStatement('DELETE FROM app_settings');
       await customStatement('DELETE FROM roles');
       await customStatement('DELETE FROM sqlite_sequence');
       await customStatement('PRAGMA foreign_keys = ON');
@@ -398,6 +495,13 @@ class AppDatabase extends _$AppDatabase {
         roleId: cashierRoleId,
         posCounterId: Value(pos1Id),
       ),
+    );
+
+    final defaultWarehouseId = await into(warehouses).insert(
+      WarehousesCompanion.insert(name: 'Main Store', isDefault: const Value(true)),
+    );
+    await into(appSettings).insert(
+      AppSettingsCompanion.insert(key: 'inventory_mode', value: 'single'),
     );
 
     final groceriesCategoryId = await into(categories).insert(
@@ -524,6 +628,7 @@ class AppDatabase extends _$AppDatabase {
         InventoryCompanion.insert(
           productId: riceId,
           variantId: const Value(null),
+          warehouseId: Value(defaultWarehouseId),
           currentStock: const Value(35),
           availableStock: const Value(35),
           lowStockThreshold: const Value(8),
@@ -534,6 +639,7 @@ class AppDatabase extends _$AppDatabase {
         InventoryCompanion.insert(
           productId: oilId,
           variantId: const Value(null),
+          warehouseId: Value(defaultWarehouseId),
           currentStock: const Value(22),
           availableStock: const Value(22),
           lowStockThreshold: const Value(6),
@@ -544,6 +650,7 @@ class AppDatabase extends _$AppDatabase {
         InventoryCompanion.insert(
           productId: colaId,
           variantId: const Value(null),
+          warehouseId: Value(defaultWarehouseId),
           currentStock: const Value(48),
           availableStock: const Value(48),
           lowStockThreshold: const Value(10),
@@ -554,6 +661,7 @@ class AppDatabase extends _$AppDatabase {
         InventoryCompanion.insert(
           productId: milkId,
           variantId: const Value(null),
+          warehouseId: Value(defaultWarehouseId),
           currentStock: const Value(60),
           availableStock: const Value(60),
           lowStockThreshold: const Value(12),
@@ -564,6 +672,7 @@ class AppDatabase extends _$AppDatabase {
         InventoryCompanion.insert(
           productId: biscuitId,
           variantId: const Value(null),
+          warehouseId: Value(defaultWarehouseId),
           currentStock: const Value(85),
           availableStock: const Value(85),
           lowStockThreshold: const Value(15),
@@ -574,6 +683,7 @@ class AppDatabase extends _$AppDatabase {
         InventoryCompanion.insert(
           productId: attaId,
           variantId: const Value(null),
+          warehouseId: Value(defaultWarehouseId),
           currentStock: const Value(26),
           availableStock: const Value(26),
           lowStockThreshold: const Value(6),
@@ -584,6 +694,7 @@ class AppDatabase extends _$AppDatabase {
         InventoryCompanion.insert(
           productId: soapId,
           variantId: const Value(null),
+          warehouseId: Value(defaultWarehouseId),
           currentStock: const Value(110),
           availableStock: const Value(110),
           lowStockThreshold: const Value(20),

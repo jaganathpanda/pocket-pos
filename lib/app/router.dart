@@ -21,6 +21,8 @@ import '../features/sales/presentation/pos_billing_page.dart';
 import '../features/expense/presentation/expense_page.dart';
 import '../features/settings/presentation/settings_page.dart';
 import '../features/suppliers/presentation/supplier_page.dart';
+import '../features/warehouse/domain/inventory_mode.dart';
+import '../features/warehouse/presentation/warehouse_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -71,6 +73,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/ledger', builder: (context, state) => const CreditLedgerPage()),
           GoRoute(path: '/expenses', builder: (context, state) => const ExpensePage()),
           GoRoute(path: '/counters', builder: (context, state) => const PosCountersPage()),
+          GoRoute(path: '/warehouses', builder: (context, state) => const WarehousePage()),
           GoRoute(path: '/settings', builder: (context, state) => const SettingsPage()),
         ],
       ),
@@ -92,12 +95,16 @@ class _AppShell extends ConsumerWidget {
     // everything plus the Counters/Users management screen.
     final scoped = user?.isCounterScoped ?? false;
     final canManage = user?.canManagePos ?? false;
+    final mode = ref.watch(inventoryModeProvider).valueOrNull ?? InventoryMode.single;
 
     final destinations = <({String route, String label, IconData icon})>[
       (route: '/dashboard', label: 'Dashboard', icon: Icons.dashboard_rounded),
       if (!scoped) (route: '/categories', label: 'Categories', icon: Icons.category_rounded),
       (route: '/products', label: 'Products', icon: Icons.inventory_2_rounded),
-      if (!scoped) (route: '/inventory', label: 'Inventory', icon: Icons.warehouse_rounded),
+      if (!scoped && mode.tracksStock)
+        (route: '/inventory', label: 'Inventory', icon: Icons.inventory_rounded),
+      if (!scoped && mode.usesWarehouses)
+        (route: '/warehouses', label: 'Warehouses', icon: Icons.warehouse_rounded),
       (route: '/billing', label: 'POS', icon: Icons.point_of_sale_rounded),
       (route: '/customers', label: 'Customers', icon: Icons.person_rounded),
       if (!scoped) (route: '/suppliers', label: 'Vendors', icon: Icons.storefront_rounded),

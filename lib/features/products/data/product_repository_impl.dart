@@ -62,6 +62,7 @@ class ProductRepositoryImpl implements ProductRepository {
           InventoryCompanion.insert(
             productId: id,
             variantId: const Value(null),
+            warehouseId: Value(await _db.defaultWarehouseId()),
             currentStock: const Value(0),
             availableStock: const Value(0),
           ),

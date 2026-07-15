@@ -7,6 +7,7 @@ abstract class PurchaseRepository {
     int? supplierId,
     String? invoiceNo,
     String? note,
+    int? warehouseId,
   });
   Future<void> addItem({
     required int purchaseId,

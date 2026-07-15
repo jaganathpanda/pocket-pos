@@ -5,6 +5,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/database_provider.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/utilities/money.dart';
+import '../../warehouse/domain/inventory_mode.dart';
 import '../domain/purchase_repository.dart';
 
 class PurchasePage extends ConsumerWidget {
@@ -65,6 +66,19 @@ class PurchasePage extends ConsumerWidget {
 
     final suppliers = await ref.read(supplierRepositoryProvider).search('');
 
+    final mode = ref.read(inventoryModeProvider).valueOrNull ?? InventoryMode.single;
+    final multiple = mode == InventoryMode.multiple;
+    final warehouses = (ref.read(warehousesProvider).valueOrNull ?? const <Warehouse>[])
+        .where((w) => w.isActive)
+        .toList();
+    int? selectedWarehouseId = multiple
+        ? (warehouses.isEmpty
+            ? null
+            : warehouses
+                .firstWhere((w) => w.isDefault, orElse: () => warehouses.first)
+                .id)
+        : null;
+
     await showDialog<void>(
       context: context,
       builder: (ctx) {
@@ -93,6 +107,19 @@ class PurchasePage extends ConsumerWidget {
                       ],
                       onChanged: (v) => setState(() => selectedSupplierId = v),
                     ),
+                    if (multiple) ...[
+                      const SizedBox(height: 10),
+                      DropdownButtonFormField<int>(
+                        initialValue: selectedWarehouseId,
+                        decoration: const InputDecoration(
+                            labelText: 'Warehouse *', border: OutlineInputBorder()),
+                        items: [
+                          for (final w in warehouses)
+                            DropdownMenuItem(value: w.id, child: Text(w.name)),
+                        ],
+                        onChanged: (v) => setState(() => selectedWarehouseId = v),
+                      ),
+                    ],
                     const SizedBox(height: 10),
                     TextField(
                       controller: invoiceNo,
@@ -111,10 +138,17 @@ class PurchasePage extends ConsumerWidget {
                         const SizedBox(width: 8),
                         FilledButton(
                           onPressed: () async {
+                            if (multiple && selectedWarehouseId == null) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                const SnackBar(content: Text('Select a warehouse for this purchase.')),
+                              );
+                              return;
+                            }
                             final id = await ref.read(purchaseRepositoryProvider).createPurchase(
                                   supplierId: selectedSupplierId,
                                   invoiceNo: invoiceNo.text.trim().isEmpty ? null : invoiceNo.text.trim(),
                                   note: note.text.trim().isEmpty ? null : note.text.trim(),
+                                  warehouseId: selectedWarehouseId,
                                 );
                             if (ctx.mounted) {
                               Navigator.pop(ctx);

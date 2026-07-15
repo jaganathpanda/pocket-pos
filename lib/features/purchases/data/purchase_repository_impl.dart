@@ -55,12 +55,14 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
     int? supplierId,
     String? invoiceNo,
     String? note,
+    int? warehouseId,
   }) {
     return _db.into(_db.purchases).insert(
           PurchasesCompanion.insert(
             supplierId: Value(supplierId),
             invoiceNo: Value(invoiceNo),
             note: Value(note),
+            warehouseId: Value(warehouseId),
             status: const Value('draft'),
           ),
         );
@@ -103,17 +105,28 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
 
   @override
   Future<void> finalize(int purchaseId) async {
+    final purchase = await (_db.select(_db.purchases)..where((p) => p.id.equals(purchaseId))).getSingleOrNull();
     final items = await (_db.select(_db.purchaseItems)..where((i) => i.purchaseId.equals(purchaseId))).get();
 
+    // Respect the inventory mode: 'none' skips stock updates entirely.
+    final modeRow = await (_db.select(_db.appSettings)
+          ..where((s) => s.key.equals('inventory_mode')))
+        .getSingleOrNull();
+    final tracksStock = (modeRow?.value ?? 'single') != 'none';
+    final warehouseId = purchase?.warehouseId ?? await _db.defaultWarehouseId();
+
     await _db.transaction(() async {
-      final repo = InventoryRepositoryImpl(_db);
-      for (final item in items) {
-        await repo.stockIn(
-          productId: item.productId,
-          quantity: item.quantity,
-          unitCost: item.unitCost,
-          note: 'Purchase #$purchaseId',
-        );
+      if (tracksStock) {
+        final repo = InventoryRepositoryImpl(_db);
+        for (final item in items) {
+          await repo.stockIn(
+            productId: item.productId,
+            warehouseId: warehouseId,
+            quantity: item.quantity,
+            unitCost: item.unitCost,
+            note: 'Purchase #$purchaseId',
+          );
+        }
       }
 
       await (_db.update(_db.purchases)..where((p) => p.id.equals(purchaseId))).write(
