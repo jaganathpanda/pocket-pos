@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:drift/drift.dart' show Expression;
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_provider.dart';
@@ -56,106 +55,127 @@ class PosBillingPage extends ConsumerWidget {
           final isNarrow = constraints.maxWidth < 600;
 
           final Widget cartList = Card(
-              margin: const EdgeInsets.all(12),
-              child: Column(
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Text('Active Carts', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                  const Divider(height: 1),
-                  Expanded(
-                    child: carts.when(
-                      data: (list) {
-                        if (list.isEmpty) {
-                          return const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Text('No active carts.\nTap New Cart to start.',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: Colors.grey)),
-                            ),
-                          );
-                        }
-                        return ListView(
-                          children: [
-                            for (final cart in list)
-                              ListTile(
-                                selected: cart.id == selectedCartId,
-                                selectedTileColor: Theme.of(context).colorScheme.primaryContainer,
-                                leading: const Icon(Icons.shopping_cart_outlined, size: 18),
-                                title: Text(cart.name, style: const TextStyle(fontSize: 13)),
-                                subtitle: _CartMetaText(
-                                  cart: cart,
-                                  counterName: counterNameById[cart.posCounterId],
-                                ),
-                                onTap: () =>
-                                    ref.read(selectedCartIdProvider.notifier).state = cart.id,
-                                trailing: PopupMenuButton<String>(
-                                  icon: const Icon(Icons.more_vert, size: 18),
-                                  onSelected: (value) async {
-                                    if (value == 'rename') {
-                                      await _showRenameCartDialog(context, ref, cart);
-                                      return;
-                                    }
-
-                                    if (value == 'transfer') {
-                                      await _showTransferCartDialog(context, ref, cart);
-                                      return;
-                                    }
-
-                                    if (value == 'toggle_hold') {
-                                      final next = cart.status == 'hold' ? 'active' : 'hold';
-                                      await ref.read(salesRepositoryProvider).setCartStatus(cart.id, next);
-                                      ref.invalidate(dashboardMetricsProvider);
-                                      return;
-                                    }
-
-                                    if (value == 'delete') {
-                                      await ref.read(salesRepositoryProvider).deleteCart(cart.id);
-                                      if (cart.id == selectedCartId) {
-                                        ref.read(selectedCartIdProvider.notifier).state = null;
-                                      }
-                                      ref.invalidate(dashboardMetricsProvider);
-                                    }
-                                  },
-                                  itemBuilder: (_) => [
-                                    const PopupMenuItem(
-                                      value: 'rename',
-                                      child: Text('Rename Cart'),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'transfer',
-                                      child: Text('Transfer to POS…'),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 'toggle_hold',
-                                      child: Text(cart.status == 'hold' ? 'Resume Cart' : 'Hold Cart'),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'delete',
-                                      child: Text('Delete Cart'),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
+            margin: const EdgeInsets.all(12),
+            child: Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Text('Active Carts',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: carts.when(
+                    data: (list) {
+                      if (list.isEmpty) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Text(
+                                'No active carts.\nTap New Cart to start.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.grey)),
+                          ),
                         );
-                      },
-                      loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (e, _) => Center(child: Text('$e')),
-                    ),
+                      }
+                      return ListView(
+                        children: [
+                          for (final cart in list)
+                            ListTile(
+                              selected: cart.id == selectedCartId,
+                              selectedTileColor: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer,
+                              leading: const Icon(Icons.shopping_cart_outlined,
+                                  size: 18),
+                              title: Text(cart.name,
+                                  style: const TextStyle(fontSize: 13)),
+                              subtitle: _CartMetaText(
+                                cart: cart,
+                                counterName: counterNameById[cart.posCounterId],
+                              ),
+                              onTap: () => ref
+                                  .read(selectedCartIdProvider.notifier)
+                                  .state = cart.id,
+                              trailing: PopupMenuButton<String>(
+                                icon: const Icon(Icons.more_vert, size: 18),
+                                onSelected: (value) async {
+                                  if (value == 'rename') {
+                                    await _showRenameCartDialog(
+                                        context, ref, cart);
+                                    return;
+                                  }
+
+                                  if (value == 'transfer') {
+                                    await _showTransferCartDialog(
+                                        context, ref, cart);
+                                    return;
+                                  }
+
+                                  if (value == 'toggle_hold') {
+                                    final next = cart.status == 'hold'
+                                        ? 'active'
+                                        : 'hold';
+                                    await ref
+                                        .read(salesRepositoryProvider)
+                                        .setCartStatus(cart.id, next);
+                                    ref.invalidate(dashboardMetricsProvider);
+                                    return;
+                                  }
+
+                                  if (value == 'delete') {
+                                    await ref
+                                        .read(salesRepositoryProvider)
+                                        .deleteCart(cart.id);
+                                    if (cart.id == selectedCartId) {
+                                      ref
+                                          .read(selectedCartIdProvider.notifier)
+                                          .state = null;
+                                    }
+                                    ref.invalidate(dashboardMetricsProvider);
+                                  }
+                                },
+                                itemBuilder: (_) => [
+                                  const PopupMenuItem(
+                                    value: 'rename',
+                                    child: Text('Rename Cart'),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'transfer',
+                                    child: Text('Transfer to POS…'),
+                                  ),
+                                  PopupMenuItem(
+                                    value: 'toggle_hold',
+                                    child: Text(cart.status == 'hold'
+                                        ? 'Resume Cart'
+                                        : 'Hold Cart'),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Text('Delete Cart'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => Center(child: Text('$e')),
                   ),
-                ],
-              ),
-            );
+                ),
+              ],
+            ),
+          );
 
           final Widget details = selectedCartId == null
               ? const Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.point_of_sale_rounded, size: 64, color: Colors.grey),
+                      Icon(Icons.point_of_sale_rounded,
+                          size: 64, color: Colors.grey),
                       SizedBox(height: 12),
                       Text('Create or select a cart to start billing',
                           style: TextStyle(color: Colors.grey)),
@@ -178,8 +198,9 @@ class PosBillingPage extends ConsumerWidget {
                       IconButton(
                         icon: const Icon(Icons.arrow_back),
                         tooltip: 'Back to carts',
-                        onPressed: () =>
-                            ref.read(selectedCartIdProvider.notifier).state = null,
+                        onPressed: () => ref
+                            .read(selectedCartIdProvider.notifier)
+                            .state = null,
                       ),
                       const Expanded(
                         child: Text('Cart Details',
@@ -205,16 +226,19 @@ class PosBillingPage extends ConsumerWidget {
     );
   }
 
-  Future<void> _showCustomerMobileDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showCustomerMobileDialog(
+      BuildContext context, WidgetRef ref) async {
     final mobileCtrl = TextEditingController();
     final nameCtrl = TextEditingController();
     final customers = ref.read(customerRepositoryProvider);
 
-    final mode = ref.read(inventoryModeProvider).valueOrNull ?? InventoryMode.single;
+    final mode =
+        ref.read(inventoryModeProvider).valueOrNull ?? InventoryMode.single;
     final multiple = mode == InventoryMode.multiple;
-    final warehouses = (ref.read(warehousesProvider).valueOrNull ?? const <Warehouse>[])
-        .where((w) => w.isActive)
-        .toList();
+    final warehouses =
+        (ref.read(warehousesProvider).valueOrNull ?? const <Warehouse>[])
+            .where((w) => w.isActive)
+            .toList();
     int? selectedWarehouse = multiple
         ? (warehouses.isEmpty
             ? null
@@ -223,7 +247,8 @@ class PosBillingPage extends ConsumerWidget {
                 .id)
         : null;
 
-    final result = await showDialog<({String mobile, String name, int? warehouseId})?>(
+    final result =
+        await showDialog<({String mobile, String name, int? warehouseId})?>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) {
@@ -255,7 +280,8 @@ class PosBillingPage extends ConsumerWidget {
                     }
 
                     // Search for customer with this mobile
-                    final foundCustomer = await customers.findByMobile(value.trim());
+                    final foundCustomer =
+                        await customers.findByMobile(value.trim());
                     if (foundCustomer != null && ctx.mounted) {
                       nameCtrl.text = foundCustomer.name;
                       setState(() {});
@@ -293,12 +319,15 @@ class PosBillingPage extends ConsumerWidget {
               ],
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel')),
               FilledButton(
                 onPressed: () {
                   if (multiple && selectedWarehouse == null) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(content: Text('Select a warehouse for this cart.')),
+                      const SnackBar(
+                          content: Text('Select a warehouse for this cart.')),
                     );
                     return;
                   }
@@ -371,7 +400,8 @@ class PosBillingPage extends ConsumerWidget {
     }
   }
 
-  Future<void> _showRenameCartDialog(BuildContext context, WidgetRef ref, Cart cart) async {
+  Future<void> _showRenameCartDialog(
+      BuildContext context, WidgetRef ref, Cart cart) async {
     final nameCtrl = TextEditingController(text: cart.name);
     final newName = await showDialog<String?>(
       context: context,
@@ -386,8 +416,11 @@ class PosBillingPage extends ConsumerWidget {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, nameCtrl.text.trim()), child: const Text('Save')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, nameCtrl.text.trim()),
+              child: const Text('Save')),
         ],
       ),
     );
@@ -433,7 +466,8 @@ class PosBillingPage extends ConsumerWidget {
                   for (final c in counters)
                     DropdownMenuItem(value: c.id, child: Text(c.name)),
                 ],
-                onChanged: (v) => setDialogState(() => selected = v ?? selected),
+                onChanged: (v) =>
+                    setDialogState(() => selected = v ?? selected),
               ),
             ],
           ),
@@ -488,7 +522,8 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
 
   /// Resolves a scanned/typed code to a product and adds it to the cart.
   Future<void> _addByBarcode(String code) async {
-    final product = await ref.read(productRepositoryProvider).findByBarcode(code);
+    final product =
+        await ref.read(productRepositoryProvider).findByBarcode(code);
     if (!mounted) return;
     if (product == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -511,7 +546,8 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
       }
     }
   }
@@ -534,176 +570,223 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
       enabled: !_dialogOpen,
       onScan: _addByBarcode,
       child: Column(
-      children: [
-        Expanded(
-          child: Card(
-            margin: const EdgeInsets.fromLTRB(0, 12, 12, 0),
-            child: items.when(
-              data: (list) {
-                final summary = ref.watch(cartSummaryProvider(list));
-                return Column(
-                  children: [
-                    // Header
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceVariant,
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+        children: [
+          Expanded(
+            child: Card(
+              margin: const EdgeInsets.fromLTRB(0, 12, 12, 0),
+              child: items.when(
+                data: (list) {
+                  final summary = ref.watch(cartSummaryProvider(list));
+                  return Column(
+                    children: [
+                      // Header
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceVariant,
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12)),
+                        ),
+                        child: const Row(
+                          children: [
+                            Expanded(
+                                flex: 3,
+                                child: Text('Product',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12))),
+                            Expanded(
+                                flex: 4,
+                                child: Text('Qty',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12))),
+                            Expanded(
+                                flex: 2,
+                                child: Text('Price',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12))),
+                            Expanded(
+                                flex: 3,
+                                child: Text('Total',
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12))),
+                            SizedBox(width: 48),
+                          ],
+                        ),
                       ),
-                      child: const Row(
-                        children: [
-                          Expanded(flex: 3, child: Text('Product', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                          Expanded(flex: 4, child: Text('Qty', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                          Expanded(flex: 2, child: Text('Price', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                          Expanded(flex: 3, child: Text('Total', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                          SizedBox(width: 48),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 1),
-                    // Items list
-                    Expanded(
-                      child: list.isEmpty
-                          ? const Center(
-                              child: Text('Cart is empty.\nTap Add Item to add products.',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: Colors.grey)),
-                            )
-                          : ListView.separated(
-                              itemCount: list.length,
-                              separatorBuilder: (_, __) => const Divider(height: 1),
-                              itemBuilder: (context, index) {
-                                final row = list[index];
-                                final lineTotal = row.item.quantity * row.item.unitPrice -
-                                    row.item.discountAmount;
-                                return ListTile(
-                                  dense: true,
-                                  title: Row(
-                                    children: [
-                                      Expanded(
-                                        flex: 3,
-                                        child: Text(row.product.name,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(fontSize: 13)),
-                                      ),
-                                      Expanded(
-                                        flex: 4,
-                                        child: _QtyControl(
-                                          qty: row.item.quantity,
-                                          onChanged: (newQty) async {
-                                            try {
-                                              if (newQty <= 0) {
-                                                await ref.read(salesRepositoryProvider).removeItem(row.item.id);
-                                              } else {
-                                                await ref.read(salesRepositoryProvider).updateItemQuantity(row.item.id, newQty);
+                      const Divider(height: 1),
+                      // Items list
+                      Expanded(
+                        child: list.isEmpty
+                            ? const Center(
+                                child: Text(
+                                    'Cart is empty.\nTap Add Item to add products.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: Colors.grey)),
+                              )
+                            : ListView.separated(
+                                itemCount: list.length,
+                                separatorBuilder: (_, __) =>
+                                    const Divider(height: 1),
+                                itemBuilder: (context, index) {
+                                  final row = list[index];
+                                  final lineTotal =
+                                      row.item.quantity * row.item.unitPrice -
+                                          row.item.discountAmount;
+                                  return ListTile(
+                                    dense: true,
+                                    title: Row(
+                                      children: [
+                                        Expanded(
+                                          flex: 3,
+                                          child: Text(row.product.name,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                  fontSize: 13)),
+                                        ),
+                                        Expanded(
+                                          flex: 4,
+                                          child: _QtyControl(
+                                            qty: row.item.quantity,
+                                            onChanged: (newQty) async {
+                                              try {
+                                                if (newQty <= 0) {
+                                                  await ref
+                                                      .read(
+                                                          salesRepositoryProvider)
+                                                      .removeItem(row.item.id);
+                                                } else {
+                                                  await ref
+                                                      .read(
+                                                          salesRepositoryProvider)
+                                                      .updateItemQuantity(
+                                                          row.item.id, newQty);
+                                                }
+                                              } catch (e) {
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    SnackBar(
+                                                        content: Text('$e')),
+                                                  );
+                                                }
                                               }
+                                            },
+                                          ),
+                                        ),
+                                        Expanded(
+                                          flex: 2,
+                                          child: Text(
+                                            '₹${row.item.unitPrice.toStringAsFixed(2)}',
+                                            textAlign: TextAlign.center,
+                                            style:
+                                                const TextStyle(fontSize: 12),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          flex: 3,
+                                          child: Text(
+                                            '₹${lineTotal.toStringAsFixed(2)}',
+                                            textAlign: TextAlign.right,
+                                            style: const TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500),
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.close,
+                                              size: 16, color: Colors.red),
+                                          tooltip: 'Remove item',
+                                          onPressed: () async {
+                                            try {
+                                              await ref
+                                                  .read(salesRepositoryProvider)
+                                                  .removeItem(row.item.id);
                                             } catch (e) {
                                               if (context.mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
                                                   SnackBar(content: Text('$e')),
                                                 );
                                               }
                                             }
                                           },
                                         ),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Text(
-                                          '₹${row.item.unitPrice.toStringAsFixed(2)}',
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(fontSize: 12),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        flex: 3,
-                                        child: Text(
-                                          '₹${lineTotal.toStringAsFixed(2)}',
-                                          textAlign: TextAlign.right,
-                                          style: const TextStyle(
-                                              fontSize: 13, fontWeight: FontWeight.w500),
-                                        ),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.close, size: 16, color: Colors.red),
-                                        tooltip: 'Remove item',
-                                        onPressed: () async {
-                                          try {
-                                            await ref.read(salesRepositoryProvider).removeItem(row.item.id);
-                                          } catch (e) {
-                                            if (context.mounted) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(content: Text('$e')),
-                                              );
-                                            }
-                                          }
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                  subtitle: Text(
-                                    'Tax: ${row.item.taxPercent}%  |  Discount: ₹${row.item.discountAmount.toStringAsFixed(2)}',
-                                    style: const TextStyle(fontSize: 11, color: Colors.grey),
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                    // Summary
-                    const Divider(height: 1),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          _sumRow('Sub Total', summary.subTotal),
-                          if (summary.discountTotal > 0)
-                            _sumRow('Discount', -summary.discountTotal,
-                                color: Colors.green),
-                          _sumRow('GST / Tax', summary.taxTotal),
-                          const Divider(),
-                          _sumRow('Grand Total', summary.grandTotal, isBold: true),
-                        ],
+                                      ],
+                                    ),
+                                    subtitle: Text(
+                                      'Tax: ${row.item.taxPercent}%  |  Discount: ₹${row.item.discountAmount.toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                          fontSize: 11, color: Colors.grey),
+                                    ),
+                                  );
+                                },
+                              ),
                       ),
-                    ),
-                  ],
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+                      // Summary
+                      const Divider(height: 1),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            _sumRow('Sub Total', summary.subTotal),
+                            if (summary.discountTotal > 0)
+                              _sumRow('Discount', -summary.discountTotal,
+                                  color: Colors.green),
+                            _sumRow('GST / Tax', summary.taxTotal),
+                            const Divider(),
+                            _sumRow('Grand Total', summary.grandTotal,
+                                isBold: true),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(child: Text('Error: $e')),
+              ),
             ),
           ),
-        ),
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
-            child: Row(
-              children: [
-                IconButton.filledTonal(
-                  tooltip: 'Scan barcode (camera)',
-                  onPressed: _scanWithCamera,
-                  icon: const Icon(Icons.qr_code_scanner),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.icon(
-                  onPressed: () => _showAddItemDialog(context, ref),
-                  icon: const Icon(Icons.add_shopping_cart_rounded),
-                  label: const Text('Add Item'),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(backgroundColor: Colors.green.shade700),
-                    onPressed: () => _showCheckoutDialog(context, ref),
-                    icon: const Icon(Icons.receipt_long_rounded),
-                    label: const Text('Checkout & Pay'),
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
+              child: Row(
+                children: [
+                  IconButton.filledTonal(
+                    tooltip: 'Scan barcode (camera)',
+                    onPressed: _scanWithCamera,
+                    icon: const Icon(Icons.qr_code_scanner),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  FilledButton.icon(
+                    onPressed: () => _showAddItemDialog(context, ref),
+                    icon: const Icon(Icons.add_shopping_cart_rounded),
+                    label: const Text('Add Item'),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                          backgroundColor: Colors.green.shade700),
+                      onPressed: () => _showCheckoutDialog(context, ref),
+                      icon: const Icon(Icons.receipt_long_rounded),
+                      label: const Text('Checkout & Pay'),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
         ],
       ),
     );
@@ -729,7 +812,10 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
   }
 
   Future<void> _showCheckoutDialog(BuildContext context, WidgetRef ref) async {
-    final items = await ref.read(salesRepositoryProvider).watchCartItems(widget.cartId).first;
+    final items = await ref
+        .read(salesRepositoryProvider)
+        .watchCartItems(widget.cartId)
+        .first;
     if (items.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -741,18 +827,22 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
 
     final summary = ref.read(cartSummaryProvider(items)).grandTotal;
     final paidCtrl = TextEditingController(text: summary.toStringAsFixed(2));
-    
+
     final cart = await ref.read(salesRepositoryProvider).getCart(widget.cartId);
     Customer? customer;
     if (cart?.customerId != null) {
       final db = ref.read(appDatabaseProvider);
-      customer = await (db.select(db.customers)..where((c) => c.id.equals(cart!.customerId!))).getSingleOrNull();
+      customer = await (db.select(db.customers)
+            ..where((c) => c.id.equals(cart!.customerId!)))
+          .getSingleOrNull();
     }
 
-    final customerMobileCtrl = TextEditingController(text: customer?.mobile ?? '');
+    final customerMobileCtrl =
+        TextEditingController(text: customer?.mobile ?? '');
     final customerNameCtrl = TextEditingController(text: customer?.name ?? '');
-    final customerAddressCtrl = TextEditingController(text: customer?.address ?? '');
-    
+    final customerAddressCtrl =
+        TextEditingController(text: customer?.address ?? '');
+
     String paymentMode = 'cash';
 
     if (!context.mounted) return;
@@ -796,9 +886,11 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Customer section
-                  const Text('Customer (Optional)', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+                  const Text('Customer (Optional)',
+                      style:
+                          TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
                   const SizedBox(height: 8),
                   TextField(
                     controller: customerMobileCtrl,
@@ -831,30 +923,46 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Payment mode
-                  const Text('Payment Mode', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+                  const Text('Payment Mode',
+                      style:
+                          TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
                   const SizedBox(height: 8),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: SegmentedButton<String>(
                       showSelectedIcon: false,
                       segments: const [
-                        ButtonSegment(value: 'cash', label: Text('Cash'), icon: Icon(Icons.money)),
-                        ButtonSegment(value: 'card', label: Text('Card'), icon: Icon(Icons.credit_card)),
-                        ButtonSegment(value: 'upi', label: Text('UPI'), icon: Icon(Icons.qr_code)),
-                        ButtonSegment(value: 'credit', label: Text('Credit'), icon: Icon(Icons.timer_outlined)),
+                        ButtonSegment(
+                            value: 'cash',
+                            label: Text('Cash'),
+                            icon: Icon(Icons.money)),
+                        ButtonSegment(
+                            value: 'card',
+                            label: Text('Card'),
+                            icon: Icon(Icons.credit_card)),
+                        ButtonSegment(
+                            value: 'upi',
+                            label: Text('UPI'),
+                            icon: Icon(Icons.qr_code)),
+                        ButtonSegment(
+                            value: 'credit',
+                            label: Text('Credit'),
+                            icon: Icon(Icons.timer_outlined)),
                       ],
                       selected: {paymentMode},
-                      onSelectionChanged: (s) => setDialogState(() => paymentMode = s.first),
+                      onSelectionChanged: (s) =>
+                          setDialogState(() => paymentMode = s.first),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Amount received
                   TextField(
                     controller: paidCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(
                       labelText: 'Amount Received (₹)',
                       border: OutlineInputBorder(),
@@ -864,7 +972,7 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                     onChanged: (_) => setDialogState(() {}),
                   ),
                   const SizedBox(height: 8),
-                  
+
                   // Change calculation
                   Builder(builder: (context) {
                     final paid = double.tryParse(paidCtrl.text) ?? 0;
@@ -894,9 +1002,12 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel')),
             FilledButton.icon(
-              style: FilledButton.styleFrom(backgroundColor: Colors.green.shade700),
+              style: FilledButton.styleFrom(
+                  backgroundColor: Colors.green.shade700),
               onPressed: () => Navigator.pop(ctx, true),
               icon: const Icon(Icons.check_circle_outline),
               label: const Text('Confirm Payment'),
@@ -915,9 +1026,14 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
             cartId: widget.cartId,
             paymentMode: paymentMode,
             paidAmount: paid,
-            customerMobile: customerMobileCtrl.text.isEmpty ? null : customerMobileCtrl.text,
-            customerName: customerNameCtrl.text.isEmpty ? null : customerNameCtrl.text,
-            customerAddress: customerAddressCtrl.text.isEmpty ? null : customerAddressCtrl.text,
+            customerMobile: customerMobileCtrl.text.isEmpty
+                ? null
+                : customerMobileCtrl.text,
+            customerName:
+                customerNameCtrl.text.isEmpty ? null : customerNameCtrl.text,
+            customerAddress: customerAddressCtrl.text.isEmpty
+                ? null
+                : customerAddressCtrl.text,
           );
       ref.invalidate(dashboardMetricsProvider);
       ref.invalidate(salesReportProvider);
@@ -926,8 +1042,9 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.green.shade700,
-            content: Text('✓ Sale complete!  Payment: ${paymentMode.toUpperCase()}  '
-                'Paid: ₹${paid.toStringAsFixed(2)}'),
+            content:
+                Text('✓ Sale complete!  Payment: ${paymentMode.toUpperCase()}  '
+                    'Paid: ₹${paid.toStringAsFixed(2)}'),
           ),
         );
       }
@@ -946,7 +1063,8 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
   /// Adds a product to the cart by barcode/product-code from within the
   /// add-item dialog. Returns true when a matching product was found.
   Future<bool> _tryAddByCode(BuildContext dialogContext, String code) async {
-    final product = await ref.read(productRepositoryProvider).findByBarcode(code);
+    final product =
+        await ref.read(productRepositoryProvider).findByBarcode(code);
     if (product == null) return false;
     try {
       await ref.read(salesRepositoryProvider).addItem(
@@ -955,7 +1073,8 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
           );
     } catch (e) {
       if (dialogContext.mounted) {
-        ScaffoldMessenger.of(dialogContext).showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(dialogContext)
+            .showSnackBar(SnackBar(content: Text('$e')));
       }
     }
     return true;
@@ -964,6 +1083,16 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
   Future<void> _showAddItemDialog(BuildContext context, WidgetRef ref) async {
     final query = TextEditingController();
     final results = ValueNotifier<List<dynamic>>([]);
+
+    // Resolve which warehouse this cart draws from so we can show and enforce
+    // per-warehouse stock. Null = stock not tracked (No-Inventory mode).
+    final mode =
+        ref.read(inventoryModeProvider).valueOrNull ?? InventoryMode.single;
+    final cart = await ref.read(salesRepositoryProvider).getCart(widget.cartId);
+    final int? stockWarehouseId = mode.tracksStock
+        ? (cart?.warehouseId ??
+            await ref.read(appDatabaseProvider).defaultWarehouseId())
+        : null;
 
     setState(() => _dialogOpen = true);
     await showDialog<void>(
@@ -991,7 +1120,8 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                       results.value = [];
                       return;
                     }
-                    results.value = await ref.read(productRepositoryProvider).search(value);
+                    results.value =
+                        await ref.read(productRepositoryProvider).search(value);
                   },
                   // Fires when a HID scanner sends its terminating Enter.
                   onSubmitted: (value) async {
@@ -1000,8 +1130,9 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                     if (await _tryAddByCode(ctx, code)) {
                       if (ctx.mounted) Navigator.pop(ctx);
                     } else {
-                      results.value =
-                          await ref.read(productRepositoryProvider).search(code);
+                      results.value = await ref
+                          .read(productRepositoryProvider)
+                          .search(code);
                     }
                   },
                   decoration: InputDecoration(
@@ -1018,8 +1149,9 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                           if (ctx.mounted) Navigator.pop(ctx);
                         } else {
                           query.text = code;
-                          results.value =
-                              await ref.read(productRepositoryProvider).search(code);
+                          results.value = await ref
+                              .read(productRepositoryProvider)
+                              .search(code);
                         }
                       },
                     ),
@@ -1042,17 +1174,10 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                         separatorBuilder: (_, __) => const Divider(height: 1),
                         itemBuilder: (context, index) {
                           final p = list[index];
-                          return ListTile(
-                            title: Text(p.name),
-                            subtitle: Row(
-                              children: [
-                                Expanded(child: Text('${p.productCode}  •  ${p.unit}')),
-                                _AvailableStockChip(productId: p.id),
-                              ],
-                            ),
-                            trailing: Text('₹${p.sellingPrice.toStringAsFixed(2)}',
-                                style: const TextStyle(fontWeight: FontWeight.bold)),
-                            onTap: () async {
+                          return _AddProductTile(
+                            product: p,
+                            warehouseId: stockWarehouseId,
+                            onAdd: () async {
                               try {
                                 await ref.read(salesRepositoryProvider).addItem(
                                       cartId: widget.cartId,
@@ -1077,7 +1202,9 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Close')),
           ],
         );
       },
@@ -1103,7 +1230,8 @@ class _QtyControl extends StatelessWidget {
         InkWell(
           onTap: () => onChanged(qty - 1),
           borderRadius: BorderRadius.circular(4),
-          child: const Icon(Icons.remove_rounded, size: 18, color: Colors.orange),
+          child:
+              const Icon(Icons.remove_rounded, size: 18, color: Colors.orange),
         ),
         const SizedBox(width: 4),
         GestureDetector(
@@ -1141,10 +1269,12 @@ class _QtyControl extends StatelessWidget {
           controller: ctrl,
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(labelText: 'Quantity', border: OutlineInputBorder()),
+          decoration: const InputDecoration(
+              labelText: 'Quantity', border: OutlineInputBorder()),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, double.tryParse(ctrl.text)),
             child: const Text('Set'),
@@ -1186,7 +1316,9 @@ class _CartMetaText extends ConsumerWidget {
 
     final db = ref.read(appDatabaseProvider);
     return FutureBuilder<Customer?>(
-      future: (db.select(db.customers)..where((c) => c.id.equals(cart.customerId!))).getSingleOrNull(),
+      future: (db.select(db.customers)
+            ..where((c) => c.id.equals(cart.customerId!)))
+          .getSingleOrNull(),
       builder: (_, snap) => _wrap(mobile: snap.data?.mobile),
     );
   }
@@ -1264,39 +1396,76 @@ class _CartStatusChip extends StatelessWidget {
   }
 }
 
-class _AvailableStockChip extends ConsumerWidget {
-  const _AvailableStockChip({required this.productId});
+/// A product row in the Add-to-cart dialog. When [warehouseId] is provided
+/// (stock is tracked) it shows that warehouse's available stock and disables
+/// adding when the product is out of stock there.
+class _AddProductTile extends ConsumerWidget {
+  const _AddProductTile({
+    required this.product,
+    required this.warehouseId,
+    required this.onAdd,
+  });
 
-  final int productId;
+  final dynamic product;
+  final int? warehouseId;
+  final Future<void> Function() onAdd;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final db = ref.read(appDatabaseProvider);
-    return FutureBuilder<InventoryData?>(
-      future: (db.select(db.inventory)
-            ..where((i) => Expression.and([i.productId.equals(productId), i.variantId.isNull()])))
-          .getSingleOrNull(),
+    final priceText = '₹${product.sellingPrice.toStringAsFixed(2)}';
+    final meta = '${product.productCode}  •  ${product.unit}';
+
+    // No stock tracking → always addable, no chip.
+    if (warehouseId == null) {
+      return ListTile(
+        title: Text(product.name),
+        subtitle: Text(meta),
+        trailing: Text(priceText,
+            style: const TextStyle(fontWeight: FontWeight.bold)),
+        onTap: onAdd,
+      );
+    }
+
+    return FutureBuilder<double>(
+      future: ref.read(inventoryRepositoryProvider).availableStock(
+            productId: product.id,
+            warehouseId: warehouseId!,
+          ),
       builder: (_, snap) {
-        final available = snap.data?.availableStock ?? 0;
-        final low = available <= 0;
+        final available = snap.data ?? 0;
+        final out = available <= 0;
         final label = available % 1 == 0
             ? available.toInt().toString()
             : available.toStringAsFixed(2);
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(
-            color: low ? Colors.red.shade50 : Colors.green.shade50,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: low ? Colors.red.shade300 : Colors.green.shade300),
+
+        return ListTile(
+          enabled: !out,
+          title: Text(product.name),
+          subtitle: Row(
+            children: [
+              Expanded(child: Text(meta)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: out ? Colors.red.shade50 : Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                      color: out ? Colors.red.shade300 : Colors.green.shade300),
+                ),
+                child: Text(
+                  out ? 'Out of stock' : 'Stock: $label',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: out ? Colors.red.shade700 : Colors.green.shade700,
+                  ),
+                ),
+              ),
+            ],
           ),
-          child: Text(
-            'Stock: $label',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: low ? Colors.red.shade700 : Colors.green.shade700,
-            ),
-          ),
+          trailing: Text(priceText,
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+          onTap: out ? null : onAdd,
         );
       },
     );
