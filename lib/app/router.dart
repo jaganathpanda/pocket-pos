@@ -19,6 +19,7 @@ import '../features/ledger/presentation/credit_ledger_page.dart';
 import '../features/reports/presentation/sales_report_page.dart';
 import '../features/sales/presentation/pos_billing_page.dart';
 import '../features/expense/presentation/expense_page.dart';
+import '../features/staff/presentation/staff_page.dart';
 import '../features/settings/presentation/settings_page.dart';
 import '../features/suppliers/presentation/supplier_page.dart';
 import '../features/warehouse/domain/inventory_mode.dart';
@@ -72,6 +73,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/reports', builder: (context, state) => const SalesReportPage()),
           GoRoute(path: '/ledger', builder: (context, state) => const CreditLedgerPage()),
           GoRoute(path: '/expenses', builder: (context, state) => const ExpensePage()),
+          GoRoute(path: '/staff', builder: (context, state) => const StaffPage()),
           GoRoute(path: '/counters', builder: (context, state) => const PosCountersPage()),
           GoRoute(path: '/warehouses', builder: (context, state) => const WarehousePage()),
           GoRoute(path: '/settings', builder: (context, state) => const SettingsPage()),
@@ -112,6 +114,7 @@ class _AppShell extends ConsumerWidget {
       (route: '/reports', label: 'Reports', icon: Icons.analytics_rounded),
       (route: '/ledger', label: 'Udhar', icon: Icons.account_balance_wallet_rounded),
       if (!scoped) (route: '/expenses', label: 'Expenses', icon: Icons.receipt_long_rounded),
+      if (!scoped) (route: '/staff', label: 'Staff', icon: Icons.badge_rounded),
       if (!scoped) (route: '/settings', label: 'Settings', icon: Icons.settings_rounded),
       if (canManage) (route: '/counters', label: 'Counters', icon: Icons.storefront_rounded),
     ];

@@ -2,6 +2,8 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 
 import 'connection/connection.dart';
+import 'seed/demo_business_type.dart';
+import 'seed/demo_data_loader.dart';
 
 part 'app_database.g.dart';
 
@@ -200,6 +202,62 @@ class Expenses extends Table {
   DateTimeColumn get spentAt => dateTime().withDefault(currentDateAndTime)();
 }
 
+class Staffs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  IntColumn get age => integer()();
+  TextColumn get designation => text()();
+  RealColumn get monthlySalary => real()();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+class StaffAttendances extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get staffId => integer().references(Staffs, #id)();
+  DateTimeColumn get attendanceDate => dateTime()();
+  TextColumn get status =>
+      text().withDefault(const Constant('present'))(); // present, absent, half_day, leave
+  DateTimeColumn get checkInAt => dateTime().nullable()();
+  DateTimeColumn get checkOutAt => dateTime().nullable()();
+  TextColumn get note => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {staffId, attendanceDate},
+      ];
+}
+
+class StaffPayrolls extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get staffId => integer().references(Staffs, #id)();
+  IntColumn get payrollMonth => integer()();
+  IntColumn get payrollYear => integer()();
+  RealColumn get presentDays => real().withDefault(const Constant(0))();
+  RealColumn get absentDays => real().withDefault(const Constant(0))();
+  RealColumn get payableAmount => real().withDefault(const Constant(0))();
+  RealColumn get paidAmount => real().withDefault(const Constant(0))();
+  DateTimeColumn get paidAt => dateTime().nullable()();
+  TextColumn get status => text().withDefault(const Constant('unpaid'))(); // unpaid, partial, paid
+  TextColumn get note => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {staffId, payrollMonth, payrollYear},
+      ];
+}
+
+class StaffSalaryPayments extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get staffId => integer().references(Staffs, #id)();
+  IntColumn get payrollId => integer().references(StaffPayrolls, #id)();
+  RealColumn get amount => real()();
+  DateTimeColumn get paidOn => dateTime().withDefault(currentDateAndTime)();
+  TextColumn get note => text().nullable()();
+}
+
 class Suppliers extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
@@ -281,6 +339,10 @@ class AuditLogs extends Table {
     SaleItems,
     Payments,
     Expenses,
+    Staffs,
+    StaffAttendances,
+    StaffPayrolls,
+    StaffSalaryPayments,
     Notifications,
     AuditLogs,
   ],
@@ -289,7 +351,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -340,6 +402,14 @@ class AppDatabase extends _$AppDatabase {
                 newColumns: [inventory.warehouseId],
               ),
             );
+          }
+          if (from < 5) {
+            await m.createTable(staffs);
+            await m.createTable(staffAttendances);
+            await m.createTable(staffPayrolls);
+          }
+          if (from < 6) {
+            await m.createTable(staffSalaryPayments);
           }
         },
         beforeOpen: (details) async {
@@ -395,6 +465,27 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Replaces the current product catalog (categories, products, stock and any
+  /// in-progress carts/sales) with the sample data for [type]. Users, POS
+  /// counters, warehouses, customers and suppliers are preserved.
+  Future<void> loadDemoCatalog(DemoBusinessType type) async {
+    await transaction(() async {
+      await customStatement('PRAGMA foreign_keys = OFF');
+      await customStatement('DELETE FROM cart_items');
+      await customStatement('DELETE FROM carts');
+      await customStatement('DELETE FROM payments');
+      await customStatement('DELETE FROM sale_items');
+      await customStatement('DELETE FROM sales');
+      await customStatement('DELETE FROM inventory_transactions');
+      await customStatement('DELETE FROM inventory');
+      await customStatement('DELETE FROM product_variants');
+      await customStatement('DELETE FROM products');
+      await customStatement('DELETE FROM categories');
+      await customStatement('PRAGMA foreign_keys = ON');
+    });
+    await DemoDataLoader(this).seedCatalog(type);
+  }
+
   Future<void> resetWebDemoData() async {
     if (!kIsWeb) {
       throw UnsupportedError('Demo data reset is only available on web builds.');
@@ -436,7 +527,7 @@ class AppDatabase extends _$AppDatabase {
       return;
     }
 
-    await _insertDemoSeedData();
+    await DemoDataLoader(this).seedAll();
   }
 
   Future<void> _ensureDefaultWebLogin() async {
@@ -463,266 +554,6 @@ class AppDatabase extends _$AppDatabase {
         pinHash: const Value('1234'),
         roleId: Value(superAdminRoleId),
         isActive: const Value(true),
-      ),
-    );
-  }
-
-  Future<void> _insertDemoSeedData() async {
-    final superAdminRoleId = await into(roles).insert(RolesCompanion.insert(name: 'super_admin'));
-    final cashierRoleId = await into(roles).insert(RolesCompanion.insert(name: 'cashier'));
-
-    await into(users).insert(
-      UsersCompanion.insert(
-        username: 'owner',
-        passwordHash: '1234',
-        pinHash: '1234',
-        roleId: superAdminRoleId,
-      ),
-    );
-
-    final pos1Id = await into(posCounters).insert(
-      PosCountersCompanion.insert(name: 'POS1'),
-    );
-    await into(posCounters).insert(
-      PosCountersCompanion.insert(name: 'POS2'),
-    );
-
-    await into(users).insert(
-      UsersCompanion.insert(
-        username: 'cashier',
-        passwordHash: '1234',
-        pinHash: '1234',
-        roleId: cashierRoleId,
-        posCounterId: Value(pos1Id),
-      ),
-    );
-
-    final defaultWarehouseId = await into(warehouses).insert(
-      WarehousesCompanion.insert(name: 'Main Store', isDefault: const Value(true)),
-    );
-    await into(appSettings).insert(
-      AppSettingsCompanion.insert(key: 'inventory_mode', value: 'single'),
-    );
-
-    final groceriesCategoryId = await into(categories).insert(
-      CategoriesCompanion.insert(name: 'Groceries'),
-    );
-
-    final beveragesCategoryId = await into(categories).insert(
-      CategoriesCompanion.insert(name: 'Beverages'),
-    );
-
-    final dairyCategoryId = await into(categories).insert(
-      CategoriesCompanion.insert(name: 'Dairy'),
-    );
-
-    final snacksCategoryId = await into(categories).insert(
-      CategoriesCompanion.insert(name: 'Snacks'),
-    );
-
-    final personalCareCategoryId = await into(categories).insert(
-      CategoriesCompanion.insert(name: 'Personal Care'),
-    );
-
-    final riceId = await into(products).insert(
-      ProductsCompanion.insert(
-        name: 'Premium Rice 5kg',
-        productCode: 'PRD-RICE-001',
-        barcode: const Value('8900000000011'),
-        categoryId: Value(groceriesCategoryId),
-        purchasePrice: const Value(410),
-        sellingPrice: const Value(460),
-        mrp: const Value(480),
-        taxPercent: const Value(5),
-        unit: const Value('bag'),
-      ),
-    );
-
-    final oilId = await into(products).insert(
-      ProductsCompanion.insert(
-        name: 'Sunflower Oil 1L',
-        productCode: 'PRD-OIL-001',
-        barcode: const Value('8900000000028'),
-        categoryId: Value(groceriesCategoryId),
-        purchasePrice: const Value(128),
-        sellingPrice: const Value(145),
-        mrp: const Value(150),
-        taxPercent: const Value(5),
-        unit: const Value('bottle'),
-      ),
-    );
-
-    final colaId = await into(products).insert(
-      ProductsCompanion.insert(
-        name: 'Cola 750ml',
-        productCode: 'PRD-COLA-001',
-        barcode: const Value('8900000000035'),
-        categoryId: Value(beveragesCategoryId),
-        purchasePrice: const Value(32),
-        sellingPrice: const Value(40),
-        mrp: const Value(42),
-        taxPercent: const Value(12),
-        unit: const Value('bottle'),
-      ),
-    );
-
-    final milkId = await into(products).insert(
-      ProductsCompanion.insert(
-        name: 'Toned Milk 1L',
-        productCode: 'PRD-MLK-001',
-        barcode: const Value('8900000000042'),
-        categoryId: Value(dairyCategoryId),
-        purchasePrice: const Value(49),
-        sellingPrice: const Value(54),
-        mrp: const Value(56),
-        taxPercent: const Value(5),
-        unit: const Value('packet'),
-      ),
-    );
-
-    final biscuitId = await into(products).insert(
-      ProductsCompanion.insert(
-        name: 'Butter Biscuit 200g',
-        productCode: 'PRD-BISC-001',
-        barcode: const Value('8900000000059'),
-        categoryId: Value(snacksCategoryId),
-        purchasePrice: const Value(18),
-        sellingPrice: const Value(24),
-        mrp: const Value(25),
-        taxPercent: const Value(12),
-        unit: const Value('pack'),
-      ),
-    );
-
-    final attaId = await into(products).insert(
-      ProductsCompanion.insert(
-        name: 'Whole Wheat Atta 10kg',
-        productCode: 'PRD-ATTA-001',
-        barcode: const Value('8900000000066'),
-        categoryId: Value(groceriesCategoryId),
-        purchasePrice: const Value(360),
-        sellingPrice: const Value(420),
-        mrp: const Value(430),
-        taxPercent: const Value(5),
-        unit: const Value('bag'),
-      ),
-    );
-
-    final soapId = await into(products).insert(
-      ProductsCompanion.insert(
-        name: 'Bath Soap 125g',
-        productCode: 'PRD-SOAP-001',
-        barcode: const Value('8900000000073'),
-        categoryId: Value(personalCareCategoryId),
-        purchasePrice: const Value(28),
-        sellingPrice: const Value(35),
-        mrp: const Value(36),
-        taxPercent: const Value(18),
-        unit: const Value('piece'),
-      ),
-    );
-
-    await batch((b) {
-      b.insert(
-        inventory,
-        InventoryCompanion.insert(
-          productId: riceId,
-          variantId: const Value(null),
-          warehouseId: Value(defaultWarehouseId),
-          currentStock: const Value(35),
-          availableStock: const Value(35),
-          lowStockThreshold: const Value(8),
-        ),
-      );
-      b.insert(
-        inventory,
-        InventoryCompanion.insert(
-          productId: oilId,
-          variantId: const Value(null),
-          warehouseId: Value(defaultWarehouseId),
-          currentStock: const Value(22),
-          availableStock: const Value(22),
-          lowStockThreshold: const Value(6),
-        ),
-      );
-      b.insert(
-        inventory,
-        InventoryCompanion.insert(
-          productId: colaId,
-          variantId: const Value(null),
-          warehouseId: Value(defaultWarehouseId),
-          currentStock: const Value(48),
-          availableStock: const Value(48),
-          lowStockThreshold: const Value(10),
-        ),
-      );
-      b.insert(
-        inventory,
-        InventoryCompanion.insert(
-          productId: milkId,
-          variantId: const Value(null),
-          warehouseId: Value(defaultWarehouseId),
-          currentStock: const Value(60),
-          availableStock: const Value(60),
-          lowStockThreshold: const Value(12),
-        ),
-      );
-      b.insert(
-        inventory,
-        InventoryCompanion.insert(
-          productId: biscuitId,
-          variantId: const Value(null),
-          warehouseId: Value(defaultWarehouseId),
-          currentStock: const Value(85),
-          availableStock: const Value(85),
-          lowStockThreshold: const Value(15),
-        ),
-      );
-      b.insert(
-        inventory,
-        InventoryCompanion.insert(
-          productId: attaId,
-          variantId: const Value(null),
-          warehouseId: Value(defaultWarehouseId),
-          currentStock: const Value(26),
-          availableStock: const Value(26),
-          lowStockThreshold: const Value(6),
-        ),
-      );
-      b.insert(
-        inventory,
-        InventoryCompanion.insert(
-          productId: soapId,
-          variantId: const Value(null),
-          warehouseId: Value(defaultWarehouseId),
-          currentStock: const Value(110),
-          availableStock: const Value(110),
-          lowStockThreshold: const Value(20),
-        ),
-      );
-    });
-
-    final walkInCustomerId = await into(customers).insert(
-      CustomersCompanion.insert(name: 'Walk-in Customer', mobile: const Value('9999999999')),
-    );
-
-    final cartId = await into(carts).insert(
-      CartsCompanion.insert(
-        name: 'Counter Cart',
-        status: const Value('active'),
-        customerId: Value(walkInCustomerId),
-      ),
-    );
-
-    await into(cartItems).insert(
-      CartItemsCompanion.insert(
-        cartId: cartId,
-        productId: riceId,
-        variantId: const Value(null),
-        quantity: const Value(1),
-        unitPrice: const Value(460),
-        discountAmount: const Value(10),
-        taxPercent: const Value(5),
       ),
     );
   }

@@ -27,6 +27,8 @@ import '../../features/warehouse/data/warehouse_repository_impl.dart';
 import '../../features/warehouse/domain/inventory_mode.dart';
 import '../../features/warehouse/domain/warehouse_repository.dart';
 import '../database/app_database.dart';
+import '../database/seed/demo_business_type.dart';
+import '../database/seed/demo_data_loader.dart';
 import '../database/database_provider.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -113,6 +115,21 @@ final inventoryModeProvider = StreamProvider<InventoryMode>((ref) {
 
 final warehousesProvider = StreamProvider<List<Warehouse>>((ref) {
   return ref.watch(warehouseRepositoryProvider).watchWarehouses();
+});
+
+/// The demo catalog currently loaded (shown in Settings → Sample Data).
+final demoBusinessTypeProvider = StreamProvider<DemoBusinessType>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return (db.select(db.appSettings)
+        ..where((s) => s.key.equals('demo_business_type')))
+      .watchSingleOrNull()
+      .map((row) {
+    if (row == null) return DemoDataLoader.defaultBusinessType;
+    return DemoBusinessType.values.firstWhere(
+      (t) => t.name == row.value,
+      orElse: () => DemoDataLoader.defaultBusinessType,
+    );
+  });
 });
 
 // ── Suppliers ─────────────────────────────────────────────────────────────────
