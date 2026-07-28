@@ -35,4 +35,15 @@ class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
     await _repository.logout();
     state = const AsyncData(null);
   }
+
+  /// Bridges a cloud store session into the app's local session so the existing
+  /// POS screens (which read the local user) work after a store login.
+  void enterAsOwner(String username) {
+    state = AsyncData(AppUser(
+      id: 0,
+      username: username.isEmpty ? 'owner' : username,
+      role: UserRole.superAdmin,
+      isActive: true,
+    ));
+  }
 }

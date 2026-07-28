@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/di/providers.dart';
+import '../features/store/domain/store_models.dart';
+import '../features/store/presentation/store_auth_controller.dart';
 import 'router.dart';
 
 class PocketPosApp extends ConsumerWidget {
@@ -8,6 +11,18 @@ class PocketPosApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Bridge the cloud store session into the app's local session so existing
+    // POS screens keep working once a store owner is signed in.
+    ref.listen<StoreAuthState>(storeAuthControllerProvider, (prev, next) {
+      if (next.stage == StoreAuthStage.active) {
+        ref
+            .read(authControllerProvider.notifier)
+            .enterAsOwner(next.session?.username ?? 'owner');
+      } else if (next.stage == StoreAuthStage.loggedOut) {
+        ref.read(authControllerProvider.notifier).logout();
+      }
+    });
+
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(

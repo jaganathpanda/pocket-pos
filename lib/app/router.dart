@@ -21,14 +21,49 @@ import '../features/sales/presentation/pos_billing_page.dart';
 import '../features/expense/presentation/expense_page.dart';
 import '../features/staff/presentation/staff_page.dart';
 import '../features/settings/presentation/settings_page.dart';
+import '../features/store/domain/store_models.dart';
+import '../features/store/presentation/admin_approval_page.dart';
+import '../features/store/presentation/admin_login_page.dart';
+import '../features/store/presentation/pending_approval_page.dart';
+import '../features/store/presentation/store_auth_controller.dart';
+import '../features/store/presentation/store_login_page.dart';
+import '../features/store/presentation/store_register_page.dart';
 import '../features/suppliers/presentation/supplier_page.dart';
 import '../features/warehouse/domain/inventory_mode.dart';
 import '../features/warehouse/presentation/warehouse_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
+  final refresh = ValueNotifier<int>(0);
+  ref.onDispose(refresh.dispose);
+  ref.listen(storeAuthControllerProvider, (_, __) => refresh.value++);
+
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/store-login',
+    refreshListenable: refresh,
+    redirect: (context, state) {
+      final stage = ref.read(storeAuthControllerProvider).stage;
+      final loc = state.matchedLocation;
+      const authRoutes = {'/store-login', '/store-register', '/admin-login'};
+      switch (stage) {
+        case StoreAuthStage.unknown:
+          return null; // brief; controller resolves on start
+        case StoreAuthStage.loggedOut:
+          return authRoutes.contains(loc) ? null : '/store-login';
+        case StoreAuthStage.pending:
+          return loc == '/pending' ? null : '/pending';
+        case StoreAuthStage.admin:
+          return loc == '/admin' ? null : '/admin';
+        case StoreAuthStage.active:
+          if (authRoutes.contains(loc) || loc == '/pending') return '/dashboard';
+          return null;
+      }
+    },
     routes: [
+      GoRoute(path: '/store-login', builder: (context, state) => const StoreLoginPage()),
+      GoRoute(path: '/store-register', builder: (context, state) => const StoreRegisterPage()),
+      GoRoute(path: '/pending', builder: (context, state) => const PendingApprovalPage()),
+      GoRoute(path: '/admin-login', builder: (context, state) => const AdminLoginPage()),
+      GoRoute(path: '/admin', builder: (context, state) => const AdminApprovalPage()),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       ShellRoute(
         builder: (context, state, child) => _AppShell(child: child),

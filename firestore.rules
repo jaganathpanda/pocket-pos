@@ -1,0 +1,70 @@
+rules_version = '2';
+
+// Pocket POS multi-tenant rules.
+// - A signed-in user may read/write their own store's data.
+// - Store data (subcollections) is only accessible once the store is approved.
+// - Platform admins (docs in /platform_admins/{uid}) can read all stores and
+//   change a store's status (approve / suspend).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isPlatformAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/platform_admins/$(request.auth.uid));
+    }
+
+    // Is the caller a member of this store?
+    function isStoreMember(storeId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/stores/$(storeId)/users/$(request.auth.uid));
+    }
+
+    // Is the store approved?
+    function storeApproved(storeId) {
+      return get(/databases/$(database)/documents/stores/$(storeId)).data.status == 'approved';
+    }
+
+    // Lets a user find their store on session-restore (uid -> storeId).
+    match /user_store_index/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    match /platform_admins/{uid} {
+      // A user may check their own admin doc; only admins manage the list.
+      allow get: if isSignedIn() && request.auth.uid == uid;
+      allow list, write: if isPlatformAdmin();
+    }
+
+    match /stores/{storeId} {
+      // Registration: a signed-in user may create their own store as pending.
+      allow create: if isSignedIn()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      // Members can read their store; admins can read any (for approvals).
+      allow get: if isStoreMember(storeId) || isPlatformAdmin();
+      allow list: if isPlatformAdmin();
+
+      // Only platform admins flip status (approve / suspend). Members may not
+      // change their own approval state.
+      allow update: if isPlatformAdmin();
+
+      // Store-scoped user directory.
+      match /users/{uid} {
+        allow read: if isStoreMember(storeId) || isPlatformAdmin();
+        allow create: if isSignedIn() && request.auth.uid == uid;
+        allow update, delete: if isStoreMember(storeId);
+      }
+
+      // All other store data: members only, and only when approved.
+      match /{document=**} {
+        allow read, write: if isStoreMember(storeId) && storeApproved(storeId);
+      }
+    }
+  }
+}
