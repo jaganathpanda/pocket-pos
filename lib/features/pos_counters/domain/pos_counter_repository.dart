@@ -1,10 +1,19 @@
 import '../../../core/database/app_database.dart';
 
-/// A POS user together with the counter they are bound to.
+/// A POS/staff user together with the counter they are bound to.
+/// [uid] is a string so it works for both Drift (int id → string) and
+/// Firestore (Firebase Auth uid).
 class PosUserRow {
-  const PosUserRow({required this.user, this.counterName});
+  const PosUserRow({
+    required this.uid,
+    required this.username,
+    required this.isActive,
+    this.counterName,
+  });
 
-  final User user;
+  final String uid;
+  final String username;
+  final bool isActive;
   final String? counterName;
 }
 
@@ -15,12 +24,12 @@ abstract class PosCounterRepository {
   Future<void> renameCounter(int id, String name);
   Future<void> setCounterActive(int id, bool active);
 
-  /// POS users are those bound to a counter (`posCounterId` is not null).
+  /// POS users bound to a counter.
   Stream<List<PosUserRow>> watchPosUsers();
   Future<void> addPosUser({
     required String username,
     required String pin,
     required int counterId,
   });
-  Future<void> setUserActive(int userId, bool active);
+  Future<void> setUserActive(String uid, bool active);
 }

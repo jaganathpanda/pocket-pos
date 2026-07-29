@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/database/seed/demo_business_type.dart';
 import '../data/store_auth_service.dart';
 import '../domain/store_models.dart';
 
@@ -72,6 +73,7 @@ class StoreAuthController extends StateNotifier<StoreAuthState> {
     required String ownerName,
     required String ownerUsername,
     required String password,
+    required DemoBusinessType businessType,
     String? mobile,
     String? email,
   }) async {
@@ -82,6 +84,7 @@ class StoreAuthController extends StateNotifier<StoreAuthState> {
         ownerName: ownerName,
         ownerUsername: ownerUsername,
         password: password,
+        businessType: businessType,
         mobile: mobile,
         email: email,
       );

@@ -15,9 +15,12 @@ class PocketPosApp extends ConsumerWidget {
     // POS screens keep working once a store owner is signed in.
     ref.listen<StoreAuthState>(storeAuthControllerProvider, (prev, next) {
       if (next.stage == StoreAuthStage.active) {
-        ref
-            .read(authControllerProvider.notifier)
-            .enterAsOwner(next.session?.username ?? 'owner');
+        final s = next.session;
+        ref.read(authControllerProvider.notifier).enterFromStore(
+              username: s?.username ?? 'owner',
+              role: s?.role ?? 'owner',
+              posCounterId: s?.posCounterId,
+            );
       } else if (next.stage == StoreAuthStage.loggedOut) {
         ref.read(authControllerProvider.notifier).logout();
       }

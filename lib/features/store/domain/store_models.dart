@@ -22,6 +22,7 @@ class StoreSession {
     required this.username,
     required this.role,
     required this.status,
+    this.posCounterId,
   });
 
   final String storeId;
@@ -30,6 +31,9 @@ class StoreSession {
   final String username;
   final String role;
   final StoreStatus status;
+
+  /// The POS counter a cashier is bound to (null for owner/manager).
+  final int? posCounterId;
 
   bool get isApproved => status == StoreStatus.approved;
 }

@@ -23,11 +23,6 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/stores/$(storeId)/users/$(request.auth.uid));
     }
 
-    // Is the store approved?
-    function storeApproved(storeId) {
-      return get(/databases/$(database)/documents/stores/$(storeId)).data.status == 'approved';
-    }
-
     // Lets a user find their store on session-restore (uid -> storeId).
     match /user_store_index/{uid} {
       allow read: if isSignedIn() && request.auth.uid == uid;
@@ -61,9 +56,11 @@ service cloud.firestore {
         allow update, delete: if isStoreMember(storeId);
       }
 
-      // All other store data: members only, and only when approved.
+      // All other store data: members of the store only. (App access for
+      // unapproved stores is gated client-side; store `status` stays
+      // admin-only above, and registration seeds its catalog here.)
       match /{document=**} {
-        allow read, write: if isStoreMember(storeId) && storeApproved(storeId);
+        allow read, write: if isStoreMember(storeId);
       }
     }
   }

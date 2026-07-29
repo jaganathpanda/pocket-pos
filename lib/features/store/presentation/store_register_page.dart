@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/database/seed/demo_business_type.dart';
 import 'store_auth_controller.dart';
 
 class StoreRegisterPage extends ConsumerStatefulWidget {
@@ -18,6 +19,7 @@ class _StoreRegisterPageState extends ConsumerState<StoreRegisterPage> {
   final _email = TextEditingController();
   final _username = TextEditingController();
   final _password = TextEditingController();
+  DemoBusinessType _businessType = DemoBusinessType.grocery;
 
   @override
   void dispose() {
@@ -37,6 +39,7 @@ class _StoreRegisterPageState extends ConsumerState<StoreRegisterPage> {
           ownerName: _ownerName.text,
           ownerUsername: _username.text,
           password: _password.text,
+          businessType: _businessType,
           mobile: _mobile.text,
           email: _email.text,
         );
@@ -76,6 +79,25 @@ class _StoreRegisterPageState extends ConsumerState<StoreRegisterPage> {
                   const SizedBox(height: 16),
                   _field(_storeName, 'Store name *', Icons.storefront_rounded,
                       validator: _required),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: DropdownButtonFormField<DemoBusinessType>(
+                      initialValue: _businessType,
+                      decoration: const InputDecoration(
+                        labelText: 'Business type *',
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.category_rounded),
+                        helperText: 'Sample products & categories are created for this type',
+                      ),
+                      items: [
+                        for (final t in DemoBusinessType.values)
+                          DropdownMenuItem(value: t, child: Text(t.label)),
+                      ],
+                      onChanged: (v) =>
+                          setState(() => _businessType = v ?? _businessType),
+                    ),
+                  ),
                   _field(_ownerName, 'Owner name *', Icons.person_rounded,
                       validator: _required),
                   _field(_mobile, 'Mobile', Icons.phone,

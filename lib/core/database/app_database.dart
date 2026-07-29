@@ -1,9 +1,6 @@
 import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart';
 
 import 'connection/connection.dart';
-import 'seed/demo_business_type.dart';
-import 'seed/demo_data_loader.dart';
 
 part 'app_database.g.dart';
 
@@ -422,35 +419,11 @@ class AppDatabase extends _$AppDatabase {
             await customStatement('CREATE INDEX idx_cart_items_cart ON cart_items(cart_id);');
           }
 
-          // Seed default roles/users (owner + cashier) and demo data on every
-          // platform. Without this, native builds open an empty database and
-          // the owner/1234 login fails with "Invalid credentials".
-          await _seedWebMockDataIfEmpty();
-
-          // Guarantee a default warehouse and an inventory-mode setting exist
-          // regardless of how the database got here.
-          await _ensureInventoryDefaults();
+          // No local seeding: authentication and all data are now in
+          // Firebase/Firestore, scoped per store. Demo catalogs are seeded into
+          // a store at registration based on its business type.
         },
       );
-
-  /// Idempotently ensures there is at least one (default) warehouse and an
-  /// `inventory_mode` setting.
-  Future<void> _ensureInventoryDefaults() async {
-    final anyWarehouse = await (select(warehouses)..limit(1)).getSingleOrNull();
-    if (anyWarehouse == null) {
-      await into(warehouses).insert(
-        WarehousesCompanion.insert(name: 'Main Store', isDefault: const Value(true)),
-      );
-    }
-    final mode = await (select(appSettings)
-          ..where((s) => s.key.equals('inventory_mode')))
-        .getSingleOrNull();
-    if (mode == null) {
-      await into(appSettings).insert(
-        AppSettingsCompanion.insert(key: 'inventory_mode', value: 'single'),
-      );
-    }
-  }
 
   Future<int> defaultWarehouseId() async {
     final def = await (select(warehouses)
@@ -465,98 +438,6 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  /// Replaces the current product catalog (categories, products, stock and any
-  /// in-progress carts/sales) with the sample data for [type]. Users, POS
-  /// counters, warehouses, customers and suppliers are preserved.
-  Future<void> loadDemoCatalog(DemoBusinessType type) async {
-    await transaction(() async {
-      await customStatement('PRAGMA foreign_keys = OFF');
-      await customStatement('DELETE FROM cart_items');
-      await customStatement('DELETE FROM carts');
-      await customStatement('DELETE FROM payments');
-      await customStatement('DELETE FROM sale_items');
-      await customStatement('DELETE FROM sales');
-      await customStatement('DELETE FROM inventory_transactions');
-      await customStatement('DELETE FROM inventory');
-      await customStatement('DELETE FROM product_variants');
-      await customStatement('DELETE FROM products');
-      await customStatement('DELETE FROM categories');
-      await customStatement('PRAGMA foreign_keys = ON');
-    });
-    await DemoDataLoader(this).seedCatalog(type);
-  }
-
-  Future<void> resetWebDemoData() async {
-    if (!kIsWeb) {
-      throw UnsupportedError('Demo data reset is only available on web builds.');
-    }
-
-    await transaction(() async {
-      await customStatement('PRAGMA foreign_keys = OFF');
-      await customStatement('DELETE FROM cart_items');
-      await customStatement('DELETE FROM carts');
-      await customStatement('DELETE FROM payments');
-      await customStatement('DELETE FROM sale_items');
-      await customStatement('DELETE FROM sales');
-      await customStatement('DELETE FROM inventory_transactions');
-      await customStatement('DELETE FROM inventory');
-      await customStatement('DELETE FROM product_variants');
-      await customStatement('DELETE FROM products');
-      await customStatement('DELETE FROM categories');
-      await customStatement('DELETE FROM notifications');
-      await customStatement('DELETE FROM audit_logs');
-      await customStatement('DELETE FROM expenses');
-      await customStatement('DELETE FROM customers');
-      await customStatement('DELETE FROM shops');
-      await customStatement('DELETE FROM users');
-      await customStatement('DELETE FROM pos_counters');
-      await customStatement('DELETE FROM warehouses');
-      await customStatement('DELETE FROM app_settings');
-      await customStatement('DELETE FROM roles');
-      await customStatement('DELETE FROM sqlite_sequence');
-      await customStatement('PRAGMA foreign_keys = ON');
-    });
-
-    await _seedWebMockDataIfEmpty();
-  }
-
-  Future<void> _seedWebMockDataIfEmpty() async {
-    final existingUsers = await select(users).get();
-    if (existingUsers.isNotEmpty) {
-      await _ensureDefaultWebLogin();
-      return;
-    }
-
-    await DemoDataLoader(this).seedAll();
-  }
-
-  Future<void> _ensureDefaultWebLogin() async {
-    final superAdminRole = await (select(roles)..where((r) => r.name.equals('super_admin'))).getSingleOrNull();
-    final superAdminRoleId = superAdminRole?.id ?? await into(roles).insert(RolesCompanion.insert(name: 'super_admin'));
-
-    final ownerUser = await (select(users)..where((u) => u.username.equals('owner'))).getSingleOrNull();
-
-    if (ownerUser == null) {
-      await into(users).insert(
-        UsersCompanion.insert(
-          username: 'owner',
-          passwordHash: '1234',
-          pinHash: '1234',
-          roleId: superAdminRoleId,
-        ),
-      );
-      return;
-    }
-
-    await (update(users)..where((u) => u.id.equals(ownerUser.id))).write(
-      UsersCompanion(
-        passwordHash: const Value('1234'),
-        pinHash: const Value('1234'),
-        roleId: Value(superAdminRoleId),
-        isActive: const Value(true),
-      ),
-    );
-  }
 }
 
 LazyDatabase _openConnection() {

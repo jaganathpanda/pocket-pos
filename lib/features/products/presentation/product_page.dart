@@ -234,31 +234,40 @@ class _ProductPageState extends ConsumerState<ProductPage> {
               if (!formKey.currentState!.validate()) return;
               final barcodeVal = barcode.text.trim().isEmpty ? null : barcode.text.trim();
               final unitVal = unit.text.trim().isEmpty ? 'piece' : unit.text.trim();
-              if (isEdit) {
-                await ref.read(productRepositoryProvider).update(
-                      id: product.id,
-                      name: name.text.trim(),
-                      productCode: code.text.trim(),
-                      barcode: barcodeVal,
-                      categoryId: selectedCategoryId,
-                      sellingPrice: double.tryParse(selling.text) ?? 0,
-                      purchasePrice: double.tryParse(purchase.text) ?? 0,
-                      taxPercent: double.tryParse(tax.text) ?? 0,
-                      unit: unitVal,
-                    );
-              } else {
-                await ref.read(productRepositoryProvider).add(
-                      name: name.text.trim(),
-                      productCode: code.text.trim(),
-                      barcode: barcodeVal,
-                      categoryId: selectedCategoryId,
-                      sellingPrice: double.tryParse(selling.text) ?? 0,
-                      purchasePrice: double.tryParse(purchase.text) ?? 0,
-                      taxPercent: double.tryParse(tax.text) ?? 0,
-                      unit: unitVal,
-                    );
+              final repo = ref.read(productRepositoryProvider);
+              try {
+                if (isEdit) {
+                  await repo.update(
+                    id: product.id,
+                    name: name.text.trim(),
+                    productCode: code.text.trim(),
+                    barcode: barcodeVal,
+                    categoryId: selectedCategoryId,
+                    sellingPrice: double.tryParse(selling.text) ?? 0,
+                    purchasePrice: double.tryParse(purchase.text) ?? 0,
+                    taxPercent: double.tryParse(tax.text) ?? 0,
+                    unit: unitVal,
+                  );
+                } else {
+                  await repo.add(
+                    name: name.text.trim(),
+                    productCode: code.text.trim(),
+                    barcode: barcodeVal,
+                    categoryId: selectedCategoryId,
+                    sellingPrice: double.tryParse(selling.text) ?? 0,
+                    purchasePrice: double.tryParse(purchase.text) ?? 0,
+                    taxPercent: double.tryParse(tax.text) ?? 0,
+                    unit: unitVal,
+                  );
+                }
+                if (ctx.mounted) Navigator.pop(ctx);
+              } catch (e) {
+                if (ctx.mounted) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    SnackBar(content: Text('Failed to save product: $e')),
+                  );
+                }
               }
-              if (ctx.mounted) Navigator.pop(ctx);
             },
             child: Text(isEdit ? 'Update' : 'Save'),
           ),

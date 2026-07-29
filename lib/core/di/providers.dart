@@ -1,43 +1,38 @@
-import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../features/auth/data/auth_repository_impl.dart';
 import '../../features/auth/domain/auth_models.dart';
-import '../../features/auth/domain/auth_repository.dart';
 import '../../features/auth/presentation/auth_controller.dart';
-import '../../features/customers/data/customer_repository_impl.dart';
-import '../../features/customers/domain/customer_repository.dart';
-import '../../features/categories/data/category_repository_impl.dart';
+import '../../features/categories/data/firestore_category_repository.dart';
 import '../../features/categories/domain/category_repository.dart';
-import '../../features/inventory/data/inventory_repository_impl.dart';
+import '../../features/customers/data/firestore_customer_repository.dart';
+import '../../features/customers/domain/customer_repository.dart';
+import '../../features/inventory/data/firestore_inventory_repository.dart';
 import '../../features/inventory/domain/inventory_repository.dart';
-import '../../features/products/data/product_repository_impl.dart';
+import '../../features/pos_counters/data/firestore_pos_counter_repository.dart';
+import '../../features/pos_counters/domain/pos_counter_repository.dart';
+import '../../features/products/data/firestore_product_repository.dart';
 import '../../features/products/domain/product_repository.dart';
-import '../../features/sales/data/sales_repository_impl.dart';
+import '../../features/purchases/data/firestore_purchase_repository.dart';
+import '../../features/purchases/domain/purchase_repository.dart';
+import '../../features/reports/data/firestore_reports_repository.dart';
+import '../../features/sales/data/firestore_sales_repository.dart';
 import '../../features/sales/domain/sales_models.dart';
 import '../../features/sales/domain/sales_repository.dart';
-import '../../features/suppliers/data/supplier_repository_impl.dart';
+import '../../features/store/presentation/store_auth_controller.dart';
+import '../../features/suppliers/data/firestore_supplier_repository.dart';
 import '../../features/suppliers/domain/supplier_repository.dart';
-import '../../features/purchases/data/purchase_repository_impl.dart';
-import '../../features/purchases/domain/purchase_repository.dart';
-import '../../features/pos_counters/data/pos_counter_repository_impl.dart';
-import '../../features/pos_counters/domain/pos_counter_repository.dart';
-import '../../features/warehouse/data/warehouse_repository_impl.dart';
+import '../../features/warehouse/data/firestore_warehouse_repository.dart';
 import '../../features/warehouse/domain/inventory_mode.dart';
 import '../../features/warehouse/domain/warehouse_repository.dart';
 import '../database/app_database.dart';
 import '../database/seed/demo_business_type.dart';
 import '../database/seed/demo_data_loader.dart';
-import '../database/database_provider.dart';
-
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepositoryImpl(ref.watch(appDatabaseProvider));
-});
+import '../firestore/store_scope.dart';
 
 final authControllerProvider =
     StateNotifierProvider<AuthController, AsyncValue<AppUser?>>((ref) {
-  return AuthController(ref.watch(authRepositoryProvider));
+  return AuthController();
 });
 
 /// The currently signed-in user (null when logged out).
@@ -54,51 +49,62 @@ final activeCounterIdProvider = Provider<int?>((ref) {
 // ── POS counters & POS users ────────────────────────────────────────────────
 
 final posCounterRepositoryProvider = Provider<PosCounterRepository>((ref) {
-  return PosCounterRepositoryImpl(ref.watch(appDatabaseProvider));
+  return FirestorePosCounterRepository(
+      ref.watch(firestoreProvider), ref.watch(activeStoreIdProvider) ?? '');
 });
 
 final countersProvider = StreamProvider<List<PosCounter>>((ref) {
+  if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
   return ref.watch(posCounterRepositoryProvider).watchCounters();
 });
 
 final posUsersProvider = StreamProvider<List<PosUserRow>>((ref) {
+  if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
   return ref.watch(posCounterRepositoryProvider).watchPosUsers();
 });
 
 final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
-  return CategoryRepositoryImpl(ref.watch(appDatabaseProvider));
+  return FirestoreCategoryRepository(
+      ref.watch(firestoreProvider), ref.watch(activeStoreIdProvider) ?? '');
 });
 
 final categoriesProvider = StreamProvider<List<Category>>((ref) {
+  if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
   return ref.watch(categoryRepositoryProvider).watchAll();
 });
 
 final customerRepositoryProvider = Provider<CustomerRepository>((ref) {
-  return CustomerRepositoryImpl(ref.watch(appDatabaseProvider));
+  return FirestoreCustomerRepository(
+      ref.watch(firestoreProvider), ref.watch(activeStoreIdProvider) ?? '');
 });
 
 final customersProvider = StreamProvider<List<Customer>>((ref) {
+  if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
   return ref.watch(customerRepositoryProvider).watchAll();
 });
 
 final productRepositoryProvider = Provider<ProductRepository>((ref) {
-  return ProductRepositoryImpl(ref.watch(appDatabaseProvider));
+  return FirestoreProductRepository(
+      ref.watch(firestoreProvider), ref.watch(activeStoreIdProvider) ?? '');
 });
 
 final productSearchQueryProvider = StateProvider<String>((ref) => '');
 
 final productsProvider = StreamProvider<List<Product>>((ref) {
+  if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
   return ref.watch(productRepositoryProvider).watchAll();
 });
 
 final inventoryRepositoryProvider = Provider<InventoryRepository>((ref) {
-  return InventoryRepositoryImpl(ref.watch(appDatabaseProvider));
+  return FirestoreInventoryRepository(
+      ref.watch(firestoreProvider), ref.watch(activeStoreIdProvider) ?? '');
 });
 
 /// The warehouse whose stock the Inventory screen shows (null = all).
 final selectedInventoryWarehouseProvider = StateProvider<int?>((ref) => null);
 
 final inventoryProvider = StreamProvider((ref) {
+  if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
   final warehouseId = ref.watch(selectedInventoryWarehouseProvider);
   return ref.watch(inventoryRepositoryProvider).watchInventory(warehouseId: warehouseId);
 });
@@ -106,27 +112,35 @@ final inventoryProvider = StreamProvider((ref) {
 // ── Warehouses & inventory mode ─────────────────────────────────────────────
 
 final warehouseRepositoryProvider = Provider<WarehouseRepository>((ref) {
-  return WarehouseRepositoryImpl(ref.watch(appDatabaseProvider));
+  return FirestoreWarehouseRepository(
+      ref.watch(firestoreProvider), ref.watch(activeStoreIdProvider) ?? '');
 });
 
 final inventoryModeProvider = StreamProvider<InventoryMode>((ref) {
+  if (ref.watch(activeStoreIdProvider) == null) {
+    return Stream.value(InventoryMode.single);
+  }
   return ref.watch(warehouseRepositoryProvider).watchMode();
 });
 
 final warehousesProvider = StreamProvider<List<Warehouse>>((ref) {
+  if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
   return ref.watch(warehouseRepositoryProvider).watchWarehouses();
 });
 
 /// The demo catalog currently loaded (shown in Settings → Sample Data).
 final demoBusinessTypeProvider = StreamProvider<DemoBusinessType>((ref) {
-  final db = ref.watch(appDatabaseProvider);
-  return (db.select(db.appSettings)
-        ..where((s) => s.key.equals('demo_business_type')))
-      .watchSingleOrNull()
-      .map((row) {
-    if (row == null) return DemoDataLoader.defaultBusinessType;
+  final storeId = ref.watch(activeStoreIdProvider);
+  if (storeId == null) {
+    return Stream.value(DemoDataLoader.defaultBusinessType);
+  }
+  return storeCollection(ref.watch(firestoreProvider), storeId, 'settings')
+      .doc('demo')
+      .snapshots()
+      .map((snap) {
+    final v = snap.data()?['type'] as String?;
     return DemoBusinessType.values.firstWhere(
-      (t) => t.name == row.value,
+      (t) => t.name == v,
       orElse: () => DemoDataLoader.defaultBusinessType,
     );
   });
@@ -135,37 +149,44 @@ final demoBusinessTypeProvider = StreamProvider<DemoBusinessType>((ref) {
 // ── Suppliers ─────────────────────────────────────────────────────────────────
 
 final supplierRepositoryProvider = Provider<SupplierRepository>((ref) {
-  return SupplierRepositoryImpl(ref.watch(appDatabaseProvider));
+  return FirestoreSupplierRepository(
+      ref.watch(firestoreProvider), ref.watch(activeStoreIdProvider) ?? '');
 });
 
 final suppliersProvider = StreamProvider<List<Supplier>>((ref) {
+  if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
   return ref.watch(supplierRepositoryProvider).watchAll();
 });
 
 // ── Purchases ─────────────────────────────────────────────────────────────────
 
 final purchaseRepositoryProvider = Provider<PurchaseRepository>((ref) {
-  return PurchaseRepositoryImpl(ref.watch(appDatabaseProvider));
+  return FirestorePurchaseRepository(
+      ref.watch(firestoreProvider), ref.watch(activeStoreIdProvider) ?? '');
 });
 
 final purchasesProvider = StreamProvider<List<PurchaseWithSupplier>>((ref) {
+  if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
   return ref.watch(purchaseRepositoryProvider).watchAll();
 });
 
 final purchaseItemsProvider =
     StreamProvider.family<List<PurchaseItemWithProduct>, int>((ref, id) {
+  if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
   return ref.watch(purchaseRepositoryProvider).watchItems(id);
 });
 
 // ── Sales ─────────────────────────────────────────────────────────────────────
 
 final salesRepositoryProvider = Provider<SalesRepository>((ref) {
-  return SalesRepositoryImpl(ref.watch(appDatabaseProvider));
+  return FirestoreSalesRepository(
+      ref.watch(firestoreProvider), ref.watch(activeStoreIdProvider) ?? '');
 });
 
 final selectedCartIdProvider = StateProvider<int?>((ref) => null);
 
 final activeCartsProvider = StreamProvider<List<Cart>>((ref) {
+  if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
   final counterId = ref.watch(activeCounterIdProvider);
   return ref.watch(salesRepositoryProvider).watchActiveCarts(counterId);
 });
@@ -235,65 +256,32 @@ class DashboardMetrics {
   final int totalCustomers;
 }
 
-final dashboardMetricsProvider = FutureProvider<DashboardMetrics>((ref) async {
-  final db = ref.watch(appDatabaseProvider);
-  final counterId = ref.watch(activeCounterIdProvider);
-  final now = DateTime.now();
-  final dayStart = DateTime(now.year, now.month, now.day);
-
-  final salesQuery = db.select(db.sales);
-  if (counterId != null) {
-    salesQuery.where((s) => s.posCounterId.equals(counterId));
-  }
-  final allSales = await salesQuery.get();
-  final todaySales =
-      allSales.where((s) => !s.soldAt.isBefore(dayStart)).toList();
-  final todayRevenue =
-      todaySales.fold<double>(0, (sum, s) => sum + s.grandTotal);
-  final totalRevenue = allSales.fold<double>(0, (sum, s) => sum + s.grandTotal);
-  final totalTax = allSales.fold<double>(0, (sum, s) => sum + s.taxTotal);
-  final totalDiscount =
-      allSales.fold<double>(0, (sum, s) => sum + s.discountTotal);
-
-  final activeCartsQuery = db.select(db.carts)
-    ..where((c) =>
-        Expression.or([c.status.equals('active'), c.status.equals('hold')]));
-  if (counterId != null) {
-    activeCartsQuery.where((c) => c.posCounterId.equals(counterId));
-  }
-  final activeCarts = await activeCartsQuery.get();
-  final allInventory = await db.select(db.inventory).get();
-  final allProducts = await db.select(db.products).get();
-  final allCustomers = await db.select(db.customers).get();
-  final low =
-      allInventory.where((i) => i.availableStock <= i.lowStockThreshold).length;
-  final out = allInventory.where((i) => i.availableStock <= 0).length;
-
-  final creditSalesQuery = db.select(db.sales)
-    ..where((s) => Expression.or([
-          s.paymentStatus.equals('partial'),
-          s.paymentStatus.equals('credit')
-        ]));
-  if (counterId != null) {
-    creditSalesQuery.where((s) => s.posCounterId.equals(counterId));
-  }
-  final creditSales = await creditSalesQuery.get();
-  final pending = creditSales.fold<double>(0, (sum, s) => sum + s.grandTotal);
-
-  return DashboardMetrics(
-    todayRevenue: todayRevenue,
-    todayTransactions: todaySales.length,
-    totalRevenue: totalRevenue,
-    totalTransactions: allSales.length,
-    totalTax: totalTax,
-    totalDiscount: totalDiscount,
-    activeCarts: activeCarts.length,
-    lowStockItems: low,
-    outOfStockItems: out,
-    pendingCredit: pending,
-    totalProducts: allProducts.length,
-    totalCustomers: allCustomers.length,
+FirestoreReportsRepository _reportsRepo(Ref ref) {
+  return FirestoreReportsRepository(
+    ref.watch(firestoreProvider),
+    ref.watch(activeStoreIdProvider) ?? '',
+    ref.watch(activeCounterIdProvider),
   );
+}
+
+const _emptyDashboard = DashboardMetrics(
+  todayRevenue: 0,
+  todayTransactions: 0,
+  totalRevenue: 0,
+  totalTransactions: 0,
+  totalTax: 0,
+  totalDiscount: 0,
+  activeCarts: 0,
+  lowStockItems: 0,
+  outOfStockItems: 0,
+  pendingCredit: 0,
+  totalProducts: 0,
+  totalCustomers: 0,
+);
+
+final dashboardMetricsProvider = FutureProvider<DashboardMetrics>((ref) async {
+  if (ref.watch(activeStoreIdProvider) == null) return _emptyDashboard;
+  return _reportsRepo(ref).dashboard();
 });
 
 class SalesReportRow {
@@ -378,22 +366,10 @@ final salesReportRangeProvider = StateProvider<DateTimeRange>((ref) {
 });
 
 final salesReportProvider = FutureProvider<SalesReportData>((ref) async {
-  final db = ref.watch(appDatabaseProvider);
-  final counterId = ref.watch(activeCounterIdProvider);
   final range = ref.watch(salesReportRangeProvider);
-  final start = DateTime(range.start.year, range.start.month, range.start.day);
-  final end =
-      DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59, 999);
-
-  final salesInRangeQuery = db.select(db.sales)
-    ..where((s) => s.soldAt.isBetweenValues(start, end))
-    ..orderBy([(s) => OrderingTerm.desc(s.soldAt)]);
-  if (counterId != null) {
-    salesInRangeQuery.where((s) => s.posCounterId.equals(counterId));
-  }
-  final salesInRange = await salesInRangeQuery.get();
-
-  if (salesInRange.isEmpty) {
+  if (ref.watch(activeStoreIdProvider) == null) {
+    final start = DateTime(range.start.year, range.start.month, range.start.day);
+    final end = DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59, 999);
     return SalesReportData(
       start: start,
       end: end,
@@ -408,124 +384,8 @@ final salesReportProvider = FutureProvider<SalesReportData>((ref) async {
       rows: const [],
     );
   }
-
-  final saleIds = salesInRange.map((s) => s.id).toList(growable: false);
-  final saleItems = await (db.select(db.saleItems)
-        ..where((i) => i.saleId.isIn(saleIds)))
-      .get();
-  final payments = await (db.select(db.payments)
-        ..where((p) => p.saleId.isIn(saleIds)))
-      .get();
-
-  final totalAmount =
-      salesInRange.fold<double>(0, (sum, s) => sum + s.grandTotal);
-  final totalTax = salesInRange.fold<double>(0, (sum, s) => sum + s.taxTotal);
-  final totalDiscount =
-      salesInRange.fold<double>(0, (sum, s) => sum + s.discountTotal);
-  final totalQuantity = saleItems.fold<double>(0, (sum, i) => sum + i.quantity);
-
-  final paymentMethodTotals = <String, double>{};
-  for (final payment in payments) {
-    paymentMethodTotals[payment.method] =
-        (paymentMethodTotals[payment.method] ?? 0) + payment.amount;
-  }
-
-  final itemsBySaleId = <int, List<SaleItem>>{};
-  for (final item in saleItems) {
-    itemsBySaleId.putIfAbsent(item.saleId, () => []).add(item);
-  }
-
-  final paymentsBySaleId = <int, List<Payment>>{};
-  for (final payment in payments) {
-    paymentsBySaleId.putIfAbsent(payment.saleId, () => []).add(payment);
-  }
-
-  final productTotals = <int, ({double qty, double amount})>{};
-  for (final item in saleItems) {
-    final current = productTotals[item.productId] ?? (qty: 0.0, amount: 0.0);
-    productTotals[item.productId] = (
-      qty: current.qty + item.quantity,
-      amount: current.amount + item.lineTotal,
-    );
-  }
-
-  final productIds = productTotals.keys.toList(growable: false);
-  final products =
-      await (db.select(db.products)..where((p) => p.id.isIn(productIds))).get();
-  final productById = {for (final p in products) p.id: p};
-  final productNameById = {for (final p in products) p.id: p.name};
-
-  final topProducts = productTotals.entries
-      .map(
-        (entry) => TopSellingProduct(
-          productId: entry.key,
-          name: productNameById[entry.key] ?? 'Product #${entry.key}',
-          quantity: entry.value.qty,
-          amount: entry.value.amount,
-        ),
-      )
-      .toList()
-    ..sort((a, b) => b.amount.compareTo(a.amount));
-
-  final rows = salesInRange.map(
-    (sale) {
-      final salePayments = paymentsBySaleId[sale.id] ?? const <Payment>[];
-      final paidAmount =
-          salePayments.fold<double>(0, (sum, p) => sum + p.amount);
-      final dueAmount =
-          (sale.grandTotal - paidAmount).clamp(0, 999999999).toDouble();
-
-      return SalesReportRow(
-        saleId: sale.id,
-        invoiceNo: sale.invoiceNo,
-        soldAt: sale.soldAt,
-        paymentStatus: sale.paymentStatus,
-        grandTotal: sale.grandTotal,
-        itemsCount: itemsBySaleId[sale.id]?.length ?? 0,
-        totalQty: itemsBySaleId[sale.id]
-                ?.fold<double>(0, (sum, i) => sum + i.quantity) ??
-            0,
-        paymentCount: salePayments.length,
-        paidAmount: paidAmount,
-        dueAmount: dueAmount,
-        productGstSummary: _buildProductGstSummary(
-          itemsBySaleId[sale.id] ?? const <SaleItem>[],
-          productById,
-        ),
-        paymentMethod: salePayments.isEmpty ? null : salePayments.last.method,
-      );
-    },
-  ).toList(growable: false);
-
-  return SalesReportData(
-    start: start,
-    end: end,
-    totalSales: salesInRange.length,
-    totalAmount: totalAmount,
-    totalTax: totalTax,
-    totalDiscount: totalDiscount,
-    totalItems: saleItems.length,
-    totalQuantity: totalQuantity,
-    paymentMethodTotals: paymentMethodTotals,
-    topProducts: topProducts.take(5).toList(growable: false),
-    rows: rows,
-  );
+  return _reportsRepo(ref).salesReport(range);
 });
-
-String _buildProductGstSummary(List<SaleItem> items, Map<int, Product> productById) {
-  if (items.isEmpty) return '-';
-  return items.map((item) {
-    final product = productById[item.productId];
-    final name = product?.name ?? 'Product #${item.productId}';
-    final qtyLabel = item.quantity % 1 == 0
-        ? item.quantity.toInt().toString()
-        : item.quantity.toStringAsFixed(2);
-    final gstLabel = item.taxPercent % 1 == 0
-        ? item.taxPercent.toInt().toString()
-        : item.taxPercent.toStringAsFixed(2);
-    return '$name x$qtyLabel (GST $gstLabel%)';
-  }).join(' | ');
-}
 
 class CreditLedgerRow {
   const CreditLedgerRow({
@@ -542,56 +402,9 @@ class CreditLedgerRow {
 }
 
 final creditLedgerProvider = FutureProvider<List<CreditLedgerRow>>((ref) async {
-  final db = ref.watch(appDatabaseProvider);
-  final counterId = ref.watch(activeCounterIdProvider);
-
-  final salesQuery = db.select(db.sales)
-    ..orderBy([(s) => OrderingTerm.desc(s.soldAt)]);
-  if (counterId != null) {
-    salesQuery.where((s) => s.posCounterId.equals(counterId));
-  }
-  final sales = await salesQuery.get();
-  if (sales.isEmpty) return const [];
-
-  final saleIds = sales.map((s) => s.id).toList(growable: false);
-  final payments = await (db.select(db.payments)
-        ..where((p) => p.saleId.isIn(saleIds)))
-      .get();
-
-  final paidBySale = <int, double>{};
-  for (final p in payments) {
-    paidBySale[p.saleId] = (paidBySale[p.saleId] ?? 0) + p.amount;
-  }
-
-  final customerIds = sales
-      .where((s) => s.customerId != null)
-      .map((s) => s.customerId!)
-      .toSet()
-      .toList(growable: false);
-  final customers = customerIds.isEmpty
-      ? const <Customer>[]
-      : await (db.select(db.customers)..where((c) => c.id.isIn(customerIds)))
-          .get();
-  final customerById = {for (final c in customers) c.id: c};
-
-  return sales.map((sale) {
-    final paid = paidBySale[sale.id] ?? 0;
-    final due = (sale.grandTotal - paid).clamp(0, 999999999).toDouble();
-    return CreditLedgerRow(
-      sale: sale,
-      customer: sale.customerId == null ? null : customerById[sale.customerId],
-      paidAmount: paid,
-      dueAmount: due,
-    );
-  }).where((r) {
-    final status = r.sale.paymentStatus.toLowerCase();
-    return r.dueAmount > 0 || status == 'partial' || status == 'credit';
-  }).toList(growable: false);
+  if (ref.watch(activeStoreIdProvider) == null) return const [];
+  return _reportsRepo(ref).creditLedger();
 });
 
-final expensesProvider = StreamProvider<List<Expense>>((ref) {
-  final db = ref.watch(appDatabaseProvider);
-  return (db.select(db.expenses)
-        ..orderBy([(e) => OrderingTerm.desc(e.spentAt)]))
-      .watch();
-});
+// NOTE: Expenses migrated to store-scoped Firestore in Phase 2 — see
+// features/expense/data/expense_repository.dart (storeExpensesProvider).

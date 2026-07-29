@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/database/seed/demo_business_type.dart';
+import '../../../core/firestore/store_catalog_seeder.dart';
 import '../domain/store_models.dart';
 
 /// Firebase-backed multi-tenant auth: store registration, store-scoped login
@@ -42,6 +44,7 @@ class StoreAuthService {
     required String ownerName,
     required String ownerUsername,
     required String password,
+    required DemoBusinessType businessType,
     String? mobile,
     String? email,
   }) async {
@@ -62,6 +65,7 @@ class StoreAuthService {
       'ownerUsername': ownerUsername.trim(),
       'mobile': mobile?.trim(),
       'email': email?.trim(),
+      'businessType': businessType.name,
       'status': 'pending',
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -74,6 +78,10 @@ class StoreAuthService {
 
     // Index for session restore (uid -> storeId).
     await _db.collection('user_store_index').doc(uid).set({'storeId': storeId});
+
+    // Seed the chosen business type's demo catalog (categories, products,
+    // opening stock) into the new store.
+    await StoreCatalogSeeder(_db).load(businessType, storeId);
 
     await _persist(storeId: storeId, isAdmin: false);
     return storeId;
@@ -110,6 +118,7 @@ class StoreAuthService {
       username: (userSnap.data()?['username'] as String?) ?? username,
       role: (userSnap.data()?['role'] as String?) ?? 'owner',
       status: storeStatusFromString(data['status'] as String?),
+      posCounterId: (userSnap.data()?['posCounterId'] as num?)?.toInt(),
     );
   }
 

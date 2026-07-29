@@ -54,14 +54,15 @@ class PosCounterRepositoryImpl implements PosCounterRepository {
       ..orderBy([OrderingTerm.asc(_db.users.username)]);
 
     return query.watch().map(
-          (rows) => rows
-              .map(
-                (r) => PosUserRow(
-                  user: r.readTable(_db.users),
-                  counterName: r.readTableOrNull(_db.posCounters)?.name,
-                ),
-              )
-              .toList(),
+          (rows) => rows.map((r) {
+            final user = r.readTable(_db.users);
+            return PosUserRow(
+              uid: '${user.id}',
+              username: user.username,
+              isActive: user.isActive,
+              counterName: r.readTableOrNull(_db.posCounters)?.name,
+            );
+          }).toList(),
         );
   }
 
@@ -89,7 +90,8 @@ class PosCounterRepositoryImpl implements PosCounterRepository {
   }
 
   @override
-  Future<void> setUserActive(int userId, bool active) {
+  Future<void> setUserActive(String uid, bool active) {
+    final userId = int.tryParse(uid) ?? 0;
     return (_db.update(_db.users)..where((u) => u.id.equals(userId)))
         .write(UsersCompanion(isActive: Value(active)));
   }

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/auth/domain/auth_models.dart';
-import '../features/auth/presentation/login_page.dart';
 import '../features/categories/presentation/category_page.dart';
 import '../features/customers/presentation/customer_details_page.dart';
 import '../features/customers/presentation/customer_invoice_detail_page.dart';
@@ -64,7 +63,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/pending', builder: (context, state) => const PendingApprovalPage()),
       GoRoute(path: '/admin-login', builder: (context, state) => const AdminLoginPage()),
       GoRoute(path: '/admin', builder: (context, state) => const AdminApprovalPage()),
-      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       ShellRoute(
         builder: (context, state, child) => _AppShell(child: child),
         routes: [
@@ -237,8 +235,9 @@ class _AppShell extends ConsumerWidget {
     // Clear any in-memory POS selection so the next user never inherits the
     // previous user's open cart.
     ref.read(selectedCartIdProvider.notifier).state = null;
-    ref.read(authControllerProvider.notifier).logout();
-    context.go('/login');
+    // Sign out of the cloud store session; the app.dart listener clears the
+    // local session and the router redirect returns to /store-login.
+    ref.read(storeAuthControllerProvider.notifier).logout();
   }
 
   void _showMenuSheet(

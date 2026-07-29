@@ -104,16 +104,16 @@ class PosCountersPage extends ConsumerWidget {
                     Card(
                       child: ListTile(
                         leading: const Icon(Icons.person_rounded),
-                        title: Text(row.user.username),
+                        title: Text(row.username),
                         subtitle: Text(
                           'Counter: ${row.counterName ?? '-'}  •  '
-                          '${row.user.isActive ? 'Active' : 'Disabled'}',
+                          '${row.isActive ? 'Active' : 'Disabled'}',
                         ),
                         trailing: Switch(
-                          value: row.user.isActive,
+                          value: row.isActive,
                           onChanged: (v) => ref
                               .read(posCounterRepositoryProvider)
-                              .setUserActive(row.user.id, v),
+                              .setUserActive(row.uid, v),
                         ),
                       ),
                     ),

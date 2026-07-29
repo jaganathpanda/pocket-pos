@@ -1,49 +1,35 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/auth_models.dart';
-import '../domain/auth_repository.dart';
 
+/// Holds the app's in-memory session (role + counter), populated from the
+/// signed-in cloud store session via [enterFromStore]. There is no local
+/// username/password auth — authentication is Firebase (see StoreAuthService).
 class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
-  AuthController(this._repository) : super(const AsyncData(null));
+  AuthController() : super(const AsyncData(null));
 
-  final AuthRepository _repository;
-
-  Future<void> restoreSession() async {
-    state = const AsyncLoading();
-    try {
-      state = AsyncData(await _repository.currentUser());
-    } catch (error, stackTrace) {
-      state = AsyncError(error, stackTrace);
-      state = const AsyncData(null);
-    }
-  }
-
-  Future<bool> login(String username, String pin) async {
-    state = const AsyncLoading();
-    try {
-      final user = await _repository.login(username: username, pin: pin);
-      state = AsyncData(user);
-      return user != null;
-    } catch (error, stackTrace) {
-      state = AsyncError(error, stackTrace);
-      state = const AsyncData(null);
-      return false;
-    }
-  }
-
-  Future<void> logout() async {
-    await _repository.logout();
-    state = const AsyncData(null);
-  }
-
-  /// Bridges a cloud store session into the app's local session so the existing
-  /// POS screens (which read the local user) work after a store login.
-  void enterAsOwner(String username) {
+  /// Bridges a cloud store session into the app session so POS screens (which
+  /// read the local user for role/counter scoping) work after a store login.
+  void enterFromStore({
+    required String username,
+    required String role,
+    int? posCounterId,
+    String? posCounterName,
+  }) {
+    final mapped = role == 'owner' || role == 'super_admin'
+        ? UserRole.superAdmin
+        : role == 'manager'
+            ? UserRole.shopManager
+            : UserRole.cashier;
     state = AsyncData(AppUser(
       id: 0,
-      username: username.isEmpty ? 'owner' : username,
-      role: UserRole.superAdmin,
+      username: username.isEmpty ? 'user' : username,
+      role: mapped,
       isActive: true,
+      posCounterId: posCounterId,
+      posCounterName: posCounterName,
     ));
   }
+
+  void logout() => state = const AsyncData(null);
 }

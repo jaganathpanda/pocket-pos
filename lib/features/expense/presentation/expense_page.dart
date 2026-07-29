@@ -2,19 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:drift/drift.dart' show Value;
 
-import '../../../core/database/app_database.dart';
-import '../../../core/database/database_provider.dart';
-import '../../../core/di/providers.dart';
 import '../../../core/utilities/money.dart';
+import '../../store/presentation/store_auth_controller.dart';
+import '../data/expense_repository.dart';
+import '../domain/expense_item.dart';
 
 class ExpensePage extends ConsumerWidget {
   const ExpensePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final expenses = ref.watch(expensesProvider);
+    final expenses = ref.watch(storeExpensesProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -23,7 +22,7 @@ class ExpensePage extends ConsumerWidget {
           IconButton(
             tooltip: 'Export CSV',
             onPressed: () async {
-              final rows = await ref.read(expensesProvider.future);
+              final rows = await ref.read(storeExpensesProvider.future);
               if (!context.mounted) return;
               await Clipboard.setData(ClipboardData(text: _toCsv(rows)));
               if (context.mounted) {
@@ -54,7 +53,8 @@ class ExpensePage extends ConsumerWidget {
               Card(
                 child: ListTile(
                   title: const Text('Total Expenses'),
-                  trailing: Text(formatInr(total), style: const TextStyle(fontWeight: FontWeight.bold)),
+                  trailing: Text(formatInr(total),
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(height: 8),
@@ -73,12 +73,16 @@ class ExpensePage extends ConsumerWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Text(formatInr(e.amount), style: const TextStyle(fontWeight: FontWeight.w700)),
+                          Text(formatInr(e.amount),
+                              style: const TextStyle(fontWeight: FontWeight.w700)),
                           IconButton(
                             icon: const Icon(Icons.delete_outline, color: Colors.red),
                             onPressed: () async {
-                              final db = ref.read(appDatabaseProvider);
-                              await (db.delete(db.expenses)..where((x) => x.id.equals(e.id))).go();
+                              final storeId = ref.read(activeStoreIdProvider);
+                              if (storeId == null) return;
+                              await ref
+                                  .read(expenseRepositoryProvider)
+                                  .delete(storeId, e.id);
                             },
                           ),
                         ],
@@ -113,18 +117,21 @@ class ExpensePage extends ConsumerWidget {
               children: [
                 TextField(
                   controller: category,
-                  decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                      labelText: 'Category', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: amount,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Amount', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                      labelText: 'Amount', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: note,
-                  decoration: const InputDecoration(labelText: 'Note (optional)', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                      labelText: 'Note (optional)', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 10),
                 Row(
@@ -139,7 +146,8 @@ class ExpensePage extends ConsumerWidget {
                           initialDate: spentAt,
                         );
                         if (picked != null) {
-                          setState(() => spentAt = DateTime(picked.year, picked.month, picked.day, spentAt.hour, spentAt.minute));
+                          setState(() => spentAt = DateTime(picked.year,
+                              picked.month, picked.day, spentAt.hour, spentAt.minute));
                         }
                       },
                       child: const Text('Pick Date'),
@@ -170,22 +178,23 @@ class ExpensePage extends ConsumerWidget {
       return;
     }
 
-    final db = ref.read(appDatabaseProvider);
-    await db.into(db.expenses).insert(
-          ExpensesCompanion.insert(
-            category: cat,
-            amount: amt,
-            note: Value(note.text.trim().isEmpty ? null : note.text.trim()),
-            spentAt: Value(spentAt),
-          ),
+    final storeId = ref.read(activeStoreIdProvider);
+    if (storeId == null) return;
+    await ref.read(expenseRepositoryProvider).add(
+          storeId,
+          category: cat,
+          amount: amt,
+          note: note.text.trim().isEmpty ? null : note.text.trim(),
+          spentAt: spentAt,
         );
   }
 
-  String _toCsv(List<Expense> rows) {
+  String _toCsv(List<ExpenseItem> rows) {
     final b = StringBuffer();
     b.writeln('spent_at,category,amount,note');
     for (final r in rows) {
-      b.writeln('${r.spentAt.toIso8601String()},${_csv(r.category)},${r.amount.toStringAsFixed(2)},${_csv(r.note ?? '')}');
+      b.writeln('${r.spentAt.toIso8601String()},${_csv(r.category)},'
+          '${r.amount.toStringAsFixed(2)},${_csv(r.note ?? '')}');
     }
     return b.toString();
   }
