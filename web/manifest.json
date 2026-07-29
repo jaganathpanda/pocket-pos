@@ -1,11 +1,11 @@
 {
-    "name": "pocket_pos",
-    "short_name": "pocket_pos",
-    "start_url": ".",
+    "name": "Pocket POS — Offline-first POS & Billing",
+    "short_name": "Pocket POS",
+    "start_url": "/",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#f6faf9",
+    "theme_color": "#005D4D",
+    "description": "Offline-first point-of-sale and billing app with multi-counter billing, inventory & warehouse tracking, barcode scanning, GST invoices, credit ledger and cloud sync.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
