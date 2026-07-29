@@ -157,10 +157,9 @@
     footer{border-top:1px solid var(--line);padding:36px 0;color:var(--muted);font-size:14px}
     .foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
 
-    /* App loader (shown while Flutter boots) */
-    #app-loading{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:100}
-    .spinner{width:44px;height:44px;border:4px solid #cfe6e0;border-top-color:var(--brand);border-radius:50%;animation:spin 1s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
+    /* Landing overlay — sits above the Flutter app (which boots in the
+       background) until the user clicks Login/Register. */
+    #landing{position:fixed;inset:0;z-index:2147483000;overflow-y:auto;background:var(--bg)}
   </style>
 </head>
 <body>
@@ -173,8 +172,8 @@
           <a class="link" href="#business">Businesses</a>
           <a class="link" href="#how">How it works</a>
           <div class="nav-cta">
-            <button class="btn btn-ghost" onclick="launchApp()">Login</button>
-            <button class="btn btn-primary" onclick="launchApp()">Register store</button>
+            <button class="btn btn-ghost" onclick="enterApp()">Login</button>
+            <button class="btn btn-primary" onclick="enterApp()">Register store</button>
           </div>
         </nav>
       </div>
@@ -189,8 +188,8 @@
             <h1>The fastest way to <span>bill, track stock &amp; grow</span> your store</h1>
             <p class="sub">Pocket POS runs billing and inventory for grocery, pharmacy, bakery, electronics and apparel stores — working even without internet and syncing to the cloud the moment you're back online.</p>
             <div class="hero-cta">
-              <button class="btn btn-primary btn-lg" onclick="launchApp()">Register your store →</button>
-              <button class="btn btn-ghost btn-lg" onclick="launchApp()">Login</button>
+              <button class="btn btn-primary btn-lg" onclick="enterApp()">Register your store →</button>
+              <button class="btn btn-ghost btn-lg" onclick="enterApp()">Login</button>
             </div>
             <p class="hero-note">No card required · Your data stays isolated per store</p>
           </div>
@@ -282,7 +281,7 @@
           <div class="cta-band">
             <h2>Ready to modernise your counter?</h2>
             <p>Set up your store in minutes — it's free to get started.</p>
-            <button class="btn btn-primary btn-lg" onclick="launchApp()">Register your store</button>
+            <button class="btn btn-primary btn-lg" onclick="enterApp()">Register your store</button>
           </div>
         </div>
       </section>
@@ -292,35 +291,22 @@
       <div class="wrap foot">
         <div class="logo" style="font-size:16px"><span class="dot" style="width:24px;height:24px;font-size:12px">🛒</span> Pocket POS</div>
         <div>© 2026 Pocket POS · Offline-first POS &amp; billing for every business</div>
-        <div><a href="#" onclick="launchApp();return false;">Login</a> · <a href="#" onclick="launchApp();return false;">Register</a></div>
+        <div><a href="#" onclick="enterApp();return false;">Login</a> · <a href="#" onclick="enterApp();return false;">Register</a></div>
       </div>
     </footer>
   </div>
 
-  <!-- Shown while the POS app boots -->
-  <div id="app-loading">
-    <div class="spinner"></div>
-    <div style="color:#005D4D;font-weight:600">Opening Pocket POS…</div>
-  </div>
-
+  <!-- Boot the Flutter POS app in the background (async, non-blocking so the
+       landing paints instantly and stays crawlable). The #landing overlay
+       covers it until the user chooses to enter. -->
+  <script src="sqljs/sql-asm.js" defer></script>
+  <script src="flutter_bootstrap.js" async></script>
   <script>
-    // Launch the Flutter POS app on demand: hide the landing, load sql.js then
-    // the Flutter bootstrap. This keeps the landing page lightweight & crawlable.
-    var _booting = false;
-    function launchApp() {
-      if (_booting) return;
-      _booting = true;
-      document.getElementById('landing').style.display = 'none';
-      document.getElementById('app-loading').style.display = 'flex';
-      var sql = document.createElement('script');
-      sql.src = 'sqljs/sql-asm.js';
-      sql.onload = sql.onerror = function () {
-        var boot = document.createElement('script');
-        boot.src = 'flutter_bootstrap.js';
-        boot.async = true;
-        document.body.appendChild(boot);
-      };
-      document.body.appendChild(sql);
+    // Login / Register simply reveal the already-booting app (which opens on
+    // the store-login screen). Reliable in `flutter run` and production.
+    function enterApp() {
+      var l = document.getElementById('landing');
+      if (l) l.style.display = 'none';
     }
   </script>
 </body>
