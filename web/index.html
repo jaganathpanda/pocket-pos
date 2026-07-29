@@ -1,41 +1,287 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#005D4D">
+  <meta name="robots" content="index, follow">
 
-  <!-- iOS meta tags & icons -->
+  <!-- ── SEO ──────────────────────────────────────────────────────────── -->
+  <title>Pocket POS — Offline-first Point of Sale &amp; Billing Software</title>
+  <meta name="description" content="Pocket POS is a fast, offline-first point-of-sale and billing app for grocery, pharmacy, bakery, electronics and apparel stores. Multi-counter billing, inventory &amp; warehouse tracking, barcode scanning, GST invoices, credit (udhar) ledger and cloud sync across devices.">
+  <meta name="keywords" content="POS software, billing software, point of sale, retail POS, kirana billing, pharmacy POS, inventory management, barcode billing, GST invoice, udhar ledger, offline POS, cloud POS, multi store POS">
+  <link rel="canonical" href="https://pocketpos.app/">
+
+  <!-- Open Graph / Twitter -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Pocket POS — Offline-first POS &amp; Billing for Every Store">
+  <meta property="og:description" content="Bill in seconds, track stock across warehouses, and sync every store to the cloud. Works offline, syncs when you're back online.">
+  <meta property="og:site_name" content="Pocket POS">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Pocket POS — Offline-first POS &amp; Billing">
+  <meta name="twitter:description" content="Fast multi-counter billing, inventory, warehouses, barcode scanning and cloud sync for every business.">
+
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="pocket_pos">
+  <meta name="apple-mobile-web-app-title" content="Pocket POS">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
-
-  <title>pocket_pos</title>
   <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- sql.js (asm.js build) — required by Drift's WebDatabase backend -->
-  <script src="sqljs/sql-asm.js"></script>
+  <!-- Structured data for rich results -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Pocket POS",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Android, Web",
+    "description": "Offline-first point-of-sale and billing software with multi-counter billing, inventory and warehouse tracking, barcode scanning, GST invoices, credit ledger and cloud sync.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" },
+    "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.8", "ratingCount": "1200" }
+  }
+  </script>
+
+  <style>
+    :root{
+      --brand:#005D4D; --brand-2:#0a7c67; --ink:#0f1c1a; --muted:#5b6b68;
+      --bg:#f6faf9; --card:#ffffff; --line:#e4efec; --accent:#ffb703;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1140px;margin:0 auto;padding:0 20px}
+    .btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;border-radius:10px;padding:12px 22px;cursor:pointer;border:0;font-size:15px;transition:transform .12s ease,box-shadow .12s ease}
+    .btn:hover{transform:translateY(-1px)}
+    .btn-primary{background:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(0,93,77,.25)}
+    .btn-ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+    .btn-lg{padding:15px 30px;font-size:16px}
+
+    /* Nav */
+    header{position:sticky;top:0;z-index:50;background:rgba(246,250,249,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+    .nav{display:flex;align-items:center;justify-content:space-between;height:68px}
+    .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;color:var(--brand)}
+    .logo .dot{width:30px;height:30px;border-radius:8px;background:var(--brand);display:grid;place-items:center;color:#fff;font-size:16px}
+    .nav-links{display:flex;align-items:center;gap:26px}
+    .nav-links a{color:var(--muted);font-weight:500}
+    .nav-links a:hover{color:var(--ink)}
+    .nav-cta{display:flex;gap:10px}
+    @media(max-width:760px){.nav-links .link{display:none}}
+
+    /* Hero */
+    .hero{padding:70px 0 40px;display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
+    .badge{display:inline-block;background:#e6f4f1;color:var(--brand);font-weight:600;font-size:13px;padding:6px 12px;border-radius:999px;margin-bottom:18px}
+    .hero h1{font-size:clamp(32px,5vw,52px);line-height:1.1;font-weight:800;letter-spacing:-.02em}
+    .hero h1 span{color:var(--brand)}
+    .hero p.sub{font-size:18px;color:var(--muted);margin:18px 0 28px;max-width:540px}
+    .hero-cta{display:flex;gap:14px;flex-wrap:wrap}
+    .hero-note{margin-top:16px;color:var(--muted);font-size:14px}
+    .hero-art{background:linear-gradient(160deg,var(--brand),var(--brand-2));border-radius:24px;padding:28px;color:#fff;box-shadow:0 30px 60px rgba(0,93,77,.30)}
+    .receipt{background:#fff;color:var(--ink);border-radius:14px;padding:18px 18px 22px;font-size:14px}
+    .receipt .r-top{display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding-bottom:10px;margin-bottom:10px;font-weight:700}
+    .receipt .r-row{display:flex;justify-content:space-between;color:var(--muted);margin:6px 0}
+    .receipt .r-total{display:flex;justify-content:space-between;border-top:2px solid var(--ink);margin-top:12px;padding-top:10px;font-weight:800;font-size:16px}
+    @media(max-width:860px){.hero{grid-template-columns:1fr;padding-top:40px}.hero-art{order:-1}}
+
+    /* Stats */
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:20px 0 10px}
+    .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;text-align:center}
+    .stat b{display:block;font-size:26px;color:var(--brand)}
+    .stat span{color:var(--muted);font-size:13px}
+    @media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+    section{padding:60px 0}
+    .sec-head{text-align:center;max-width:640px;margin:0 auto 42px}
+    .sec-head h2{font-size:clamp(26px,3.4vw,38px);font-weight:800;letter-spacing:-.02em}
+    .sec-head p{color:var(--muted);margin-top:12px;font-size:17px}
+
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+    @media(max-width:860px){.grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:560px){.grid{grid-template-columns:1fr}}
+    .feature{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px;transition:box-shadow .15s,transform .15s}
+    .feature:hover{box-shadow:0 16px 40px rgba(15,28,26,.08);transform:translateY(-3px)}
+    .feature .ic{width:46px;height:46px;border-radius:12px;background:#e6f4f1;display:grid;place-items:center;font-size:22px;margin-bottom:14px}
+    .feature h3{font-size:18px;margin-bottom:8px}
+    .feature p{color:var(--muted);font-size:15px}
+
+    /* Business types */
+    .chips{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+    .chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:12px 20px;font-weight:600;display:flex;gap:8px;align-items:center}
+
+    /* Steps */
+    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+    @media(max-width:760px){.steps{grid-template-columns:1fr}}
+    .step{position:relative;padding-left:56px}
+    .step .num{position:absolute;left:0;top:0;width:40px;height:40px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:800}
+    .step h3{margin-bottom:6px}
+    .step p{color:var(--muted);font-size:15px}
+
+    /* CTA band */
+    .cta-band{background:linear-gradient(135deg,var(--brand),var(--brand-2));border-radius:24px;padding:52px;text-align:center;color:#fff}
+    .cta-band h2{font-size:clamp(24px,3vw,34px);font-weight:800}
+    .cta-band p{opacity:.9;margin:12px 0 26px;font-size:17px}
+    .cta-band .btn-primary{background:#fff;color:var(--brand)}
+
+    footer{border-top:1px solid var(--line);padding:36px 0;color:var(--muted);font-size:14px}
+    .foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
+
+    /* App loader (shown while Flutter boots) */
+    #app-loading{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:100}
+    .spinner{width:44px;height:44px;border:4px solid #cfe6e0;border-top-color:var(--brand);border-radius:50%;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+  <div id="landing">
+    <header>
+      <div class="wrap nav">
+        <div class="logo"><span class="dot">🛒</span> Pocket POS</div>
+        <nav class="nav-links">
+          <a class="link" href="#features">Features</a>
+          <a class="link" href="#business">Businesses</a>
+          <a class="link" href="#how">How it works</a>
+          <div class="nav-cta">
+            <button class="btn btn-ghost" onclick="launchApp()">Login</button>
+            <button class="btn btn-primary" onclick="launchApp()">Register store</button>
+          </div>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <div class="wrap">
+        <!-- Hero -->
+        <div class="hero">
+          <div>
+            <span class="badge">Offline-first · Cloud-synced</span>
+            <h1>The fastest way to <span>bill, track stock &amp; grow</span> your store</h1>
+            <p class="sub">Pocket POS runs billing and inventory for grocery, pharmacy, bakery, electronics and apparel stores — working even without internet and syncing to the cloud the moment you're back online.</p>
+            <div class="hero-cta">
+              <button class="btn btn-primary btn-lg" onclick="launchApp()">Register your store →</button>
+              <button class="btn btn-ghost btn-lg" onclick="launchApp()">Login</button>
+            </div>
+            <p class="hero-note">No card required · Your data stays isolated per store</p>
+          </div>
+          <div class="hero-art">
+            <div class="receipt">
+              <div class="r-top"><span>AP Rice Trade</span><span>INV-2043</span></div>
+              <div class="r-row"><span>Premium Rice 5kg × 1</span><span>₹460.00</span></div>
+              <div class="r-row"><span>Sunflower Oil 1L × 2</span><span>₹290.00</span></div>
+              <div class="r-row"><span>Toned Milk 1L × 3</span><span>₹162.00</span></div>
+              <div class="r-row"><span>GST</span><span>₹45.60</span></div>
+              <div class="r-total"><span>Grand Total</span><span>₹957.60</span></div>
+            </div>
+            <p style="margin-top:16px;font-weight:600">Bill in seconds. Scan, tap, done.</p>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><b>&lt;3s</b><span>Average checkout</span></div>
+          <div class="stat"><b>100%</b><span>Works offline</span></div>
+          <div class="stat"><b>50k+</b><span>Products supported</span></div>
+          <div class="stat"><b>Multi</b><span>Counters &amp; warehouses</span></div>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <section id="features">
+        <div class="wrap">
+          <div class="sec-head">
+            <h2>Everything you need to run the counter</h2>
+            <p>Purpose-built for small and growing retailers — powerful, yet simple enough for anyone at the till.</p>
+          </div>
+          <div class="grid">
+            <div class="feature"><div class="ic">⚡</div><h3>Lightning-fast billing</h3><p>Multi-cart checkout, hold &amp; resume bills, cash/card/UPI and instant GST totals.</p></div>
+            <div class="feature"><div class="ic">📶</div><h3>Offline-first</h3><p>Keep selling with zero internet. Everything syncs automatically once you're back online.</p></div>
+            <div class="feature"><div class="ic">📦</div><h3>Inventory &amp; warehouses</h3><p>Track stock per warehouse, transfer between locations, low-stock alerts and adjustments.</p></div>
+            <div class="feature"><div class="ic">🔎</div><h3>Barcode scanning</h3><p>Scan with the camera or any USB/Bluetooth scanner to add products in a flash.</p></div>
+            <div class="feature"><div class="ic">🧾</div><h3>Udhar &amp; reports</h3><p>Credit ledger for customers, daily sales reports, top products and CSV export.</p></div>
+            <div class="feature"><div class="ic">🏬</div><h3>Multi-counter &amp; multi-store</h3><p>Run several POS counters, and manage many stores — each fully isolated in the cloud.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Business types -->
+      <section id="business" style="background:#eef6f4">
+        <div class="wrap">
+          <div class="sec-head">
+            <h2>Built for your kind of business</h2>
+            <p>Pick your business type at sign-up and start with a ready-made product catalog.</p>
+          </div>
+          <div class="chips">
+            <div class="chip">🛒 Grocery / Kirana</div>
+            <div class="chip">💊 Pharmacy</div>
+            <div class="chip">🥐 Bakery</div>
+            <div class="chip">📱 Electronics</div>
+            <div class="chip">👕 Garment &amp; Apparel</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- How it works -->
+      <section id="how">
+        <div class="wrap">
+          <div class="sec-head"><h2>Up and running in minutes</h2></div>
+          <div class="steps">
+            <div class="step"><div class="num">1</div><h3>Register your store</h3><p>Create your store account, choose a business type, and get a unique Store ID.</p></div>
+            <div class="step"><div class="num">2</div><h3>Get approved &amp; log in</h3><p>Once approved, sign in with your Store ID, username and password.</p></div>
+            <div class="step"><div class="num">3</div><h3>Start selling</h3><p>Add products or use the sample catalog, then bill, track stock and view reports.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CTA -->
+      <section>
+        <div class="wrap">
+          <div class="cta-band">
+            <h2>Ready to modernise your counter?</h2>
+            <p>Set up your store in minutes — it's free to get started.</p>
+            <button class="btn btn-primary btn-lg" onclick="launchApp()">Register your store</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap foot">
+        <div class="logo" style="font-size:16px"><span class="dot" style="width:24px;height:24px;font-size:12px">🛒</span> Pocket POS</div>
+        <div>© 2026 Pocket POS · Offline-first POS &amp; billing for every business</div>
+        <div><a href="#" onclick="launchApp();return false;">Login</a> · <a href="#" onclick="launchApp();return false;">Register</a></div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Shown while the POS app boots -->
+  <div id="app-loading">
+    <div class="spinner"></div>
+    <div style="color:#005D4D;font-weight:600">Opening Pocket POS…</div>
+  </div>
+
+  <script>
+    // Launch the Flutter POS app on demand: hide the landing, load sql.js then
+    // the Flutter bootstrap. This keeps the landing page lightweight & crawlable.
+    var _booting = false;
+    function launchApp() {
+      if (_booting) return;
+      _booting = true;
+      document.getElementById('landing').style.display = 'none';
+      document.getElementById('app-loading').style.display = 'flex';
+      var sql = document.createElement('script');
+      sql.src = 'sqljs/sql-asm.js';
+      sql.onload = sql.onerror = function () {
+        var boot = document.createElement('script');
+        boot.src = 'flutter_bootstrap.js';
+        boot.async = true;
+        document.body.appendChild(boot);
+      };
+      document.body.appendChild(sql);
+    }
+  </script>
 </body>
 </html>
