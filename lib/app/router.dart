@@ -132,6 +132,16 @@ class _AppShell extends ConsumerWidget {
     final canManage = user?.canManagePos ?? false;
     final mode = ref.watch(inventoryModeProvider).valueOrNull ?? InventoryMode.single;
 
+    // Keep the warehouse + inventory caches warm for the whole authenticated
+    // session. Firestore's one-time .get() throws ("client is offline") for a
+    // document that isn't in the local cache, and returns nothing for an
+    // un-cached query — so without a live listener, the POS add-to-cart /
+    // checkout path (which resolves the default warehouse and reads stock via
+    // .get()) fails as soon as the device goes offline. These listeners prime
+    // and maintain that cache so offline billing works.
+    ref.watch(warehousesProvider);
+    ref.watch(inventoryProvider);
+
     final destinations = <({String route, String label, IconData icon})>[
       (route: '/dashboard', label: 'Dashboard', icon: Icons.dashboard_rounded),
       if (!scoped) (route: '/categories', label: 'Categories', icon: Icons.category_rounded),

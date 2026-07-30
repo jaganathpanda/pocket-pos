@@ -21,6 +21,18 @@ class StoreAuthService {
   static const _prefsStoreId = 'active_store_id';
   static const _prefsAdmin = 'is_platform_admin';
 
+  // Firebase Auth / Firestore calls occasionally never complete on Android (a
+  // stalled reCAPTCHA / Play-Integrity handshake, or an unreachable backend),
+  // which would leave the login spinner hanging forever. Cap every network
+  // step so a stall surfaces as a clear error instead.
+  static const _netTimeout = Duration(seconds: 25);
+
+  Never _timedOut(String what) => throw Exception(
+        '$what timed out. Check your internet connection. If it keeps '
+        'happening, the app\'s SHA-1/SHA-256 fingerprints may need to be added '
+        'to this Firebase project.',
+      );
+
   // Firebase Auth is email-based; we synthesize a per-store email so the same
   // username can exist in different stores.
   String _emailFor(String storeId, String username) =>
@@ -51,10 +63,12 @@ class StoreAuthService {
     // Generated locally (no pre-read: the caller isn't signed in yet, and the
     // id space is large). Firestore's create rule guards against a real clash.
     final storeId = _generateStoreId();
-    final cred = await _auth.createUserWithEmailAndPassword(
-      email: _emailFor(storeId, ownerUsername),
-      password: password,
-    );
+    final cred = await _auth
+        .createUserWithEmailAndPassword(
+          email: _emailFor(storeId, ownerUsername),
+          password: password,
+        )
+        .timeout(_netTimeout, onTimeout: () => _timedOut('Creating your account'));
     final uid = cred.user!.uid;
 
     await _storeDoc(storeId).set({
@@ -94,23 +108,31 @@ class StoreAuthService {
     required String password,
   }) async {
     final id = storeId.trim().toUpperCase();
-    final cred = await _auth.signInWithEmailAndPassword(
-      email: _emailFor(id, username),
-      password: password,
-    );
+    final cred = await _auth
+        .signInWithEmailAndPassword(
+          email: _emailFor(id, username),
+          password: password,
+        )
+        .timeout(_netTimeout, onTimeout: () => _timedOut('Sign-in'));
     final session = await _sessionFor(id, cred.user!.uid, username.trim());
     await _persist(storeId: id, isAdmin: false);
     return session;
   }
 
   Future<StoreSession> _sessionFor(String storeId, String uid, String username) async {
-    final storeSnap = await _storeDoc(storeId).get();
+    final storeSnap = await _storeDoc(storeId)
+        .get()
+        .timeout(_netTimeout, onTimeout: () => _timedOut('Loading your store'));
     if (!storeSnap.exists) {
       await _auth.signOut();
       throw Exception('Store $storeId not found.');
     }
     final data = storeSnap.data()!;
-    final userSnap = await _storeDoc(storeId).collection('users').doc(uid).get();
+    final userSnap = await _storeDoc(storeId)
+        .collection('users')
+        .doc(uid)
+        .get()
+        .timeout(_netTimeout, onTimeout: () => _timedOut('Loading your profile'));
     return StoreSession(
       storeId: storeId,
       storeName: (data['name'] as String?) ?? storeId,

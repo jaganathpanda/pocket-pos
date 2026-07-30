@@ -1172,6 +1172,7 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                         itemBuilder: (context, index) {
                           final p = list[index];
                           return _AddProductTile(
+                            key: ValueKey(p.id),
                             product: p,
                             warehouseId: stockWarehouseId,
                             onAdd: () async {
@@ -1393,8 +1394,9 @@ class _CartStatusChip extends StatelessWidget {
 /// A product row in the Add-to-cart dialog. When [warehouseId] is provided
 /// (stock is tracked) it shows that warehouse's available stock and disables
 /// adding when the product is out of stock there.
-class _AddProductTile extends ConsumerWidget {
+class _AddProductTile extends ConsumerStatefulWidget {
   const _AddProductTile({
+    super.key,
     required this.product,
     required this.warehouseId,
     required this.onAdd,
@@ -1405,32 +1407,70 @@ class _AddProductTile extends ConsumerWidget {
   final Future<void> Function() onAdd;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_AddProductTile> createState() => _AddProductTileState();
+}
+
+class _AddProductTileState extends ConsumerState<_AddProductTile> {
+  // Cached once so rebuilds don't re-issue the stock read (which caused the
+  // tile to briefly flash "Out of stock" while the future re-resolved).
+  Future<double>? _stockFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.warehouseId != null) {
+      _stockFuture = ref.read(inventoryRepositoryProvider).availableStock(
+            productId: widget.product.id,
+            warehouseId: widget.warehouseId!,
+          );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final product = widget.product;
     final priceText = '₹${product.sellingPrice.toStringAsFixed(2)}';
     final meta = '${product.productCode}  •  ${product.unit}';
 
     // No stock tracking → always addable, no chip.
-    if (warehouseId == null) {
+    if (widget.warehouseId == null) {
       return ListTile(
         title: Text(product.name),
         subtitle: Text(meta),
         trailing: Text(priceText,
             style: const TextStyle(fontWeight: FontWeight.bold)),
-        onTap: onAdd,
+        onTap: widget.onAdd,
       );
     }
 
     return FutureBuilder<double>(
-      future: ref.read(inventoryRepositoryProvider).availableStock(
-            productId: product.id,
-            warehouseId: warehouseId!,
-          ),
+      future: _stockFuture,
       builder: (_, snap) {
+        // Until the stock read resolves, stay neutral — never render the red
+        // "Out of stock" state on the initial (null) frame.
+        final loading = snap.connectionState == ConnectionState.waiting;
         final available = snap.data ?? 0;
-        final out = available <= 0;
+        final out = !loading && available <= 0;
         final label = available % 1 == 0
             ? available.toInt().toString()
             : available.toStringAsFixed(2);
+
+        final Color chipBg;
+        final Color chipBorder;
+        final Color chipFg;
+        if (loading) {
+          chipBg = Colors.grey.shade100;
+          chipBorder = Colors.grey.shade300;
+          chipFg = Colors.grey.shade600;
+        } else if (out) {
+          chipBg = Colors.red.shade50;
+          chipBorder = Colors.red.shade300;
+          chipFg = Colors.red.shade700;
+        } else {
+          chipBg = Colors.green.shade50;
+          chipBorder = Colors.green.shade300;
+          chipFg = Colors.green.shade700;
+        }
 
         return ListTile(
           enabled: !out,
@@ -1441,25 +1481,31 @@ class _AddProductTile extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: out ? Colors.red.shade50 : Colors.green.shade50,
+                  color: chipBg,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                      color: out ? Colors.red.shade300 : Colors.green.shade300),
+                  border: Border.all(color: chipBorder),
                 ),
-                child: Text(
-                  out ? 'Out of stock' : 'Stock: $label',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: out ? Colors.red.shade700 : Colors.green.shade700,
-                  ),
-                ),
+                child: loading
+                    ? SizedBox(
+                        height: 12,
+                        width: 12,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 1.5, color: chipFg),
+                      )
+                    : Text(
+                        out ? 'Out of stock' : 'Stock: $label',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: chipFg,
+                        ),
+                      ),
               ),
             ],
           ),
           trailing: Text(priceText,
               style: const TextStyle(fontWeight: FontWeight.bold)),
-          onTap: out ? null : onAdd,
+          onTap: out ? null : widget.onAdd,
         );
       },
     );
