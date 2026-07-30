@@ -4,6 +4,10 @@ abstract class ProductRepository {
   Stream<List<Product>> watchAll();
   Future<List<Product>> search(String query);
 
+  /// Fetches products by their ids (e.g. to resolve the line items on a saved
+  /// invoice). Missing ids are simply omitted.
+  Future<List<Product>> getByIds(List<int> ids);
+
   /// Looks up a single active product by its barcode, falling back to an exact
   /// product-code match. Returns `null` when nothing matches.
   Future<Product?> findByBarcode(String code);

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/database/app_database.dart';
-import '../../../core/database/database_provider.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/utilities/money.dart';
 
@@ -28,9 +27,9 @@ class _CustomerDetailsPageState extends ConsumerState<CustomerDetailsPage> {
   }
 
   void _loadData() {
-    final db = ref.read(appDatabaseProvider);
-    _customerFuture = (db.select(db.customers)..where((c) => c.id.equals(widget.customerId))).getSingleOrNull();
-    _ordersFuture = ref.read(customerRepositoryProvider).getCustomerOrders(widget.customerId);
+    final customers = ref.read(customerRepositoryProvider);
+    _customerFuture = customers.getById(widget.customerId);
+    _ordersFuture = customers.getCustomerOrders(widget.customerId);
   }
 
   @override

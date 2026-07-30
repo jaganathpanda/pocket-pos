@@ -2,6 +2,7 @@ import '../../../core/database/app_database.dart';
 
 abstract class CustomerRepository {
   Future<Customer?> findByMobile(String mobile);
+  Future<Customer?> getById(int id);
   Future<int> createOrUpdate({
     required String mobile,
     required String name,

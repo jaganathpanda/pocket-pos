@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/firestore/firestore_ids.dart';
+import '../../../core/firestore/firestore_mappers.dart';
 import '../../../core/firestore/store_scope.dart';
 import '../domain/product_repository.dart';
 
@@ -42,6 +43,13 @@ class FirestoreProductRepository implements ProductRepository {
             (p.barcode?.toLowerCase().contains(q) ?? false))
         .take(30)
         .toList();
+  }
+
+  @override
+  Future<List<Product>> getByIds(List<int> ids) async {
+    if (ids.isEmpty) return const [];
+    final snaps = await Future.wait(ids.map((id) => _col.doc('$id').get()));
+    return snaps.where((s) => s.exists).map(productFromDoc).toList();
   }
 
   @override

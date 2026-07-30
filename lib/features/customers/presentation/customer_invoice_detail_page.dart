@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/database/app_database.dart';
-import '../../../core/database/database_provider.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/utilities/money.dart';
 
@@ -29,19 +28,17 @@ class _CustomerInvoiceDetailPageState extends ConsumerState<CustomerInvoiceDetai
 
   void _loadData() {
     final repo = ref.read(customerRepositoryProvider);
-    final db = ref.read(appDatabaseProvider);
+    final products = ref.read(productRepositoryProvider);
 
     _invoiceFuture = repo.getOrderDetails(widget.saleId);
 
     _invoiceFuture.then((invoice) {
       _customerFuture = invoice.sale.customerId != null
-          ? (db.select(db.customers)..where((c) => c.id.equals(invoice.sale.customerId!))).getSingleOrNull()
+          ? repo.getById(invoice.sale.customerId!)
           : Future.value(null);
 
       final productIds = invoice.items.map((i) => i.productId).toSet().toList();
-      _productsFuture = productIds.isEmpty
-          ? Future.value([])
-          : (db.select(db.products)..where((p) => p.id.isIn(productIds))).get();
+      _productsFuture = products.getByIds(productIds);
     });
   }
 

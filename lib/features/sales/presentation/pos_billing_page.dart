@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/app_database.dart';
-import '../../../core/database/database_provider.dart';
 import '../../../core/di/providers.dart';
 import '../../barcode/presentation/barcode_scanner_page.dart';
 import '../../barcode/presentation/hid_scanner_listener.dart';
@@ -831,10 +830,8 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
     final cart = await ref.read(salesRepositoryProvider).getCart(widget.cartId);
     Customer? customer;
     if (cart?.customerId != null) {
-      final db = ref.read(appDatabaseProvider);
-      customer = await (db.select(db.customers)
-            ..where((c) => c.id.equals(cart!.customerId!)))
-          .getSingleOrNull();
+      customer =
+          await ref.read(customerRepositoryProvider).getById(cart!.customerId!);
     }
 
     final customerMobileCtrl =
@@ -1091,7 +1088,7 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
     final cart = await ref.read(salesRepositoryProvider).getCart(widget.cartId);
     final int? stockWarehouseId = mode.tracksStock
         ? (cart?.warehouseId ??
-            await ref.read(appDatabaseProvider).defaultWarehouseId())
+            await ref.read(warehouseRepositoryProvider).defaultWarehouseId())
         : null;
 
     setState(() => _dialogOpen = true);
@@ -1314,11 +1311,8 @@ class _CartMetaText extends ConsumerWidget {
       return _wrap();
     }
 
-    final db = ref.read(appDatabaseProvider);
     return FutureBuilder<Customer?>(
-      future: (db.select(db.customers)
-            ..where((c) => c.id.equals(cart.customerId!)))
-          .getSingleOrNull(),
+      future: ref.read(customerRepositoryProvider).getById(cart.customerId!),
       builder: (_, snap) => _wrap(mobile: snap.data?.mobile),
     );
   }

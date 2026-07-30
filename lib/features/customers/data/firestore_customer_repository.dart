@@ -38,6 +38,20 @@ class FirestoreCustomerRepository implements CustomerRepository {
   }
 
   @override
+  Future<Customer?> getById(int id) async {
+    final doc = await _col.doc('$id').get();
+    final d = doc.data();
+    if (!doc.exists || d == null) return null;
+    return Customer(
+      id: int.tryParse(doc.id) ?? 0,
+      name: (d['name'] as String?) ?? '',
+      mobile: d['mobile'] as String?,
+      address: d['address'] as String?,
+      loyaltyPoints: (d['loyaltyPoints'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  @override
   Future<int> createOrUpdate({
     required String mobile,
     required String name,

@@ -23,6 +23,12 @@ class ProductRepositoryImpl implements ProductRepository {
   }
 
   @override
+  Future<List<Product>> getByIds(List<int> ids) {
+    if (ids.isEmpty) return Future.value(const []);
+    return (_db.select(_db.products)..where((p) => p.id.isIn(ids))).get();
+  }
+
+  @override
   Future<Product?> findByBarcode(String code) {
     final c = code.trim();
     if (c.isEmpty) return Future.value(null);

@@ -14,6 +14,11 @@ class CustomerRepositoryImpl implements CustomerRepository {
   }
 
   @override
+  Future<Customer?> getById(int id) {
+    return (_db.select(_db.customers)..where((c) => c.id.equals(id))).getSingleOrNull();
+  }
+
+  @override
   Future<int> createOrUpdate({
     required String mobile,
     required String name,
