@@ -42,9 +42,20 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "Pocket POS",
+    "url": "https://mypocketpos.in/",
     "applicationCategory": "BusinessApplication",
+    "applicationSubCategory": "Point of Sale and Billing Software",
     "operatingSystem": "Android, Web",
+    "image": "https://mypocketpos.in/icons/Icon-512.png",
     "description": "Offline-first point-of-sale and billing software with multi-counter billing, inventory and warehouse tracking, barcode scanning, GST invoices, credit ledger and cloud sync.",
+    "featureList": [
+      "Offline-first billing with automatic cloud sync",
+      "Barcode scanning (camera and USB/Bluetooth) and barcode generation",
+      "GST-ready invoices with automatic tax calculation",
+      "Inventory and multi-warehouse stock tracking with transfers",
+      "Multiple POS counters per store",
+      "Customer credit (udhar) ledger"
+    ],
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" },
     "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.8", "ratingCount": "1200" }
   }
@@ -57,6 +68,15 @@
     "url": "https://mypocketpos.in/",
     "logo": "https://mypocketpos.in/icons/Icon-512.png",
     "description": "Offline-first point-of-sale and billing software for retail businesses."
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Pocket POS",
+    "url": "https://mypocketpos.in/",
+    "publisher": { "@type": "Organization", "name": "Pocket POS", "logo": { "@type": "ImageObject", "url": "https://mypocketpos.in/icons/Icon-512.png" } }
   }
   </script>
   <script type="application/ld+json">
@@ -171,6 +191,7 @@
           <a class="link" href="#features">Features</a>
           <a class="link" href="#business">Businesses</a>
           <a class="link" href="#how">How it works</a>
+          <a class="link" href="/blog/">Blog</a>
           <div class="nav-cta">
             <button class="btn btn-ghost" onclick="enterApp()">Login</button>
             <button class="btn btn-primary" onclick="enterApp()">Register store</button>
@@ -291,7 +312,7 @@
       <div class="wrap foot">
         <div class="logo" style="font-size:16px"><span class="dot" style="width:24px;height:24px;font-size:12px">🛒</span> Pocket POS</div>
         <div>© 2026 Pocket POS · Offline-first POS &amp; billing for every business</div>
-        <div><a href="#" onclick="enterApp();return false;">Login</a> · <a href="#" onclick="enterApp();return false;">Register</a></div>
+        <div><a href="/blog/">Blog</a> · <a href="#" onclick="enterApp();return false;">Login</a> · <a href="#" onclick="enterApp();return false;">Register</a></div>
       </div>
     </footer>
   </div>
@@ -307,6 +328,11 @@
     function enterApp() {
       var l = document.getElementById('landing');
       if (l) l.style.display = 'none';
+    }
+    // Deep-link from the blog / marketing pages: "/?app=1" opens the app
+    // directly instead of showing the landing overlay first.
+    if (window.location.search.indexOf('app=1') !== -1) {
+      enterApp();
     }
   </script>
 </body>

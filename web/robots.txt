@@ -1,9 +1,10 @@
 # Pocket POS — allow all crawlers
 User-agent: *
 Allow: /
+Allow: /blog/
 
 # Block the internal app routes (login/register/dashboard etc.) from indexing;
-# the marketing landing page at "/" is what we want ranked.
+# the marketing landing page at "/" and the /blog/ articles are what we want ranked.
 Disallow: /store-login
 Disallow: /store-register
 Disallow: /admin-login
