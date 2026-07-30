@@ -39,9 +39,9 @@ class FirestoreCustomerRepository implements CustomerRepository {
 
   @override
   Future<Customer?> getById(int id) async {
-    final doc = await _col.doc('$id').get();
-    final d = doc.data();
-    if (!doc.exists || d == null) return null;
+    final doc = await cacheSafeDoc(_col, '$id');
+    final d = doc?.data();
+    if (doc == null || !doc.exists || d == null) return null;
     return Customer(
       id: int.tryParse(doc.id) ?? 0,
       name: (d['name'] as String?) ?? '',

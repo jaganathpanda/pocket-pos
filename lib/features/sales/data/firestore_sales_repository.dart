@@ -97,8 +97,8 @@ class FirestoreSalesRepository implements SalesRepository {
 
   @override
   Future<Cart?> getCart(int cartId) async {
-    final doc = await _carts.doc('$cartId').get();
-    return doc.exists ? cartFromDoc(doc) : null;
+    final doc = await cacheSafeDoc(_carts, '$cartId');
+    return (doc != null && doc.exists) ? cartFromDoc(doc) : null;
   }
 
   @override
@@ -136,8 +136,10 @@ class FirestoreSalesRepository implements SalesRepository {
 
   @override
   Future<void> addItem({required int cartId, required int productId}) async {
-    final productDoc = await _products.doc('$productId').get();
-    if (!productDoc.exists) throw Exception('Product not found');
+    final productDoc = await cacheSafeDoc(_products, '$productId');
+    if (productDoc == null || !productDoc.exists) {
+      throw Exception('Product not found');
+    }
     final product = productFromDoc(productDoc);
 
     final cart = await getCart(cartId);
@@ -175,8 +177,8 @@ class FirestoreSalesRepository implements SalesRepository {
   @override
   Future<void> updateItemQuantity(int cartItemId, double quantity) async {
     if (quantity <= 0) return removeItem(cartItemId);
-    final doc = await _cartItems.doc('$cartItemId').get();
-    if (!doc.exists) throw Exception('Cart item not found');
+    final doc = await cacheSafeDoc(_cartItems, '$cartItemId');
+    if (doc == null || !doc.exists) throw Exception('Cart item not found');
     final item = cartItemFromDoc(doc);
     final cart = await getCart(item.cartId);
     final stock = await _stockContext(cart?.warehouseId);
@@ -197,8 +199,8 @@ class FirestoreSalesRepository implements SalesRepository {
     String? referenceNo,
   }) async {
     if (amount <= 0) throw Exception('Payment amount must be greater than 0');
-    final saleDoc = await _sales.doc('$saleId').get();
-    if (!saleDoc.exists) throw Exception('Sale not found');
+    final saleDoc = await cacheSafeDoc(_sales, '$saleId');
+    if (saleDoc == null || !saleDoc.exists) throw Exception('Sale not found');
     final sale = saleFromDoc(saleDoc);
 
     final payments = await _payments.where('saleId', isEqualTo: saleId).get();

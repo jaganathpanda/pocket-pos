@@ -32,8 +32,9 @@ class FirestoreWarehouseRepository implements WarehouseRepository {
 
   @override
   Future<InventoryMode> getMode() async {
-    final snap = await _modeDoc.get();
-    return snap.exists
+    final snap = await cacheSafeDoc(
+        storeCollection(_db, _storeId, 'settings'), 'inventory');
+    return (snap != null && snap.exists)
         ? InventoryMode.fromValue((snap.data()?['mode'] as String?) ?? 'single')
         : InventoryMode.single;
   }

@@ -4,6 +4,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/firestore/firestore_ids.dart';
 import '../../../core/firestore/firestore_mappers.dart';
 import '../../../core/firestore/store_scope.dart';
+import '../../warehouse/data/firestore_warehouse_repository.dart';
 import '../domain/product_repository.dart';
 
 /// Store-scoped Firestore implementation of [ProductRepository].
@@ -48,8 +49,12 @@ class FirestoreProductRepository implements ProductRepository {
   @override
   Future<List<Product>> getByIds(List<int> ids) async {
     if (ids.isEmpty) return const [];
-    final snaps = await Future.wait(ids.map((id) => _col.doc('$id').get()));
-    return snaps.where((s) => s.exists).map(productFromDoc).toList();
+    final snaps = await Future.wait(ids.map((id) => cacheSafeDoc(_col, '$id')));
+    return snaps
+        .whereType<DocumentSnapshot<Map<String, dynamic>>>()
+        .where((s) => s.exists)
+        .map(productFromDoc)
+        .toList();
   }
 
   @override
@@ -78,9 +83,28 @@ class FirestoreProductRepository implements ProductRepository {
     required double purchasePrice,
     required double taxPercent,
     String unit = 'piece',
-  }) {
+  }) async {
     final id = newIntId();
-    return _col.doc('$id').set(_data(
+
+    // Resolve which warehouses need an opening stock row. Done before the batch
+    // because it may itself create a default warehouse when none exists.
+    final warehouseRepo = FirestoreWarehouseRepository(_db, _storeId);
+    final mode = await warehouseRepo.getMode();
+    final warehouseIds = <int>[];
+    if (mode.tracksStock) {
+      if (mode.usesWarehouses) {
+        final active = await warehouseRepo.activeWarehouses();
+        warehouseIds.addAll(active.map((w) => w.id));
+      }
+      if (warehouseIds.isEmpty) {
+        warehouseIds.add(await warehouseRepo.defaultWarehouseId());
+      }
+    }
+
+    final batch = _db.batch();
+    batch.set(
+        _col.doc('$id'),
+        _data(
           name: name,
           productCode: productCode,
           barcode: barcode,
@@ -90,6 +114,24 @@ class FirestoreProductRepository implements ProductRepository {
           taxPercent: taxPercent,
           unit: unit,
         )..['createdAt'] = FieldValue.serverTimestamp());
+
+    // An opening inventory row (0 stock) per warehouse so the product shows up
+    // in the Inventory screen and can be stocked via purchases / adjustments.
+    final inventory = storeCollection(_db, _storeId, 'inventory');
+    for (final wid in warehouseIds) {
+      final invId = newIntId();
+      batch.set(inventory.doc('$invId'), {
+        'productId': id,
+        'variantId': null,
+        'warehouseId': wid,
+        'currentStock': 0.0,
+        'availableStock': 0.0,
+        'lowStockThreshold': 5.0,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
+
+    await batch.commit();
   }
 
   @override
