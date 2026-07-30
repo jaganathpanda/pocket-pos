@@ -20,7 +20,13 @@ abstract class ProductRepository {
     required double purchasePrice,
     required double taxPercent,
     String unit,
+    double openingStock,
   });
+
+  /// Creates an opening inventory row (0 stock) for every active product that
+  /// doesn't already have one, so products added before stock rows were seeded
+  /// show up in the Inventory screen. Returns how many rows were created.
+  Future<int> backfillMissingInventoryRows();
   Future<void> update({
     required int id,
     required String name,

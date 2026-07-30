@@ -50,6 +50,7 @@ class ProductRepositoryImpl implements ProductRepository {
     required double purchasePrice,
     required double taxPercent,
     String unit = 'piece',
+    double openingStock = 0,
   }) async {
     final id = await _db.into(_db.products).insert(
           ProductsCompanion.insert(
@@ -64,15 +65,41 @@ class ProductRepositoryImpl implements ProductRepository {
           ),
         );
 
+    final qty = openingStock > 0 ? openingStock : 0.0;
     await _db.into(_db.inventory).insert(
           InventoryCompanion.insert(
             productId: id,
             variantId: const Value(null),
             warehouseId: Value(await _db.defaultWarehouseId()),
-            currentStock: const Value(0),
-            availableStock: const Value(0),
+            currentStock: Value(qty),
+            availableStock: Value(qty),
           ),
         );
+  }
+
+  @override
+  Future<int> backfillMissingInventoryRows() async {
+    final products = await (_db.select(_db.products)
+          ..where((p) => p.isActive.equals(true)))
+        .get();
+    final rows = await _db.select(_db.inventory).get();
+    final covered = rows.map((r) => r.productId).toSet();
+    final defaultWarehouseId = await _db.defaultWarehouseId();
+    var created = 0;
+    for (final p in products) {
+      if (covered.contains(p.id)) continue;
+      await _db.into(_db.inventory).insert(
+            InventoryCompanion.insert(
+              productId: p.id,
+              variantId: const Value(null),
+              warehouseId: Value(defaultWarehouseId),
+              currentStock: const Value(0),
+              availableStock: const Value(0),
+            ),
+          );
+      created++;
+    }
+    return created;
   }
 
   @override

@@ -27,6 +27,23 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
     return defaultWh.id;
   }
 
+  Future<void> _backfillRows() async {
+    try {
+      final created =
+          await ref.read(productRepositoryProvider).backfillMissingInventoryRows();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(created == 0
+            ? 'All products already have stock rows.'
+            : 'Added stock rows for $created product(s).'),
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Sync failed: $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final mode = ref.watch(inventoryModeProvider).valueOrNull ?? InventoryMode.single;
@@ -72,6 +89,11 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
             }),
             icon: Icon(_bulkMode ? Icons.close : Icons.checklist_rounded),
             label: Text(_bulkMode ? 'Cancel Bulk' : 'Bulk Update'),
+          ),
+          IconButton(
+            tooltip: 'Add stock rows for any products missing from Inventory',
+            icon: const Icon(Icons.sync_rounded),
+            onPressed: _backfillRows,
           ),
           const SizedBox(width: 8),
         ],

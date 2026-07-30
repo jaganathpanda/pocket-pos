@@ -5,6 +5,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/di/providers.dart';
 import '../../barcode/presentation/barcode_scanner_page.dart';
 import '../../barcode/presentation/hid_scanner_listener.dart';
+import '../../warehouse/domain/inventory_mode.dart';
 
 class ProductPage extends ConsumerStatefulWidget {
   const ProductPage({super.key});
@@ -158,8 +159,16 @@ class _ProductPageState extends ConsumerState<ProductPage> {
     final purchase = TextEditingController(text: (product?.purchasePrice ?? 0).toStringAsFixed(2));
     final tax = TextEditingController(text: (product?.taxPercent ?? 0).toStringAsFixed(1));
     final unit = TextEditingController(text: product?.unit ?? 'piece');
+    final opening = TextEditingController(text: '0');
     final formKey = GlobalKey<FormState>();
     int? selectedCategoryId = product?.categoryId;
+
+    // Opening stock is only meaningful for a brand-new product in a
+    // stock-tracking mode.
+    final tracksStock =
+        (ref.read(inventoryModeProvider).valueOrNull ?? InventoryMode.single)
+            .tracksStock;
+    final showOpeningStock = !isEdit && tracksStock;
 
     await showDialog<void>(
       context: context,
@@ -222,6 +231,10 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                     const SizedBox(width: 8),
                     Expanded(child: _field(unit, 'Unit (piece/kg/ltr...)')),
                   ]),
+                  if (showOpeningStock) ...[
+                    const SizedBox(height: 8),
+                    _field(opening, 'Opening stock', numeric: true),
+                  ],
                 ],
               ),
             ),
@@ -258,6 +271,8 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                     purchasePrice: double.tryParse(purchase.text) ?? 0,
                     taxPercent: double.tryParse(tax.text) ?? 0,
                     unit: unitVal,
+                    openingStock:
+                        showOpeningStock ? (double.tryParse(opening.text) ?? 0) : 0,
                   );
                 }
                 if (ctx.mounted) Navigator.pop(ctx);

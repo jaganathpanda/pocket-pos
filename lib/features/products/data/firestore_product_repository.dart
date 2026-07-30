@@ -83,6 +83,7 @@ class FirestoreProductRepository implements ProductRepository {
     required double purchasePrice,
     required double taxPercent,
     String unit = 'piece',
+    double openingStock = 0,
   }) async {
     final id = newIntId();
 
@@ -91,6 +92,7 @@ class FirestoreProductRepository implements ProductRepository {
     final warehouseRepo = FirestoreWarehouseRepository(_db, _storeId);
     final mode = await warehouseRepo.getMode();
     final warehouseIds = <int>[];
+    int defaultWarehouseId = 0;
     if (mode.tracksStock) {
       if (mode.usesWarehouses) {
         final active = await warehouseRepo.activeWarehouses();
@@ -99,6 +101,7 @@ class FirestoreProductRepository implements ProductRepository {
       if (warehouseIds.isEmpty) {
         warehouseIds.add(await warehouseRepo.defaultWarehouseId());
       }
+      defaultWarehouseId = await warehouseRepo.defaultWarehouseId();
     }
 
     final batch = _db.batch();
@@ -115,23 +118,81 @@ class FirestoreProductRepository implements ProductRepository {
           unit: unit,
         )..['createdAt'] = FieldValue.serverTimestamp());
 
-    // An opening inventory row (0 stock) per warehouse so the product shows up
-    // in the Inventory screen and can be stocked via purchases / adjustments.
+    // An opening inventory row per warehouse so the product shows up in the
+    // Inventory screen and can be stocked via purchases / adjustments. Any
+    // opening quantity goes to the default warehouse; the rest start at 0.
     final inventory = storeCollection(_db, _storeId, 'inventory');
     for (final wid in warehouseIds) {
+      final qty = (wid == defaultWarehouseId && openingStock > 0)
+          ? openingStock
+          : 0.0;
       final invId = newIntId();
       batch.set(inventory.doc('$invId'), {
         'productId': id,
         'variantId': null,
         'warehouseId': wid,
-        'currentStock': 0.0,
-        'availableStock': 0.0,
+        'currentStock': qty,
+        'availableStock': qty,
         'lowStockThreshold': 5.0,
         'updatedAt': FieldValue.serverTimestamp(),
       });
     }
 
     await batch.commit();
+  }
+
+  @override
+  Future<int> backfillMissingInventoryRows() async {
+    final warehouseRepo = FirestoreWarehouseRepository(_db, _storeId);
+    final mode = await warehouseRepo.getMode();
+    if (!mode.tracksStock) return 0;
+
+    final warehouseIds = <int>[];
+    if (mode.usesWarehouses) {
+      final active = await warehouseRepo.activeWarehouses();
+      warehouseIds.addAll(active.map((w) => w.id));
+    }
+    if (warehouseIds.isEmpty) {
+      warehouseIds.add(await warehouseRepo.defaultWarehouseId());
+    }
+
+    final inventory = storeCollection(_db, _storeId, 'inventory');
+    final invSnap = await inventory.get();
+    // Product ids that already have at least one inventory row.
+    final covered = <int>{
+      for (final d in invSnap.docs) (d.data()['productId'] as num?)?.toInt() ?? -1
+    };
+
+    final prodSnap = await _col.where('isActive', isEqualTo: true).get();
+    var created = 0;
+    var batch = _db.batch();
+    var ops = 0;
+    for (final p in prodSnap.docs) {
+      final pid = int.tryParse(p.id) ?? 0;
+      if (covered.contains(pid)) continue;
+      for (final wid in warehouseIds) {
+        final invId = newIntId();
+        batch.set(inventory.doc('$invId'), {
+          'productId': pid,
+          'variantId': null,
+          'warehouseId': wid,
+          'currentStock': 0.0,
+          'availableStock': 0.0,
+          'lowStockThreshold': 5.0,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        created++;
+        ops++;
+        // Stay under Firestore's 500-op batch limit.
+        if (ops >= 450) {
+          await batch.commit();
+          batch = _db.batch();
+          ops = 0;
+        }
+      }
+    }
+    if (ops > 0) await batch.commit();
+    return created;
   }
 
   @override
