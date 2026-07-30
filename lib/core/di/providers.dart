@@ -19,6 +19,8 @@ import '../../features/reports/data/firestore_reports_repository.dart';
 import '../../features/sales/data/firestore_sales_repository.dart';
 import '../../features/sales/domain/sales_models.dart';
 import '../../features/sales/domain/sales_repository.dart';
+import '../../features/staff/data/firestore_staff_repository.dart';
+import '../../features/staff/domain/staff_repository.dart';
 import '../../features/store/presentation/store_auth_controller.dart';
 import '../../features/suppliers/data/firestore_supplier_repository.dart';
 import '../../features/suppliers/domain/supplier_repository.dart';
@@ -81,6 +83,11 @@ final customerRepositoryProvider = Provider<CustomerRepository>((ref) {
 final customersProvider = StreamProvider<List<Customer>>((ref) {
   if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
   return ref.watch(customerRepositoryProvider).watchAll();
+});
+
+final staffRepositoryProvider = Provider<StaffRepository>((ref) {
+  return FirestoreStaffRepository(
+      ref.watch(firestoreProvider), ref.watch(activeStoreIdProvider) ?? '');
 });
 
 final productRepositoryProvider = Provider<ProductRepository>((ref) {

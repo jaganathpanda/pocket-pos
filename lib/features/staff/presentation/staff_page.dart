@@ -1,13 +1,13 @@
 import 'dart:math' as math;
 
-import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/database/app_database.dart';
-import '../../../core/database/database_provider.dart';
+import '../../../core/di/providers.dart';
 import '../../../core/utilities/money.dart';
+import '../domain/staff_repository.dart';
 
 class StaffPage extends ConsumerStatefulWidget {
   const StaffPage({super.key});
@@ -45,7 +45,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
 
   @override
   Widget build(BuildContext context) {
-    final db = ref.watch(appDatabaseProvider);
+    final repo = ref.watch(staffRepositoryProvider);
 
     return DefaultTabController(
       length: 3,
@@ -62,21 +62,18 @@ class _StaffPageState extends ConsumerState<StaffPage> {
         ),
         body: TabBarView(
           children: [
-            _buildRegistrationTab(context, db),
-            _buildAttendanceTab(context, db),
-            _buildPayrollTab(context, db),
+            _buildRegistrationTab(context, repo),
+            _buildAttendanceTab(context, repo),
+            _buildPayrollTab(context, repo),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildRegistrationTab(BuildContext context, AppDatabase db) {
+  Widget _buildRegistrationTab(BuildContext context, StaffRepository repo) {
     return StreamBuilder<List<Staff>>(
-      stream: ((db.select(db.staffs)
-            ..where((s) => s.isActive.equals(true))
-            ..orderBy([(s) => OrderingTerm.desc(s.createdAt)]))
-          .watch()),
+      stream: repo.watchActiveStaff(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -135,7 +132,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: FilledButton.icon(
-                        onPressed: () => _registerStaff(context, db),
+                        onPressed: () => _registerStaff(context, repo),
                         icon: const Icon(Icons.person_add_alt_rounded),
                         label: const Text('Register Staff'),
                       ),
@@ -152,7 +149,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
                       style: TextStyle(fontWeight: FontWeight.w700)),
                 ),
                 TextButton.icon(
-                  onPressed: () => _showInactiveStaffDialog(context, db),
+                  onPressed: () => _showInactiveStaffDialog(context, repo),
                   icon: const Icon(Icons.person_search_rounded),
                   label: const Text('Find Inactive'),
                 ),
@@ -190,12 +187,12 @@ class _StaffPageState extends ConsumerState<StaffPage> {
                             children: [
                               IconButton(
                                 tooltip: 'Edit Staff',
-                                onPressed: () => _showEditStaffDialog(context, db, s),
+                                onPressed: () => _showEditStaffDialog(context, repo, s),
                                 icon: const Icon(Icons.edit_outlined),
                               ),
                               IconButton(
                                 tooltip: 'Deactivate Staff',
-                                onPressed: () => _deactivateStaff(context, db, s),
+                                onPressed: () => _deactivateStaff(context, repo, s),
                                 icon: const Icon(Icons.person_off_outlined),
                               ),
                             ],
@@ -223,7 +220,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
     );
   }
 
-  Widget _buildAttendanceTab(BuildContext context, AppDatabase db) {
+  Widget _buildAttendanceTab(BuildContext context, StaffRepository repo) {
     final dayStart = DateTime(
       _attendanceDate.year,
       _attendanceDate.month,
@@ -238,7 +235,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
     final allowInactiveForSelectedDate = dayStart.isBefore(todayStart);
 
     return StreamBuilder<List<Staff>>(
-      stream: (db.select(db.staffs)..orderBy([(s) => OrderingTerm.asc(s.name)])).watch(),
+      stream: repo.watchAllStaff(),
       builder: (context, staffSnapshot) {
         if (!staffSnapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -257,11 +254,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
         }
 
         return FutureBuilder<List<StaffAttendance>>(
-          future: (db.select(db.staffAttendances)
-                ..where((a) => a.attendanceDate.isBiggerOrEqual(Variable(dayStart)))
-                ..where((a) => a.attendanceDate.isSmallerThan(Variable(dayEnd)))
-                ..orderBy([(a) => OrderingTerm.asc(a.staffId)]))
-              .get(),
+          future: repo.attendanceForDay(dayStart, dayEnd),
           builder: (context, attendanceSnapshot) {
             final attendanceRows = attendanceSnapshot.data ?? const <StaffAttendance>[];
             final staffById = {for (final s in staffs) s.id: s};
@@ -363,7 +356,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
                           child: FilledButton.icon(
                             onPressed: selectableStaffs.isEmpty
                                 ? null
-                                : () => _markAttendance(context, db),
+                                : () => _markAttendance(context, repo),
                             icon: const Icon(Icons.fact_check_outlined),
                             label: const Text('Save Attendance'),
                           ),
@@ -425,34 +418,25 @@ class _StaffPageState extends ConsumerState<StaffPage> {
     );
   }
 
-  Widget _buildPayrollTab(BuildContext context, AppDatabase db) {
+  Widget _buildPayrollTab(BuildContext context, StaffRepository repo) {
     final monthStart = DateTime(_payrollMonth.year, _payrollMonth.month);
     final monthEnd = DateTime(_payrollMonth.year, _payrollMonth.month + 1);
 
     return FutureBuilder<List<StaffPayroll>>(
-      future: (db.select(db.staffPayrolls)
-            ..where((p) => p.payrollYear.equals(_payrollMonth.year))
-            ..where((p) => p.payrollMonth.equals(_payrollMonth.month))
-            ..orderBy([(p) => OrderingTerm.asc(p.staffId)]))
-          .get(),
+      future: repo.payrollsForMonth(_payrollMonth.year, _payrollMonth.month),
       builder: (context, payrollSnapshot) {
         final payrollRows = payrollSnapshot.data ?? const <StaffPayroll>[];
         final payrollIds = payrollRows.map((p) => p.id).toList(growable: false);
 
         return FutureBuilder<List<Staff>>(
-          future: (db.select(db.staffs)).get(),
+          future: repo.allStaff(),
           builder: (context, staffSnapshot) {
             final staffs = staffSnapshot.data ?? const <Staff>[];
             final activeStaffs = staffs.where((s) => s.isActive).toList(growable: false);
             final staffById = {for (final s in staffs) s.id: s};
 
             return FutureBuilder<List<StaffSalaryPayment>>(
-              future: payrollIds.isEmpty
-                  ? Future.value(const <StaffSalaryPayment>[])
-                  : (db.select(db.staffSalaryPayments)
-                        ..where((sp) => sp.payrollId.isIn(payrollIds))
-                        ..orderBy([(sp) => OrderingTerm.desc(sp.paidOn)]))
-                      .get(),
+              future: repo.paymentsForPayrolls(payrollIds),
               builder: (context, paymentSnapshot) {
                 final payments = paymentSnapshot.data ?? const <StaffSalaryPayment>[];
                 final paymentsByPayrollId = <int, List<StaffSalaryPayment>>{};
@@ -511,7 +495,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
                                     ? null
                                     : () => _generatePayroll(
                                           context,
-                                          db,
+                                          repo,
                                           activeStaffs,
                                           monthStart,
                                           monthEnd,
@@ -574,7 +558,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
                                       if (value == 'pay') {
                                         _recordPayrollPayment(
                                           context,
-                                          db,
+                                          repo,
                                           p,
                                           staffById[p.staffId],
                                         );
@@ -646,7 +630,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
 
   Future<void> _showEditStaffDialog(
     BuildContext context,
-    AppDatabase db,
+    StaffRepository repo,
     Staff staff,
   ) async {
     final nameCtrl = TextEditingController(text: staff.name);
@@ -730,13 +714,12 @@ class _StaffPageState extends ConsumerState<StaffPage> {
       return;
     }
 
-    await (db.update(db.staffs)..where((s) => s.id.equals(staff.id))).write(
-      StaffsCompanion(
-        name: Value(name),
-        age: Value(age),
-        designation: Value(designation),
-        monthlySalary: Value(salary),
-      ),
+    await repo.updateStaff(
+      id: staff.id,
+      name: name,
+      age: age,
+      designation: designation,
+      monthlySalary: salary,
     );
 
     if (context.mounted) {
@@ -748,7 +731,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
 
   Future<void> _deactivateStaff(
     BuildContext context,
-    AppDatabase db,
+    StaffRepository repo,
     Staff staff,
   ) async {
     final confirm = await showDialog<bool>(
@@ -771,9 +754,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
 
     if (confirm != true) return;
 
-    await (db.update(db.staffs)..where((s) => s.id.equals(staff.id))).write(
-      const StaffsCompanion(isActive: Value(false)),
-    );
+    await repo.setStaffActive(staff.id, false);
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -784,7 +765,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
 
   Future<void> _showInactiveStaffDialog(
     BuildContext context,
-    AppDatabase db,
+    StaffRepository repo,
   ) async {
     final searchCtrl = TextEditingController();
 
@@ -810,10 +791,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
                 const SizedBox(height: 12),
                 Flexible(
                   child: StreamBuilder<List<Staff>>(
-                    stream: ((db.select(db.staffs)
-                          ..where((s) => s.isActive.equals(false))
-                          ..orderBy([(s) => OrderingTerm.desc(s.createdAt)]))
-                        .watch()),
+                    stream: repo.watchInactiveStaff(),
                     builder: (context, snapshot) {
                       final rows = snapshot.data ?? const <Staff>[];
                       final q = searchCtrl.text.trim().toLowerCase();
@@ -855,11 +833,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
                                   DataCell(
                                     TextButton(
                                       onPressed: () async {
-                                        await (db.update(db.staffs)
-                                              ..where((x) => x.id.equals(s.id)))
-                                            .write(const StaffsCompanion(
-                                          isActive: Value(true),
-                                        ));
+                                        await repo.setStaffActive(s.id, true);
                                         if (ctx.mounted) {
                                           ScaffoldMessenger.of(ctx).showSnackBar(
                                             const SnackBar(content: Text('Staff reactivated.')),
@@ -997,7 +971,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
     );
   }
 
-  Future<void> _registerStaff(BuildContext context, AppDatabase db) async {
+  Future<void> _registerStaff(BuildContext context, StaffRepository repo) async {
     final name = _nameCtrl.text.trim();
     final age = int.tryParse(_ageCtrl.text.trim()) ?? 0;
     final designation = _designationCtrl.text.trim();
@@ -1010,14 +984,12 @@ class _StaffPageState extends ConsumerState<StaffPage> {
       return;
     }
 
-    await db.into(db.staffs).insert(
-          StaffsCompanion.insert(
-            name: name,
-            age: age,
-            designation: designation,
-            monthlySalary: salary,
-          ),
-        );
+    await repo.addStaff(
+      name: name,
+      age: age,
+      designation: designation,
+      monthlySalary: salary,
+    );
 
     _nameCtrl.clear();
     _ageCtrl.clear();
@@ -1031,7 +1003,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
     }
   }
 
-  Future<void> _markAttendance(BuildContext context, AppDatabase db) async {
+  Future<void> _markAttendance(BuildContext context, StaffRepository repo) async {
     final staffId = _selectedAttendanceStaffId;
     if (staffId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1046,26 +1018,11 @@ class _StaffPageState extends ConsumerState<StaffPage> {
       _attendanceDate.day,
     );
 
-    final existing = await (db.select(db.staffAttendances)
-          ..where((a) => a.staffId.equals(staffId))
-          ..where((a) => a.attendanceDate.equals(dateOnly)))
-        .getSingleOrNull();
-
-    if (existing == null) {
-      await db.into(db.staffAttendances).insert(
-            StaffAttendancesCompanion.insert(
-              staffId: staffId,
-              attendanceDate: dateOnly,
-              status: Value(_attendanceStatus),
-            ),
-          );
-    } else {
-      await (db.update(db.staffAttendances)..where((a) => a.id.equals(existing.id))).write(
-        StaffAttendancesCompanion(
-          status: Value(_attendanceStatus),
-        ),
-      );
-    }
+    await repo.markAttendance(
+      staffId: staffId,
+      date: dateOnly,
+      status: _attendanceStatus,
+    );
 
     setState(() {
       _attendancePage = 0;
@@ -1080,7 +1037,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
 
   Future<void> _generatePayroll(
     BuildContext context,
-    AppDatabase db,
+    StaffRepository repo,
     List<Staff> staffs,
     DateTime monthStart,
     DateTime monthEnd,
@@ -1088,11 +1045,8 @@ class _StaffPageState extends ConsumerState<StaffPage> {
     final daysInMonth = DateUtils.getDaysInMonth(monthStart.year, monthStart.month);
 
     for (final staff in staffs) {
-      final attendance = await (db.select(db.staffAttendances)
-            ..where((a) => a.staffId.equals(staff.id))
-        ..where((a) => a.attendanceDate.isBiggerOrEqual(Variable(monthStart)))
-        ..where((a) => a.attendanceDate.isSmallerThan(Variable(monthEnd))))
-          .get();
+      final attendance =
+          await repo.attendanceForRange(staff.id, monthStart, monthEnd);
 
       double presentDays = 0;
       for (final row in attendance) {
@@ -1106,32 +1060,14 @@ class _StaffPageState extends ConsumerState<StaffPage> {
       final absentDays = (daysInMonth - presentDays).clamp(0, daysInMonth).toDouble();
       final payableAmount = (staff.monthlySalary / daysInMonth) * presentDays;
 
-      final existing = await (db.select(db.staffPayrolls)
-            ..where((p) => p.staffId.equals(staff.id))
-            ..where((p) => p.payrollMonth.equals(monthStart.month))
-            ..where((p) => p.payrollYear.equals(monthStart.year)))
-          .getSingleOrNull();
-
-      if (existing == null) {
-        await db.into(db.staffPayrolls).insert(
-              StaffPayrollsCompanion.insert(
-                staffId: staff.id,
-                payrollMonth: monthStart.month,
-                payrollYear: monthStart.year,
-                presentDays: Value(presentDays),
-                absentDays: Value(absentDays),
-                payableAmount: Value(payableAmount),
-              ),
-            );
-      } else {
-        await (db.update(db.staffPayrolls)..where((p) => p.id.equals(existing.id))).write(
-          StaffPayrollsCompanion(
-            presentDays: Value(presentDays),
-            absentDays: Value(absentDays),
-            payableAmount: Value(payableAmount),
-          ),
-        );
-      }
+      await repo.upsertPayroll(
+        staffId: staff.id,
+        month: monthStart.month,
+        year: monthStart.year,
+        presentDays: presentDays,
+        absentDays: absentDays,
+        payableAmount: payableAmount,
+      );
     }
 
     setState(() {
@@ -1147,7 +1083,7 @@ class _StaffPageState extends ConsumerState<StaffPage> {
 
   Future<void> _recordPayrollPayment(
     BuildContext context,
-    AppDatabase db,
+    StaffRepository repo,
     StaffPayroll payroll,
     Staff? staff,
   ) async {
@@ -1214,36 +1150,11 @@ class _StaffPageState extends ConsumerState<StaffPage> {
       return;
     }
 
-    final existingRows = await (db.select(db.staffSalaryPayments)
-          ..where((sp) => sp.payrollId.equals(payroll.id)))
-        .get();
-    final legacyCarry = existingRows.isEmpty ? payroll.paidAmount : 0;
-
-    await db.into(db.staffSalaryPayments).insert(
-          StaffSalaryPaymentsCompanion.insert(
-            staffId: staff.id,
-            payrollId: payroll.id,
-            amount: paymentAmount,
-            note: Value(noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim()),
-          ),
-        );
-
-    final allRows = await (db.select(db.staffSalaryPayments)
-          ..where((sp) => sp.payrollId.equals(payroll.id)))
-        .get();
-    final totalPaid =
-        legacyCarry + allRows.fold<double>(0, (sum, p) => sum + p.amount);
-
-    final status = totalPaid >= payroll.payableAmount
-        ? 'paid'
-        : (totalPaid <= 0 ? 'unpaid' : 'partial');
-
-    await (db.update(db.staffPayrolls)..where((p) => p.id.equals(payroll.id))).write(
-      StaffPayrollsCompanion(
-        paidAmount: Value(totalPaid),
-        paidAt: Value(DateTime.now()),
-        status: Value(status),
-      ),
+    await repo.recordSalaryPayment(
+      payroll: payroll,
+      staffId: staff.id,
+      amount: paymentAmount,
+      note: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim(),
     );
 
     setState(() {});
