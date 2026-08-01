@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/seed/demo_business_type.dart';
+import '../../../core/notifications/notification_service.dart';
 import '../data/store_auth_service.dart';
 import '../domain/store_models.dart';
 
@@ -10,7 +12,10 @@ final storeAuthServiceProvider =
 
 final storeAuthControllerProvider =
     StateNotifierProvider<StoreAuthController, StoreAuthState>((ref) {
-  return StoreAuthController(ref.watch(storeAuthServiceProvider));
+  return StoreAuthController(
+    ref.watch(storeAuthServiceProvider),
+    ref.watch(notificationServiceProvider),
+  );
 });
 
 /// Convenience: the active store session (null unless signed into a store).
@@ -24,12 +29,13 @@ final activeStoreIdProvider = Provider<String?>((ref) {
 });
 
 class StoreAuthController extends StateNotifier<StoreAuthState> {
-  StoreAuthController(this._service)
+  StoreAuthController(this._service, this._notifications)
       : super(const StoreAuthState(stage: StoreAuthStage.unknown)) {
     _init();
   }
 
   final StoreAuthService _service;
+  final NotificationService _notifications;
 
   Future<void> _init() async {
     try {
@@ -88,6 +94,26 @@ class StoreAuthController extends StateNotifier<StoreAuthState> {
         mobile: mobile,
         email: email,
       );
+
+      // Fire welcome (owner) + heads-up (platform inbox) notifications. Never
+      // block or fail registration on a notification error.
+      _notifications
+          .notifyStoreRegistered(
+            storeId: storeId,
+            storeName: storeName.trim(),
+            ownerName: ownerName.trim(),
+            username: ownerUsername.trim(),
+            ownerEmail: (email ?? '').trim(),
+            ownerMobile: mobile?.trim(),
+          )
+          .then((results) {
+        if (kDebugMode) {
+          for (final r in results) {
+            print('[notify] registration → $r');
+          }
+        }
+      });
+
       state = await _service.restore(); // pending session
       return storeId;
     } on FirebaseAuthException catch (e) {
