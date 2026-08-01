@@ -66,6 +66,14 @@ class StoreAuthService {
     String? mobile,
     String? email,
   }) async {
+    // One email = one store: the contact email must be unique across the
+    // platform. We reserve it atomically in `email_index` right after creating
+    // the auth account (below).
+    final emailKey = (email ?? '').trim().toLowerCase();
+    if (emailKey.isEmpty) {
+      throw Exception('Email is required.');
+    }
+
     // Generated locally (no pre-read: the caller isn't signed in yet, and the
     // id space is large). Firestore's create rule guards against a real clash.
     final storeId = _generateStoreId();
@@ -77,34 +85,79 @@ class StoreAuthService {
         .timeout(_netTimeout, onTimeout: () => _timedOut('Creating your account'));
     final uid = cred.user!.uid;
 
-    await _storeDoc(storeId).set({
-      'storeId': storeId,
-      'name': storeName.trim(),
-      'ownerName': ownerName.trim(),
-      'ownerUid': uid,
-      'ownerUsername': ownerUsername.trim(),
-      'mobile': mobile?.trim(),
-      'email': email?.trim(),
-      'businessType': businessType.name,
-      'status': 'pending',
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    // Reserve the email atomically. The transaction fails (and no store is
+    // created) if another store already registered this address.
+    final emailRef = _db.collection('email_index').doc(emailKey);
+    try {
+      await _db
+          .runTransaction((tx) async {
+            final snap = await tx.get(emailRef);
+            if (snap.exists) throw const _EmailTakenException();
+            tx.set(emailRef, {
+              'storeId': storeId,
+              'uid': uid,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+          })
+          .timeout(_netTimeout, onTimeout: () => _timedOut('Checking your email'));
+    } on _EmailTakenException {
+      await _safeDeleteUser(cred.user);
+      throw Exception(
+          'This email is already registered to a store. Log in to your '
+          'existing store, or use a different email.');
+    } catch (_) {
+      await _safeDeleteUser(cred.user);
+      rethrow;
+    }
 
-    await _storeDoc(storeId).collection('users').doc(uid).set({
-      'username': ownerUsername.trim(),
-      'role': 'owner',
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    // Email reserved — create the store. On any failure, release the
+    // reservation and the auth account so the email can be reused.
+    try {
+      await _storeDoc(storeId).set({
+        'storeId': storeId,
+        'name': storeName.trim(),
+        'ownerName': ownerName.trim(),
+        'ownerUid': uid,
+        'ownerUsername': ownerUsername.trim(),
+        'mobile': mobile?.trim(),
+        'email': emailKey,
+        'businessType': businessType.name,
+        'status': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
-    // Index for session restore (uid -> storeId).
-    await _db.collection('user_store_index').doc(uid).set({'storeId': storeId});
+      await _storeDoc(storeId).collection('users').doc(uid).set({
+        'username': ownerUsername.trim(),
+        'role': 'owner',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
-    // Seed the chosen business type's demo catalog (categories, products,
-    // opening stock) into the new store.
-    await StoreCatalogSeeder(_db).load(businessType, storeId);
+      // Index for session restore (uid -> storeId).
+      await _db.collection('user_store_index').doc(uid).set({'storeId': storeId});
+
+      // Seed the chosen business type's demo catalog (categories, products,
+      // opening stock) into the new store.
+      await StoreCatalogSeeder(_db).load(businessType, storeId);
+    } catch (e) {
+      await emailRef.delete().catchError((_) {});
+      await _safeDeleteUser(cred.user);
+      rethrow;
+    }
 
     await _persist(storeId: storeId, isAdmin: false);
     return storeId;
+  }
+
+  /// Best-effort cleanup of a just-created auth account when registration is
+  /// aborted (e.g. the email was already taken). A freshly created user can be
+  /// deleted without re-authentication; failures are non-fatal.
+  Future<void> _safeDeleteUser(User? user) async {
+    try {
+      await user?.delete();
+    } catch (_) {
+      // Leaves an orphan auth account with a unique synthesized email; harmless
+      // because no store is attached and a retry generates a fresh store id.
+    }
   }
 
   /// Store-scoped login. Throws [FirebaseAuthException] on bad credentials.
@@ -256,4 +309,10 @@ class StoreAuthService {
     if (storeId != null) await prefs.setString(_prefsStoreId, storeId);
     await prefs.setBool(_prefsAdmin, isAdmin);
   }
+}
+
+/// Thrown inside the registration transaction when the email is already
+/// reserved by another store. Kept private to the auth service.
+class _EmailTakenException implements Exception {
+  const _EmailTakenException();
 }

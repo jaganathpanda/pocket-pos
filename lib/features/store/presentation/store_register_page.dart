@@ -55,6 +55,14 @@ class _StoreRegisterPageState extends ConsumerState<StoreRegisterPage> {
   String? _required(String? v) =>
       (v == null || v.trim().isEmpty) ? 'Required' : null;
 
+  String? _validEmail(String? v) {
+    final value = (v ?? '').trim();
+    if (value.isEmpty) return 'Required';
+    // Simple, permissive format check: something@something.tld
+    final ok = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value);
+    return ok ? null : 'Enter a valid email';
+  }
+
   @override
   Widget build(BuildContext context) {
     final busy = ref.watch(storeAuthControllerProvider).busy;
@@ -102,8 +110,9 @@ class _StoreRegisterPageState extends ConsumerState<StoreRegisterPage> {
                       validator: _required),
                   _field(_mobile, 'Mobile', Icons.phone,
                       keyboard: TextInputType.phone),
-                  _field(_email, 'Email', Icons.email_outlined,
-                      keyboard: TextInputType.emailAddress),
+                  _field(_email, 'Email *', Icons.email_outlined,
+                      keyboard: TextInputType.emailAddress,
+                      validator: _validEmail),
                   const Divider(height: 28),
                   _field(_username, 'Owner username *', Icons.account_circle_outlined,
                       validator: (v) => (v == null || v.trim().length < 3)
