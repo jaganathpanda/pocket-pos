@@ -1,0 +1,12 @@
+{
+  "name": "pocket-pos-functions",
+  "description": "Server-side notifications for Pocket POS (Resend email).",
+  "private": true,
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-functions": "^6.1.0"
+  }
+}

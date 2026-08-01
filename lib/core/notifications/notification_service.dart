@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'notification_config.dart';
 import 'notification_models.dart';
 import 'notification_providers.dart';
-import 'resend_email_provider.dart';
 
 /// Vendor-independent notification facade.
 ///
@@ -162,10 +161,11 @@ class NotificationService {
 /// Single wiring point. To change a vendor, replace the provider here.
 final notificationServiceProvider = Provider<NotificationService>((ref) {
   return NotificationService(
-    email: ResendEmailProvider(
-      apiKey: NotificationConfig.resendApiKey,
-      defaultFrom: NotificationConfig.emailFrom,
-    ),
+    // Registration emails are sent SERVER-SIDE by the `onStoreCreated` Cloud
+    // Function (the Resend key never ships in the app), so the client email
+    // channel is a no-op. If you later need on-demand client emails, add a
+    // secure proxy (a callable Cloud Function) as the EmailProvider here.
+    email: const NoopEmailProvider(),
     // SMS / WhatsApp: swap these for Twilio/Gupshup/etc. when ready.
     sms: const NoopSmsProvider(),
     whatsapp: const NoopWhatsAppProvider(),
