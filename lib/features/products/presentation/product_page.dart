@@ -208,6 +208,7 @@ class _ProductPageState extends ConsumerState<ProductPage> {
           content: Text('Filled details from existing product "${match.name}".')));
     }
 
+
     await showDialog<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -232,19 +233,24 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                           labelText: 'Name *',
                           isDense: true,
                           border: const OutlineInputBorder(),
+                          helperText: productNameScannerSupported
+                              ? 'Tap the camera to read the name from a photo'
+                              : null,
                           suffixIcon: productNameScannerSupported
                               ? IconButton(
-                                  tooltip: 'Read name from a photo',
-                                  icon: const Icon(Icons.document_scanner_outlined),
+                                  tooltip: 'Scan product name from photo',
+                                  icon: const Icon(Icons.camera_alt_outlined),
                                   onPressed: () async {
-                                    final text =
+                                    final scanned =
                                         await scanProductNameFromImage(ctx);
-                                    if (text != null && text.isNotEmpty) {
-                                      name.text = text;
+                                    if (scanned != null && scanned.isNotEmpty) {
+                                      setLocal(() => name.text = scanned);
+                                      messenger.showSnackBar(SnackBar(
+                                          content: Text('Read: "$scanned"')));
                                     } else {
                                       messenger.showSnackBar(const SnackBar(
                                           content: Text(
-                                              'No readable text found. Try again.')));
+                                              'Could not read a name. Fill the frame with the product name and try again.')));
                                     }
                                   },
                                 )

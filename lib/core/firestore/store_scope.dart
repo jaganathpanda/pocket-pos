@@ -1,8 +1,27 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final firestoreProvider =
     Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
+
+/// Offline-first write: issue a Firestore write WITHOUT awaiting the server
+/// acknowledgement. Firestore applies the write to the local cache the instant
+/// it is called (so streams and cached reads reflect it immediately), then
+/// syncs it when the network returns. Awaiting the returned Future would hang
+/// the UI while offline because it only completes on server ack. Late errors
+/// are swallowed so they don't surface as unhandled async exceptions — the
+/// write stays queued for automatic retry.
+void queueWrite(Future<void> op) {
+  unawaited(op.catchError((Object e) {
+    if (kDebugMode) {
+      // ignore: avoid_print
+      print('Firestore write queued/failed (will retry on sync): $e');
+    }
+  }));
+}
 
 /// Returns a store-scoped collection: `stores/{storeId}/{name}`.
 /// This is the single place tenant isolation is applied for cloud data.

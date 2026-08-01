@@ -59,19 +59,19 @@ class FirestoreCustomerRepository implements CustomerRepository {
   }) async {
     final existing = await findByMobile(mobile);
     if (existing != null) {
-      await _col.doc('${existing.id}').set({
+      queueWrite(_col.doc('${existing.id}').set({
         'name': name,
         'address': address,
-      }, SetOptions(merge: true));
+      }, SetOptions(merge: true)));
       return existing.id;
     }
     final id = newIntId();
-    await _col.doc('$id').set({
+    queueWrite(_col.doc('$id').set({
       'name': name,
       'mobile': mobile.trim(),
       'address': address,
       'loyaltyPoints': 0,
-    });
+    }));
     return id;
   }
 

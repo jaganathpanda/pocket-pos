@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-/// Whether reading a product name from a photo is available on this platform.
+/// Whether on-device ML-Kit OCR is available (Android / iOS only).
 bool get productNameScannerSupported => false;
 
 /// No-op on platforms without ML Kit (e.g. web).

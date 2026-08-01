@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/database/seed/demo_business_type.dart';
@@ -28,9 +30,13 @@ class StoreAuthService {
   static const _netTimeout = Duration(seconds: 25);
 
   Never _timedOut(String what) => throw Exception(
-        '$what timed out. Check your internet connection. If it keeps '
-        'happening, the app\'s SHA-1/SHA-256 fingerprints may need to be added '
-        'to this Firebase project.',
+        kIsWeb
+            ? '$what timed out. Check your internet connection. If it keeps '
+                'happening, your network may be blocking Firestore WebChannel. '
+                'Try again on a different network or enable long-polling transport.'
+            : '$what timed out. Check your internet connection. If it keeps '
+                'happening, the app\'s SHA-1/SHA-256 fingerprints may need to be '
+                'added to this Firebase project.',
       );
 
   // Firebase Auth is email-based; we synthesize a per-store email so the same
@@ -120,19 +126,26 @@ class StoreAuthService {
   }
 
   Future<StoreSession> _sessionFor(String storeId, String uid, String username) async {
-    final storeSnap = await _storeDoc(storeId)
-        .get()
-        .timeout(_netTimeout, onTimeout: () => _timedOut('Loading your store'));
+    final storeRef = _storeDoc(storeId);
+    final storeSnap = await _getWithCacheFallback(
+      serverAndCacheRead: () => storeRef.get(),
+      cacheRead: () => storeRef.get(const GetOptions(source: Source.cache)),
+      timeoutLabel: 'Loading your store',
+    );
+
     if (!storeSnap.exists) {
       await _auth.signOut();
       throw Exception('Store $storeId not found.');
     }
+
+    final userRef = storeRef.collection('users').doc(uid);
+    final userSnap = await _getWithCacheFallback(
+      serverAndCacheRead: () => userRef.get(),
+      cacheRead: () => userRef.get(const GetOptions(source: Source.cache)),
+      timeoutLabel: 'Loading your profile',
+    );
+
     final data = storeSnap.data()!;
-    final userSnap = await _storeDoc(storeId)
-        .collection('users')
-        .doc(uid)
-        .get()
-        .timeout(_netTimeout, onTimeout: () => _timedOut('Loading your profile'));
     return StoreSession(
       storeId: storeId,
       storeName: (data['name'] as String?) ?? storeId,
@@ -217,6 +230,25 @@ class StoreAuthService {
     await prefs.remove(_prefsStoreId);
     await prefs.remove(_prefsAdmin);
     await _auth.signOut();
+  }
+
+  Future<DocumentSnapshot<Map<String, dynamic>>> _getWithCacheFallback({
+    required Future<DocumentSnapshot<Map<String, dynamic>>> Function()
+        serverAndCacheRead,
+    required Future<DocumentSnapshot<Map<String, dynamic>>> Function() cacheRead,
+    required String timeoutLabel,
+  }) async {
+    try {
+      return await serverAndCacheRead().timeout(
+        _netTimeout,
+        onTimeout: () => throw TimeoutException(timeoutLabel),
+      );
+    } on TimeoutException {
+      // If network transport stalls but cache has the doc, allow login/restore.
+      final cached = await cacheRead();
+      if (cached.exists) return cached;
+      _timedOut(timeoutLabel);
+    }
   }
 
   Future<void> _persist({String? storeId, required bool isAdmin}) async {

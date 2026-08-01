@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/firestore/firestore_ids.dart';
@@ -35,6 +38,23 @@ class FirestoreSalesRepository implements SalesRepository {
       storeCollection(_db, _storeId, 'products');
 
   int get _now => DateTime.now().millisecondsSinceEpoch;
+
+  /// Offline-first write: a Firestore write is applied to the local cache the
+  /// moment it is issued (so streams and cached reads update immediately) but
+  /// the returned Future only completes when the SERVER acknowledges it — which
+  /// never happens while offline. Awaiting it would hang the UI (dialog won't
+  /// close, "New Cart" won't appear, checkout won't finish) until the network
+  /// returns. So we deliberately do NOT await the write; Firestore keeps it
+  /// queued and syncs it automatically on reconnect. Late errors are swallowed
+  /// so they don't surface as unhandled async exceptions.
+  void _write(Future<void> op) {
+    unawaited(op.catchError((Object e) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('Firestore write queued/failed (will retry on sync): $e');
+      }
+    }));
+  }
 
   // ── Carts ────────────────────────────────────────────────────────────────
 
@@ -83,7 +103,7 @@ class FirestoreSalesRepository implements SalesRepository {
   Future<int> _createCart(String name,
       {int? customerId, int? posCounterId, int? warehouseId}) async {
     final id = newIntId();
-    await _carts.doc('$id').set({
+    _write(_carts.doc('$id').set({
       'name': name,
       'status': 'active',
       'customerId': customerId,
@@ -91,7 +111,7 @@ class FirestoreSalesRepository implements SalesRepository {
       'warehouseId': warehouseId,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
-    });
+    }));
     return id;
   }
 
@@ -102,34 +122,34 @@ class FirestoreSalesRepository implements SalesRepository {
   }
 
   @override
-  Future<void> setCartStatus(int cartId, String status) =>
-      _carts.doc('$cartId').set({'status': status, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+  Future<void> setCartStatus(int cartId, String status) async =>
+      _write(_carts.doc('$cartId').set({'status': status, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)));
 
   @override
-  Future<void> setCartCounter(int cartId, int posCounterId) => _carts
+  Future<void> setCartCounter(int cartId, int posCounterId) async => _write(_carts
       .doc('$cartId')
-      .set({'posCounterId': posCounterId, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+      .set({'posCounterId': posCounterId, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)));
 
   @override
-  Future<void> renameCart(int cartId, String name) =>
-      _carts.doc('$cartId').set({'name': name, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+  Future<void> renameCart(int cartId, String name) async =>
+      _write(_carts.doc('$cartId').set({'name': name, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)));
 
   @override
-  Future<void> updateCartCustomer(int cartId, int customerId) => _carts
+  Future<void> updateCartCustomer(int cartId, int customerId) async => _write(_carts
       .doc('$cartId')
-      .set({'customerId': customerId, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+      .set({'customerId': customerId, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)));
 
   @override
-  Future<void> updateCartDiscount(int cartId, double totalDiscount) =>
-      _carts.doc('$cartId').set({'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+  Future<void> updateCartDiscount(int cartId, double totalDiscount) async =>
+      _write(_carts.doc('$cartId').set({'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)));
 
   @override
   Future<void> deleteCart(int cartId) async {
     final items = await _cartItems.where('cartId', isEqualTo: cartId).get();
     for (final d in items.docs) {
-      await d.reference.delete();
+      _write(d.reference.delete());
     }
-    await _carts.doc('$cartId').delete();
+    _write(_carts.doc('$cartId').delete());
   }
 
   // ── Cart items ─────────────────────────────────────────────────────────────
@@ -156,11 +176,11 @@ class FirestoreSalesRepository implements SalesRepository {
       final doc = existingSnap.docs.first;
       final newQty = cartItemFromDoc(doc).quantity + 1;
       await _assertStock(productId, newQty, stock);
-      await doc.reference.set({'quantity': newQty}, SetOptions(merge: true));
+      _write(doc.reference.set({'quantity': newQty}, SetOptions(merge: true)));
     } else {
       await _assertStock(productId, 1, stock);
       final id = newIntId();
-      await _cartItems.doc('$id').set({
+      _write(_cartItems.doc('$id').set({
         'cartId': cartId,
         'productId': productId,
         'variantId': null,
@@ -169,9 +189,9 @@ class FirestoreSalesRepository implements SalesRepository {
         'discountAmount': 0.0,
         'taxPercent': product.taxPercent,
         'note': null,
-      });
+      }));
     }
-    await _carts.doc('$cartId').set({'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+    _write(_carts.doc('$cartId').set({'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)));
   }
 
   @override
@@ -183,11 +203,12 @@ class FirestoreSalesRepository implements SalesRepository {
     final cart = await getCart(item.cartId);
     final stock = await _stockContext(cart?.warehouseId);
     await _assertStock(item.productId, quantity, stock);
-    await doc.reference.set({'quantity': quantity}, SetOptions(merge: true));
+    _write(doc.reference.set({'quantity': quantity}, SetOptions(merge: true)));
   }
 
   @override
-  Future<void> removeItem(int cartItemId) => _cartItems.doc('$cartItemId').delete();
+  Future<void> removeItem(int cartItemId) async =>
+      _write(_cartItems.doc('$cartItemId').delete());
 
   // ── Payments / checkout ──────────────────────────────────────────────────
 
@@ -209,16 +230,16 @@ class FirestoreSalesRepository implements SalesRepository {
     final newPaid = paidBefore + amount;
 
     final pid = newIntId();
-    await _payments.doc('$pid').set({
+    _write(_payments.doc('$pid').set({
       'saleId': saleId,
       'method': method,
       'amount': amount,
       'referenceNo': referenceNo,
       'paidAt': FieldValue.serverTimestamp(),
-    });
+    }));
 
     final status = newPaid + 0.0001 >= sale.grandTotal ? 'paid' : 'partial';
-    await _sales.doc('$saleId').set({'paymentStatus': status}, SetOptions(merge: true));
+    _write(_sales.doc('$saleId').set({'paymentStatus': status}, SetOptions(merge: true)));
   }
 
   @override
@@ -239,23 +260,28 @@ class FirestoreSalesRepository implements SalesRepository {
     // Customer upsert.
     int? customerId = cart.customerId;
     if (customerMobile != null && customerMobile.isNotEmpty) {
-      final existing =
-          await _customers.where('mobile', isEqualTo: customerMobile).limit(1).get();
-      if (existing.docs.isNotEmpty) {
-        customerId = int.tryParse(existing.docs.first.id);
-        if (customerName != null && customerName.isNotEmpty) {
-          await existing.docs.first.reference.set(
-              {'name': customerName, 'address': customerAddress},
-              SetOptions(merge: true));
+      try {
+        final existing =
+            await _customers.where('mobile', isEqualTo: customerMobile).limit(1).get();
+        if (existing.docs.isNotEmpty) {
+          customerId = int.tryParse(existing.docs.first.id);
+          if (customerName != null && customerName.isNotEmpty) {
+            _write(existing.docs.first.reference.set(
+                {'name': customerName, 'address': customerAddress},
+                SetOptions(merge: true)));
+          }
+        } else if (customerName != null && customerName.isNotEmpty) {
+          customerId = newIntId();
+          _write(_customers.doc('$customerId').set({
+            'name': customerName,
+            'mobile': customerMobile,
+            'address': customerAddress,
+            'loyaltyPoints': 0,
+          }));
         }
-      } else if (customerName != null && customerName.isNotEmpty) {
-        customerId = newIntId();
-        await _customers.doc('$customerId').set({
-          'name': customerName,
-          'mobile': customerMobile,
-          'address': customerAddress,
-          'loyaltyPoints': 0,
-        });
+      } on FirebaseException catch (e) {
+        // Offline fallback: if lookup cannot run, still proceed with sale.
+        if (e.code != 'unavailable') rethrow;
       }
     }
 
@@ -321,17 +347,21 @@ class FirestoreSalesRepository implements SalesRepository {
       'paidAt': FieldValue.serverTimestamp(),
     });
     batch.set(_carts.doc('$cartId'), {'status': 'completed'}, SetOptions(merge: true));
-    await batch.commit();
+    // Offline-first: the batch is applied to the local cache immediately (so the
+    // sale, its items and the completed-cart status are all visible at once) and
+    // syncs on reconnect. Do NOT await server acknowledgement — that would hang
+    // checkout until the network returns.
+    _write(batch.commit());
 
-    // Decrement stock (separate: each needs a read-modify-write).
+    // Decrement stock (each is a read-modify-write applied locally too).
     if (stock.track) {
       for (final item in items) {
-        await _inventory.stockOut(
+        _write(_inventory.stockOut(
           productId: item.productId,
           warehouseId: stock.warehouseId,
           quantity: item.quantity,
           note: 'Sale $invoiceNo',
-        );
+        ));
       }
     }
 
@@ -350,8 +380,16 @@ class FirestoreSalesRepository implements SalesRepository {
       int productId, double requestedQty, ({bool track, int warehouseId}) stock) async {
     if (requestedQty < 0) throw Exception('Quantity cannot be negative');
     if (!stock.track) return;
-    final available = await _inventory.availableStock(
-        productId: productId, warehouseId: stock.warehouseId);
+    double available;
+    try {
+      available = await _inventory.availableStock(
+          productId: productId, warehouseId: stock.warehouseId);
+    } on FirebaseException catch (e) {
+      // Offline fallback: let queued writes continue when live stock read is
+      // unavailable. Final stock reconciliation happens when network restores.
+      if (e.code == 'unavailable') return;
+      rethrow;
+    }
     if (requestedQty > available) {
       throw Exception('Insufficient stock. Available: ${available.toStringAsFixed(2)}, '
           'requested: ${requestedQty.toStringAsFixed(2)}');

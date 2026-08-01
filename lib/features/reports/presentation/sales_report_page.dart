@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,9 +7,11 @@ import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
 
 import '../../../core/database/app_database.dart';
-import '../../../core/database/database_provider.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/firestore/firestore_mappers.dart';
+import '../../../core/firestore/store_scope.dart';
 import '../../../core/services/pdf_service.dart';
+import '../../store/presentation/store_auth_controller.dart';
 import '../../../core/utilities/money.dart';
 
 class SalesReportPage extends ConsumerWidget {
@@ -327,23 +328,38 @@ class SalesReportPage extends ConsumerWidget {
 
   Future<void> _printInvoice(
       BuildContext context, WidgetRef ref, SalesReportRow row) async {
-    final db = ref.read(appDatabaseProvider);
+    final messenger = ScaffoldMessenger.of(context);
     try {
-      final saleItems = await (db.select(db.saleItems)
-            ..where((i) => i.saleId.equals(row.saleId)))
-          .get();
-      final productIds =
-          saleItems.map((i) => i.productId).toSet().toList(growable: false);
-      final products = productIds.isEmpty
-          ? const <Product>[]
-          : await (db.select(db.products)..where((p) => p.id.isIn(productIds)))
-              .get();
-      final productNameById = {for (final p in products) p.id: p.name};
+      final storeId = ref.read(activeStoreIdProvider);
+      if (storeId == null || storeId.isEmpty) {
+        throw Exception('No active store.');
+      }
+      final fs = ref.read(firestoreProvider);
 
-      final shop = await db.select(db.shops).getSingleOrNull();
+      // Line items for this sale (served from cache when offline).
+      final itemSnap = await storeCollection(fs, storeId, 'sale_items')
+          .where('saleId', isEqualTo: row.saleId)
+          .get();
+      final saleItems = itemSnap.docs.map(saleItemFromDoc).toList()
+        ..sort((a, b) => a.id.compareTo(b.id));
+
+      final productIds = saleItems.map((i) => i.productId).toSet().toList();
+      var productNameById = <int, String>{};
+      if (productIds.isNotEmpty) {
+        final productSnap = await storeCollection(fs, storeId, 'products').get();
+        final productById = {
+          for (final d in productSnap.docs)
+            (int.tryParse(d.id) ?? 0): productFromDoc(d),
+        };
+        productNameById = {
+          for (final id in productIds)
+            id: productById[id]?.name ?? 'Product #$id',
+        };
+      }
+
+      final shopName = ref.read(storeSessionProvider)?.storeName ?? 'Pocket POS';
       final bytes = await ReceiptPdfService().generateSimpleReceipt(
-        shopName:
-            (shop?.name.trim().isNotEmpty ?? false) ? shop!.name : 'Pocket POS',
+        shopName: shopName,
         invoiceNo: row.invoiceNo,
         items: saleItems
             .map(
@@ -362,21 +378,24 @@ class SalesReportPage extends ConsumerWidget {
         onLayout: (_) async => Uint8List.fromList(bytes),
       );
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Unable to print invoice: $e')),
-        );
-      }
+      messenger.showSnackBar(
+        SnackBar(content: Text('Unable to print invoice: $e')),
+      );
     }
   }
 
   Future<void> _showPaymentsDialog(
       BuildContext context, WidgetRef ref, SalesReportRow row) async {
-    final db = ref.read(appDatabaseProvider);
-    final payments = await (db.select(db.payments)
-          ..where((p) => p.saleId.equals(row.saleId))
-          ..orderBy([(p) => OrderingTerm.desc(p.paidAt)]))
-        .get();
+    final storeId = ref.read(activeStoreIdProvider);
+    var payments = <Payment>[];
+    if (storeId != null && storeId.isNotEmpty) {
+      final fs = ref.read(firestoreProvider);
+      final snap = await storeCollection(fs, storeId, 'payments')
+          .where('saleId', isEqualTo: row.saleId)
+          .get();
+      payments = snap.docs.map(paymentFromDoc).toList()
+        ..sort((a, b) => b.paidAt.compareTo(a.paidAt));
+    }
 
     if (!context.mounted) return;
 

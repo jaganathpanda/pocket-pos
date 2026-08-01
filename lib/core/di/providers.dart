@@ -99,7 +99,12 @@ final productSearchQueryProvider = StateProvider<String>((ref) => '');
 
 final productsProvider = StreamProvider<List<Product>>((ref) {
   if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
-  return ref.watch(productRepositoryProvider).watchAll();
+  final query = ref.watch(productSearchQueryProvider).trim();
+  if (query.isEmpty) {
+    return ref.watch(productRepositoryProvider).watchAll();
+  }
+  // Return a one-shot future as a stream; repository.search() is synchronous.
+  return Stream.fromFuture(ref.watch(productRepositoryProvider).search(query));
 });
 
 final inventoryRepositoryProvider = Provider<InventoryRepository>((ref) {
