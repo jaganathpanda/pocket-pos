@@ -47,3 +47,5 @@ flutter run
 ## Project Structure
 
 See `docs/INSTALLATION_GUIDE.md` and `docs/ARCHITECTURE.md`.
+
+## Main branch test
