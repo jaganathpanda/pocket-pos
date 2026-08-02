@@ -25,7 +25,15 @@ jobs:
       - name: Add Production Remote
         run: |
           git remote add prod-repo https://x-access-token:${{ secrets.PROD_REPO_TOKEN }}@github.com/mypocketpos/mypocketpos.git
-
+      - name: Debug Token Presence
+        run: |
+          if [ -z "${{ secrets.PROD_REPO_TOKEN }}" ]; then
+            echo "❌ TOKEN NOT FOUND"
+            exit 1
+          else
+            echo "✅ TOKEN FOUND"
+          fi
+       
       - name: Push to Production Repo
         run: |
           git push prod-repo prod --force --verbose
