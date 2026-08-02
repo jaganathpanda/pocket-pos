@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: false   # 🔥 critical for PAT usage
 
       - name: Verify Token Exists
         run: |
@@ -33,16 +33,25 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
 
-      # 🚨 IMPORTANT: No git remote add (avoids auth override)
+      # 🔥 REMOVE SYNC WORKFLOW BEFORE PUSH
+      - name: Remove unwanted workflow files
+        run: |
+          rm -f .github/workflows/sync-to-prod.yml
+
+      - name: Commit cleanup (if needed)
+        run: |
+          git add -A
+          git commit -m "Remove sync workflow for production repo" || echo "No changes to commit"
 
       - name: Push to Production Repo
         env:
           TOKEN: ${{ secrets.PROD_REPO_TOKEN }}
         run: |
           echo "🚀 Syncing branch: ${{ github.ref_name }}"
-      
+
           git remote add target "https://x-access-token:${TOKEN}@github.com/mypocketpos/mypocketpos.git"
-      
+
+          # fetch to avoid stale info error
           git fetch target
-      
+
           git push target HEAD:${{ github.ref_name }} --force-with-lease --verbose
