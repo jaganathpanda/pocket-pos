@@ -41,7 +41,8 @@ jobs:
         run: |
           echo "🚀 Syncing branch: ${{ github.ref_name }}"
       
-          git push "https://x-access-token:${TOKEN}@github.com/mypocketpos/mypocketpos.git" \
-          "HEAD:${{ github.ref_name }}" \
-          --force-with-lease \
-          --verbose
+          git remote add target "https://x-access-token:${TOKEN}@github.com/mypocketpos/mypocketpos.git"
+      
+          git fetch target
+      
+          git push target HEAD:${{ github.ref_name }} --force-with-lease --verbose
