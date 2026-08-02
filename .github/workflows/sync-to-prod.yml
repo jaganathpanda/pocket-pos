@@ -40,8 +40,8 @@ jobs:
           TOKEN: ${{ secrets.PROD_REPO_TOKEN }}
         run: |
           echo "🚀 Syncing branch: ${{ github.ref_name }}"
-
-          git push https://x-access-token:$TOKEN@github.com/mypocketpos/mypocketpos.git \
-          HEAD:${{ github.ref_name }} \
+      
+          git push "https://x-access-token:${TOKEN}@github.com/mypocketpos/mypocketpos.git" \
+          "HEAD:${{ github.ref_name }}" \
           --force-with-lease \
           --verbose
