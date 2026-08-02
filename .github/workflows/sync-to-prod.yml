@@ -1,0 +1,32 @@
+name: Sync to Production Repo
+
+on:
+  push:
+    branches:
+      - prod
+
+jobs:
+  sync:
+    # ✅ Prevent running from wrong repo (avoids loop)
+    if: github.repository == 'jaganathpanda/pocket-pos' && github.ref == 'refs/heads/prod'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Repo https://github.com/jaganathpanda/pocket-pos
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Add Production Remote (Repo A)
+        run: |
+          git remote add prod-repo https://x-access-token:${{ secrets.PROD_REPO_TOKEN }}@github.com/mypocketpos/mypocketpos.git
+
+      - name: Push to Production Repo
+        run: |
+          git push prod-repo prod --force
