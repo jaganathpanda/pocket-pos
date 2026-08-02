@@ -37,7 +37,7 @@ jobs:
 
       - name: Create CNAME for Custom Domain
         run: |
-          echo "mypocketpos.in" > build/web/CNAME
+          echo "staging.mypocketpos.in" > build/web/CNAME
 
       - name: Add .nojekyll
         run: touch build/web/.nojekyll
