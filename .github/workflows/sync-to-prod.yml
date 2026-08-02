@@ -3,37 +3,45 @@ name: Sync to Production Repo
 on:
   push:
     branches:
+      - main
       - prod
 
 jobs:
   sync:
-    if: github.repository == 'jaganathpanda/pocket-pos' && github.ref == 'refs/heads/prod'
+    # Prevent infinite loop + ensure correct repo
+    if: github.repository == 'jaganathpanda/pocket-pos'
 
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Source Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Verify Token Exists
+        run: |
+          if [ -z "${{ secrets.PROD_REPO_TOKEN }}" ]; then
+            echo "❌ PROD_REPO_TOKEN is missing"
+            exit 1
+          else
+            echo "✅ Token detected"
+          fi
 
       - name: Configure Git
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
 
-      - name: Add Production Remote
-        run: |
-          git remote add prod-repo https://x-access-token:${{ secrets.PROD_REPO_TOKEN }}@github.com/mypocketpos/mypocketpos.git
-      - name: Debug Token Presence
-        run: |
-          if [ -z "${{ secrets.PROD_REPO_TOKEN }}" ]; then
-            echo "❌ TOKEN NOT FOUND"
-            exit 1
-          else
-            echo "✅ TOKEN FOUND"
-          fi
-       
+      # 🚨 IMPORTANT: No git remote add (avoids auth override)
+
       - name: Push to Production Repo
+        env:
+          TOKEN: ${{ secrets.PROD_REPO_TOKEN }}
         run: |
-          git push prod-repo prod --force --verbose
+          echo "🚀 Syncing branch: ${{ github.ref_name }}"
+
+          git push https://x-access-token:$TOKEN@github.com/mypocketpos/mypocketpos.git \
+          HEAD:${{ github.ref_name }} \
+          --force-with-lease \
+          --verbose
