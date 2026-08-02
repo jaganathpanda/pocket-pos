@@ -1,31 +1,52 @@
-name: Sync to Production Repo
+name: Deploy Flutter Web
 
 on:
   push:
     branches:
-      - prod
+      - main 
+
+permissions:
+  contents: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
 
 jobs:
-  sync:
-    if: github.repository == 'jaganathpanda/pocket-pos' && github.ref == 'refs/heads/prod'
-
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Source Repo
-        uses: actions/checkout@v5
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
-          fetch-depth: 0
+          channel: stable
+          cache: true
 
-      - name: Configure Git
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
+      - name: Install Dependencies
+        run: flutter pub get
 
-      - name: Add Production Remote
-        run: |
-          git remote add prod-repo https://x-access-token:${{ secrets.PROD_REPO_TOKEN }}@github.com/mypocketpos/mypocketpos.git
+      - name: Build Flutter Web
+        run: flutter build web --release --base-href /
 
-      - name: Push to Production Repo
+      - name: Copy index.html to 404.html
+        run: cp build/web/index.html build/web/404.html
+
+      - name: Create CNAME for Custom Domain
         run: |
-          git push prod-repo prod --force --verbose
+          echo "mypocketpos.in" > build/web/CNAME
+
+      - name: Add .nojekyll
+        run: touch build/web/.nojekyll
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: build/web
+          force_orphan: true
+          enable_jekyll: false
