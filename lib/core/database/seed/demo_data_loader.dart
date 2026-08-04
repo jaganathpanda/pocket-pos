@@ -5,6 +5,7 @@ import 'electronics_demo_data.dart';
 import 'garment_demo_data.dart';
 import 'grocery_demo_data.dart';
 import 'pharmacy_demo_data.dart';
+import 'rice_mill_demo_data.dart';
 
 /// Registry of demo product catalogs by business type. The actual seeding into
 /// a store is done by `StoreCatalogSeeder` (Firestore) at registration.
@@ -26,6 +27,8 @@ class DemoDataLoader {
         return electronicsCatalog;
       case DemoBusinessType.bakery:
         return bakeryCatalog;
+      case DemoBusinessType.riceMill:
+        return riceMillCatalog;
     }
   }
 }

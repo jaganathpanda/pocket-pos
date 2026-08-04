@@ -31,6 +31,9 @@ import '../features/store/presentation/store_register_page.dart';
 import '../features/suppliers/presentation/supplier_page.dart';
 import '../features/warehouse/domain/inventory_mode.dart';
 import '../features/warehouse/presentation/warehouse_page.dart';
+import '../features/mill_run/presentation/mill_run_page.dart';
+import '../features/mill_run/presentation/milling_charge_page.dart';
+import '../features/mill_run/presentation/milling_contracts_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
@@ -114,6 +117,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/counters', builder: (context, state) => const PosCountersPage()),
           GoRoute(path: '/warehouses', builder: (context, state) => const WarehousePage()),
           GoRoute(path: '/settings', builder: (context, state) => const SettingsPage()),
+          GoRoute(path: '/mill-runs', builder: (context, state) => const MillRunPage()),
+          GoRoute(path: '/milling-charges', builder: (context, state) => const MillingChargePage()),
+          GoRoute(path: '/milling-contracts', builder: (context, state) => const MillingContractsPage()),
         ],
       ),
     ],
@@ -135,6 +141,7 @@ class _AppShell extends ConsumerWidget {
     final scoped = user?.isCounterScoped ?? false;
     final canManage = user?.canManagePos ?? false;
     final mode = ref.watch(inventoryModeProvider).valueOrNull ?? InventoryMode.single;
+    final isRiceMill = ref.watch(isRiceMillProvider);
 
     // Keep the warehouse + inventory caches warm for the whole authenticated
     // session. Firestore's one-time .get() throws ("client is offline") for a
@@ -149,18 +156,23 @@ class _AppShell extends ConsumerWidget {
     final destinations = <({String route, String label, IconData icon})>[
       (route: '/dashboard', label: 'Dashboard', icon: Icons.dashboard_rounded),
       if (!scoped) (route: '/categories', label: 'Categories', icon: Icons.category_rounded),
-      (route: '/products', label: 'Products', icon: Icons.inventory_2_rounded),
+      (route: '/products', label: isRiceMill ? 'Products / Stock' : 'Products', icon: Icons.inventory_2_rounded),
       if (!scoped && mode.tracksStock)
         (route: '/inventory', label: 'Inventory', icon: Icons.inventory_rounded),
       if (!scoped && mode.usesWarehouses)
-        (route: '/warehouses', label: 'Warehouses', icon: Icons.warehouse_rounded),
-      (route: '/billing', label: 'POS', icon: Icons.point_of_sale_rounded),
-      (route: '/customers', label: 'Customers', icon: Icons.person_rounded),
-      if (!scoped) (route: '/suppliers', label: 'Vendors', icon: Icons.storefront_rounded),
-      if (!scoped) (route: '/purchases', label: 'Purchases', icon: Icons.shopping_bag_rounded),
+        (route: '/warehouses', label: isRiceMill ? 'Godowns' : 'Warehouses', icon: Icons.warehouse_rounded),
+      (route: '/billing', label: isRiceMill ? 'Rice Sales' : 'POS', icon: Icons.point_of_sale_rounded),
+      (route: '/customers', label: isRiceMill ? 'Rice Parties' : 'Customers', icon: Icons.person_rounded),
+      if (!scoped) (route: '/suppliers', label: isRiceMill ? 'Farmers / Mandi' : 'Vendors', icon: Icons.storefront_rounded),
+      if (!scoped) (route: '/purchases', label: isRiceMill ? 'Paddy Procurement' : 'Purchases', icon: Icons.shopping_bag_rounded),
+      // Rice mill-only menu items
+      if (!scoped && isRiceMill)
+        (route: '/mill-runs', label: 'Mill Runs', icon: Icons.factory_rounded),
+      if (!scoped && isRiceMill)
+        (route: '/milling-charges', label: 'Milling Charges', icon: Icons.receipt_long_rounded),
       (route: '/reports', label: 'Reports', icon: Icons.analytics_rounded),
-      (route: '/ledger', label: 'Udhar', icon: Icons.account_balance_wallet_rounded),
-      if (!scoped) (route: '/expenses', label: 'Expenses', icon: Icons.receipt_long_rounded),
+      (route: '/ledger', label: isRiceMill ? 'Khata / Udhar' : 'Udhar', icon: Icons.account_balance_wallet_rounded),
+      if (!scoped) (route: '/expenses', label: 'Expenses', icon: Icons.receipt_outlined),
       if (!scoped) (route: '/staff', label: 'Staff', icon: Icons.badge_rounded),
       if (!scoped) (route: '/owner-profile', label: 'Owner', icon: Icons.badge_outlined),
       if (!scoped) (route: '/settings', label: 'Settings', icon: Icons.settings_rounded),
