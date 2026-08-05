@@ -29,21 +29,15 @@ service cloud.firestore {
       allow write: if isSignedIn() && request.auth.uid == uid;
     }
 
-    // One email = one store. Reserved atomically at registration.
-    // get-only (no list) limits email enumeration; the reservation is
-    // immutable and can only be released by the owner that created it.
-    match /email_index/{emailKey} {
-      allow get: if isSignedIn();
-      allow create: if isSignedIn()
-        && request.resource.data.uid == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
-      allow update: if false;
-    }
-
     match /platform_admins/{uid} {
       // A user may check their own admin doc; only admins manage the list.
       allow get: if isSignedIn() && request.auth.uid == uid;
       allow list, write: if isPlatformAdmin();
+    }
+
+    // Global platform feature flags/configuration.
+    match /platform_config/{docId} {
+      allow read, write: if isPlatformAdmin();
     }
 
     match /stores/{storeId} {
