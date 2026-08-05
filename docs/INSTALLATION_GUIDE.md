@@ -35,6 +35,10 @@ flutter build windows --release
 flutter build web --release
 ```
 
+## Firebase Notifications Deployment
+
+For deployment of server-side notifications using Firebase Functions and provider setup (Resend/Twilio), refer to `docs/FIREBASE_FUNCTIONS_DEPLOYMENT.md`.
+
 ## Backup/Restore
 
 - DB file export/import service is available in core services.

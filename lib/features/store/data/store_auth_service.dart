@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/database/seed/demo_business_type.dart';
+import '../../notifications/domain/domain.dart';
 import '../../../core/firestore/store_catalog_seeder.dart';
 import '../domain/store_models.dart';
 
@@ -54,6 +55,9 @@ class StoreAuthService {
 
   DocumentReference<Map<String, dynamic>> _storeDoc(String storeId) =>
       _db.collection('stores').doc(storeId);
+
+    DocumentReference<Map<String, dynamic>> _notificationConfigDoc() =>
+      _db.collection('platform_config').doc('notifications');
 
   /// Registers a new store (status = pending) and its owner login.
   /// Returns the generated store id.
@@ -272,6 +276,19 @@ class StoreAuthService {
                 email: m['email'] as String?,
               );
             }).toList());
+  }
+
+  Stream<NotificationFeatures> watchNotificationFeatures() {
+    return _notificationConfigDoc().snapshots().map((snap) {
+      return NotificationFeatures.fromFirestoreMap(snap.data());
+    });
+  }
+
+  Future<void> setNotificationFeatures(NotificationFeatures features) {
+    return _notificationConfigDoc().set(
+      features.toFirestoreMap(),
+      SetOptions(merge: true),
+    );
   }
 
   Future<void> setStoreStatus(String storeId, StoreStatus status) {
