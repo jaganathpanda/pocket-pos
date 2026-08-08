@@ -21,6 +21,11 @@ class FirestoreReportsRepository {
   bool _inCounter(int? posCounterId) =>
       _counterId == null || posCounterId == _counterId;
 
+  bool _isReturnedStatus(String status) {
+    final s = status.trim().toLowerCase();
+    return s == 'returned' || s == 'refunded';
+  }
+
   Future<List<Sale>> _allSales() async {
     final snap = await _col('sales').get();
     return snap.docs
@@ -34,7 +39,9 @@ class FirestoreReportsRepository {
   Future<DashboardMetrics> dashboard() async {
     final now = DateTime.now();
     final dayStart = DateTime(now.year, now.month, now.day);
-    final sales = await _allSales();
+    final sales = (await _allSales())
+      .where((s) => !_isReturnedStatus(s.paymentStatus))
+      .toList(growable: false);
     final today = sales.where((s) => !s.soldAt.isBefore(dayStart)).toList();
 
     final carts = (await _col('carts').get()).docs.map(cartFromDoc).where(
@@ -83,6 +90,9 @@ class FirestoreReportsRepository {
         .where((s) => !s.soldAt.isBefore(start) && !s.soldAt.isAfter(end))
         .toList()
       ..sort((a, b) => b.soldAt.compareTo(a.soldAt));
+    final activeSales = salesInRange
+      .where((s) => !_isReturnedStatus(s.paymentStatus))
+      .toList(growable: false);
 
     if (salesInRange.isEmpty) {
       return SalesReportData(
@@ -101,6 +111,7 @@ class FirestoreReportsRepository {
     }
 
     final saleIds = salesInRange.map((s) => s.id).toSet();
+    final activeSaleIds = activeSales.map((s) => s.id).toSet();
     final allItems =
         (await _col('sale_items').get()).docs.map(saleItemFromDoc).where((i) => saleIds.contains(i.saleId)).toList();
     final allPayments =
@@ -120,12 +131,12 @@ class FirestoreReportsRepository {
     }
 
     final paymentMethodTotals = <String, double>{};
-    for (final p in allPayments) {
+    for (final p in allPayments.where((p) => activeSaleIds.contains(p.saleId))) {
       paymentMethodTotals[p.method] = (paymentMethodTotals[p.method] ?? 0) + p.amount;
     }
 
     final productTotals = <int, ({double qty, double amount})>{};
-    for (final i in allItems) {
+    for (final i in allItems.where((i) => activeSaleIds.contains(i.saleId))) {
       final cur = productTotals[i.productId] ?? (qty: 0.0, amount: 0.0);
       productTotals[i.productId] =
           (qty: cur.qty + i.quantity, amount: cur.amount + i.lineTotal);
@@ -143,7 +154,10 @@ class FirestoreReportsRepository {
     final rows = salesInRange.map((sale) {
       final pays = paymentsBySale[sale.id] ?? const <Payment>[];
       final paid = pays.fold<double>(0, (s, p) => s + p.amount);
-      final due = (sale.grandTotal - paid).clamp(0, 999999999).toDouble();
+      final isReturned = _isReturnedStatus(sale.paymentStatus);
+      final due = isReturned
+          ? 0.0
+          : (sale.grandTotal - paid).clamp(0, 999999999).toDouble();
       final items = itemsBySale[sale.id] ?? const <SaleItem>[];
       return SalesReportRow(
         saleId: sale.id,
@@ -164,12 +178,14 @@ class FirestoreReportsRepository {
     return SalesReportData(
       start: start,
       end: end,
-      totalSales: salesInRange.length,
-      totalAmount: salesInRange.fold<double>(0, (s, x) => s + x.grandTotal),
-      totalTax: salesInRange.fold<double>(0, (s, x) => s + x.taxTotal),
-      totalDiscount: salesInRange.fold<double>(0, (s, x) => s + x.discountTotal),
-      totalItems: allItems.length,
-      totalQuantity: allItems.fold<double>(0, (s, i) => s + i.quantity),
+      totalSales: activeSales.length,
+      totalAmount: activeSales.fold<double>(0, (s, x) => s + x.grandTotal),
+      totalTax: activeSales.fold<double>(0, (s, x) => s + x.taxTotal),
+      totalDiscount: activeSales.fold<double>(0, (s, x) => s + x.discountTotal),
+      totalItems: allItems.where((i) => activeSaleIds.contains(i.saleId)).length,
+      totalQuantity: allItems
+          .where((i) => activeSaleIds.contains(i.saleId))
+          .fold<double>(0, (s, i) => s + i.quantity),
       paymentMethodTotals: paymentMethodTotals,
       topProducts: topProducts.take(5).toList(growable: false),
       rows: rows,
@@ -198,6 +214,9 @@ class FirestoreReportsRepository {
 
     return sales
         .map((sale) {
+          if (_isReturnedStatus(sale.paymentStatus)) {
+            return null;
+          }
           final paid = paidBySale[sale.id] ?? 0;
           final due = (sale.grandTotal - paid).clamp(0, 999999999).toDouble();
           return CreditLedgerRow(
@@ -207,6 +226,7 @@ class FirestoreReportsRepository {
             dueAmount: due,
           );
         })
+        .whereType<CreditLedgerRow>()
         .where((r) {
           final st = r.sale.paymentStatus.toLowerCase();
           return r.dueAmount > 0 || st == 'partial' || st == 'credit';

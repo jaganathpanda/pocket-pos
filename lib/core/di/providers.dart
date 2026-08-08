@@ -9,6 +9,13 @@ import '../../features/customers/data/firestore_customer_repository.dart';
 import '../../features/customers/domain/customer_repository.dart';
 import '../../features/inventory/data/firestore_inventory_repository.dart';
 import '../../features/inventory/domain/inventory_repository.dart';
+import '../../features/mill_run/data/firestore_mill_run_repository.dart';
+import '../../features/mill_run/data/firestore_milling_charge_repository.dart';
+import '../../features/mill_run/domain/mill_run_models.dart';
+import '../../features/mill_run/domain/mill_run_repository.dart';
+import '../../features/mill_run/domain/milling_charge_models.dart';
+import '../../features/mill_run/domain/milling_charge_repository.dart';
+import '../../features/mill_run/domain/milling_config.dart';
 import '../../features/pos_counters/data/firestore_pos_counter_repository.dart';
 import '../../features/pos_counters/domain/pos_counter_repository.dart';
 import '../../features/products/data/firestore_product_repository.dart';
@@ -31,6 +38,10 @@ import '../database/app_database.dart';
 import '../database/seed/demo_business_type.dart';
 import '../database/seed/demo_data_loader.dart';
 import '../firestore/store_scope.dart';
+import '../models/discount_policy.dart';
+import '../models/invoice_branding.dart';
+import '../models/printer_config.dart';
+import '../services/printer_service.dart';
 
 final authControllerProvider =
     StateNotifierProvider<AuthController, AsyncValue<AppUser?>>((ref) {
@@ -156,6 +167,41 @@ final demoBusinessTypeProvider = StreamProvider<DemoBusinessType>((ref) {
       orElse: () => DemoDataLoader.defaultBusinessType,
     );
   });
+});
+
+/// The permanent business type chosen at registration — written once to
+/// `settings/store_profile` and never overwritten by catalog reloads.
+final businessTypeProvider = StreamProvider<DemoBusinessType>((ref) {
+  final storeId = ref.watch(activeStoreIdProvider);
+  if (storeId == null) {
+    return Stream.value(DemoDataLoader.defaultBusinessType);
+  }
+  return storeCollection(ref.watch(firestoreProvider), storeId, 'settings')
+      .doc('store_profile')
+      .snapshots()
+      .map((snap) {
+    final v = snap.data()?['businessType'] as String?;
+    return DemoBusinessType.values.firstWhere(
+      (t) => t.name == v,
+      orElse: () => DemoDataLoader.defaultBusinessType,
+    );
+  });
+});
+
+/// Convenience flag — true only when this store was registered as a Rice Mill.
+final isRiceMillProvider = Provider<bool>((ref) {
+  return ref.watch(businessTypeProvider).valueOrNull == DemoBusinessType.riceMill;
+});
+
+/// Milling configuration settings stored in `settings/milling_config`.
+/// Only meaningful when [isRiceMillProvider] is true.
+final millingConfigProvider = StreamProvider<MillingConfig>((ref) {
+  final storeId = ref.watch(activeStoreIdProvider);
+  if (storeId == null) return Stream.value(MillingConfig.defaults());
+  return storeCollection(ref.watch(firestoreProvider), storeId, 'settings')
+      .doc('milling_config')
+      .snapshots()
+      .map((snap) => MillingConfig.fromMap(snap.data() ?? {}));
 });
 
 // ── Suppliers ─────────────────────────────────────────────────────────────────
@@ -420,3 +466,70 @@ final creditLedgerProvider = FutureProvider<List<CreditLedgerRow>>((ref) async {
 
 // NOTE: Expenses migrated to store-scoped Firestore in Phase 2 — see
 // features/expense/data/expense_repository.dart (storeExpensesProvider).
+
+// ── Mill Runs ─────────────────────────────────────────────────────────────────
+
+final millRunRepositoryProvider = Provider<MillRunRepository>((ref) {
+  return FirestoreMillRunRepository(
+      ref.watch(firestoreProvider), ref.watch(activeStoreIdProvider) ?? '');
+});
+
+final millRunsProvider = StreamProvider<List<MillRunWithOutputs>>((ref) {
+  if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
+  return ref.watch(millRunRepositoryProvider).watchAll();
+});
+
+// ── Milling Charge Invoices ───────────────────────────────────────────────────
+
+final millingChargeRepositoryProvider =
+    Provider<MillingChargeRepository>((ref) {
+  return FirestoreMillingChargeRepository(
+      ref.watch(firestoreProvider), ref.watch(activeStoreIdProvider) ?? '');
+});
+
+final millingChargesProvider =
+    StreamProvider<List<MillingChargeInvoice>>((ref) {
+  if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
+  return ref.watch(millingChargeRepositoryProvider).watchAll();
+});
+
+// ── Invoice Branding ──────────────────────────────────────────────────────────
+
+/// Streams the store's invoice branding settings from
+/// `stores/{storeId}/settings/invoice_branding`.
+/// Used by the Settings page (edit) and PDF print flow (read).
+final invoiceBrandingProvider = StreamProvider<InvoiceBranding>((ref) {
+  final storeId = ref.watch(activeStoreIdProvider);
+  if (storeId == null) return Stream.value(const InvoiceBranding.defaults());
+  return storeCollection(ref.watch(firestoreProvider), storeId, 'settings')
+      .doc('invoice_branding')
+      .snapshots()
+      .map((snap) => InvoiceBranding.fromFirestoreMap(snap.data()));
+});
+
+// ── Printer Integration ──────────────────────────────────────────────────────
+
+/// Streams printer integration settings from `stores/{storeId}/settings/printer_config`.
+final printerConfigProvider = StreamProvider<PrinterConfig>((ref) {
+  final storeId = ref.watch(activeStoreIdProvider);
+  if (storeId == null) return Stream.value(const PrinterConfig.defaults());
+  return storeCollection(ref.watch(firestoreProvider), storeId, 'settings')
+      .doc('printer_config')
+      .snapshots()
+      .map((snap) => PrinterConfig.fromFirestoreMap(snap.data()));
+});
+
+final printerServiceProvider = Provider<ThermalPrinterService>((ref) {
+  return ThermalPrinterService();
+});
+
+/// Streams discount policy from `stores/{storeId}/settings/discount_policy`.
+/// Bill-level percentage discounts above the configured max are blocked.
+final discountPolicyProvider = StreamProvider<DiscountPolicy>((ref) {
+  final storeId = ref.watch(activeStoreIdProvider);
+  if (storeId == null) return Stream.value(const DiscountPolicy.defaults());
+  return storeCollection(ref.watch(firestoreProvider), storeId, 'settings')
+      .doc('discount_policy')
+      .snapshots()
+      .map((snap) => DiscountPolicy.fromFirestoreMap(snap.data()));
+});

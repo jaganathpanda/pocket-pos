@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/models/discount_policy.dart';
 import '../../barcode/presentation/barcode_scanner_page.dart';
 import '../../barcode/presentation/hid_scanner_listener.dart';
 import '../../warehouse/domain/inventory_mode.dart';
@@ -736,6 +737,13 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           children: [
+                            _sumRow(
+                              'Bill Discount %',
+                              summary.subTotal <= 0
+                                  ? 0
+                                  : (summary.discountTotal * 100 / summary.subTotal),
+                              suffix: '%',
+                            ),
                             _sumRow('Sub Total', summary.subTotal),
                             if (summary.discountTotal > 0)
                               _sumRow('Discount', -summary.discountTotal,
@@ -773,6 +781,12 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                     label: const Text('Add Item'),
                   ),
                   const SizedBox(width: 12),
+                  OutlinedButton.icon(
+                    onPressed: () => _showBillDiscountDialog(context, ref),
+                    icon: const Icon(Icons.percent_rounded),
+                    label: const Text('Bill Discount'),
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: FilledButton.icon(
                       style: FilledButton.styleFrom(
@@ -792,7 +806,7 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
   }
 
   static Widget _sumRow(String label, double value,
-      {bool isBold = false, Color? color}) {
+      {bool isBold = false, Color? color, String prefix = '₹', String suffix = ''}) {
     final style = TextStyle(
       fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
       fontSize: isBold ? 16 : 14,
@@ -804,10 +818,115 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: style),
-          Text('₹${value.abs().toStringAsFixed(2)}', style: style),
+          Text('$prefix${value.abs().toStringAsFixed(2)}$suffix', style: style),
         ],
       ),
     );
+  }
+
+  Future<void> _showBillDiscountDialog(BuildContext context, WidgetRef ref) async {
+    final items = await ref
+        .read(salesRepositoryProvider)
+        .watchCartItems(widget.cartId)
+        .first;
+    if (items.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cart is empty.')),
+        );
+      }
+      return;
+    }
+
+    final summary = ref.read(cartSummaryProvider(items));
+    final currentPercent = summary.subTotal <= 0
+        ? 0.0
+        : (summary.discountTotal * 100 / summary.subTotal);
+    final policy =
+        ref.read(discountPolicyProvider).valueOrNull ??
+            const DiscountPolicy.defaults();
+
+    if (!policy.enabled) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Bill discount is disabled in Settings.')),
+        );
+      }
+      return;
+    }
+
+    final ctrl = TextEditingController(
+      text: currentPercent.toStringAsFixed(currentPercent % 1 == 0 ? 0 : 2),
+    );
+
+    final percent = await showDialog<double>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Bill Discount (%)'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Allowed: 0 to ${policy.maxBillDiscountPercent.toStringAsFixed(policy.maxBillDiscountPercent % 1 == 0 ? 0 : 2)}%',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: ctrl,
+              autofocus: true,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Discount percentage',
+                suffixText: '%',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx, double.tryParse(ctrl.text.trim()));
+            },
+            child: const Text('Apply'),
+          ),
+        ],
+      ),
+    );
+
+    if (percent == null || !context.mounted) return;
+    if (percent < 0 || percent > policy.maxBillDiscountPercent + 0.0001) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Discount cannot exceed ${policy.maxBillDiscountPercent.toStringAsFixed(2)}%.'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      await ref
+          .read(salesRepositoryProvider)
+          .updateCartDiscountPercent(widget.cartId, percent);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Applied ${percent.toStringAsFixed(2)}% bill discount.')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed: $e')));
+      }
+    }
   }
 
   Future<void> _showCheckoutDialog(BuildContext context, WidgetRef ref) async {

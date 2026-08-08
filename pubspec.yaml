@@ -34,6 +34,7 @@ dependencies:
   cloud_firestore: ^6.7.1
   image_picker: ^1.2.3
   google_mlkit_text_recognition: ^0.16.0
+  unified_esc_pos_printer: ^3.4.0
 
 dev_dependencies:
   flutter_test:

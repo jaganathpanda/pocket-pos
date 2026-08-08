@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -7,6 +8,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/firestore/firestore_ids.dart';
 import '../../../core/firestore/firestore_mappers.dart';
 import '../../../core/firestore/store_scope.dart';
+import '../../../core/models/discount_policy.dart';
 import '../../inventory/data/firestore_inventory_repository.dart';
 import '../../warehouse/data/firestore_warehouse_repository.dart';
 import '../domain/sales_repository.dart';
@@ -38,6 +40,22 @@ class FirestoreSalesRepository implements SalesRepository {
       storeCollection(_db, _storeId, 'products');
 
   int get _now => DateTime.now().millisecondsSinceEpoch;
+
+  /// Reads the store-configured invoice prefix from
+  /// `settings/invoice_branding`. Falls back to 'INV' on any error or when
+  /// the setting has not been configured yet.
+  Future<String> _invoicePrefix() async {
+    try {
+      final snap = await storeCollection(_db, _storeId, 'settings')
+          .doc('invoice_branding')
+          .get();
+      final prefix =
+          (snap.data()?['invoicePrefix'] as String?)?.trim().toUpperCase();
+      return (prefix != null && prefix.isNotEmpty) ? prefix : 'INV';
+    } catch (_) {
+      return 'INV';
+    }
+  }
 
   /// Offline-first write: a Firestore write is applied to the local cache the
   /// moment it is issued (so streams and cached reads update immediately) but
@@ -144,6 +162,34 @@ class FirestoreSalesRepository implements SalesRepository {
       _write(_carts.doc('$cartId').set({'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)));
 
   @override
+  Future<void> updateCartDiscountPercent(int cartId, double percent) async {
+    final normalized = percent.clamp(0, 100).toDouble();
+    final policy = await _discountPolicy();
+    if (!policy.enabled) {
+      throw Exception('Bill discount is disabled in Settings.');
+    }
+    if (normalized > policy.maxBillDiscountPercent + 0.0001) {
+      throw Exception(
+        'Discount ${normalized.toStringAsFixed(2)}% exceeds max '
+        '${policy.maxBillDiscountPercent.toStringAsFixed(2)}%',
+      );
+    }
+
+    final itemsSnap = await _cartItems.where('cartId', isEqualTo: cartId).get();
+    for (final d in itemsSnap.docs) {
+      final item = cartItemFromDoc(d);
+      final lineSub = (item.quantity * item.unitPrice).clamp(0, 999999999);
+      final lineDiscount = (lineSub * (normalized / 100)).clamp(0, lineSub).toDouble();
+      _write(d.reference.set({'discountAmount': lineDiscount}, SetOptions(merge: true)));
+    }
+
+    _write(_carts.doc('$cartId').set({
+      'billDiscountPercent': normalized,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true)));
+  }
+
+  @override
   Future<void> deleteCart(int cartId) async {
     final items = await _cartItems.where('cartId', isEqualTo: cartId).get();
     for (final d in items.docs) {
@@ -243,6 +289,182 @@ class FirestoreSalesRepository implements SalesRepository {
   }
 
   @override
+  Future<SalesReturnResult> processSaleReturn({
+    required int saleId,
+    required String reason,
+    required String refundMethod,
+  }) async {
+    final itemsSnap = await _saleItems.where('saleId', isEqualTo: saleId).get();
+    final lineRequests = <SaleReturnLineRequest>[];
+    for (final doc in itemsSnap.docs) {
+      final item = saleItemFromDoc(doc);
+      final returnedQty = fsNum(doc.data()['returnedQty']);
+      final remaining = (item.quantity - returnedQty).clamp(0, item.quantity);
+      if (remaining > 0) {
+        lineRequests
+            .add(SaleReturnLineRequest(saleItemId: item.id, quantity: remaining.toDouble()));
+      }
+    }
+    if (lineRequests.isEmpty) {
+      throw Exception('All items are already returned for this invoice.');
+    }
+    return processPartialSaleReturn(
+      saleId: saleId,
+      lines: lineRequests,
+      reason: reason,
+      refundMethod: refundMethod,
+    );
+  }
+
+  @override
+  Future<SalesReturnResult> processPartialSaleReturn({
+    required int saleId,
+    required List<SaleReturnLineRequest> lines,
+    required String reason,
+    required String refundMethod,
+  }) async {
+    final trimmedReason = reason.trim();
+    if (trimmedReason.isEmpty) {
+      throw Exception('Return reason is required');
+    }
+    if (lines.isEmpty) {
+      throw Exception('Select at least one line item quantity to return.');
+    }
+
+    final saleDoc = await cacheSafeDoc(_sales, '$saleId');
+    if (saleDoc == null || !saleDoc.exists) throw Exception('Sale not found');
+    final sale = saleFromDoc(saleDoc);
+    final status = sale.paymentStatus.trim().toLowerCase();
+    if (status == 'returned' || status == 'refunded') {
+      throw Exception('This invoice is already returned.');
+    }
+
+    final lineQtyById = <int, double>{};
+    for (final line in lines) {
+      if (line.quantity <= 0) continue;
+      lineQtyById[line.saleItemId] =
+          (lineQtyById[line.saleItemId] ?? 0) + line.quantity;
+    }
+    if (lineQtyById.isEmpty) {
+      throw Exception('Return quantity must be greater than 0.');
+    }
+
+    final itemsSnap = await _saleItems.where('saleId', isEqualTo: saleId).get();
+    final itemDocById = {
+      for (final d in itemsSnap.docs)
+        (int.tryParse(d.id) ?? 0): d,
+    };
+
+    var returnedAmountNow = 0.0;
+    var returnedQtyTotalNow = 0.0;
+    final restockLines = <({int productId, double qty})>[];
+
+    for (final entry in lineQtyById.entries) {
+      final itemDoc = itemDocById[entry.key];
+      if (itemDoc == null) {
+        throw Exception('Sale item not found: ${entry.key}');
+      }
+      final item = saleItemFromDoc(itemDoc);
+      final alreadyReturnedQty = fsNum(itemDoc.data()['returnedQty']);
+      final remainingQty =
+          (item.quantity - alreadyReturnedQty).clamp(0, item.quantity);
+      final reqQty = entry.value;
+
+      if (reqQty > remainingQty + 0.0001) {
+        throw Exception(
+          'Return qty exceeds remaining qty for item ${item.productId}. Remaining: '
+          '${remainingQty.toStringAsFixed(2)}',
+        );
+      }
+
+      final lineReturnAmount =
+          (item.lineTotal * (reqQty / item.quantity)).clamp(0, item.lineTotal);
+      returnedAmountNow += lineReturnAmount;
+      returnedQtyTotalNow += reqQty;
+      restockLines.add((productId: item.productId, qty: reqQty));
+
+      final nextReturnedQty = (alreadyReturnedQty + reqQty)
+          .clamp(0, item.quantity)
+          .toDouble();
+      final nextReturnedAmount =
+          fsNum(itemDoc.data()['returnedAmount']) + lineReturnAmount;
+      _write(itemDoc.reference.set({
+        'returnedQty': nextReturnedQty,
+        'returnedAmount': nextReturnedAmount,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true)));
+    }
+
+    if (returnedAmountNow <= 0) {
+      throw Exception('Nothing to return for selected quantities.');
+    }
+
+    final currentReturnedAmount = (saleDoc.data()?['returnedAmount'] as num?)
+            ?.toDouble() ??
+        0.0;
+    final nextReturnedAmount = currentReturnedAmount + returnedAmountNow;
+    final nextGrandTotal = (sale.grandTotal - returnedAmountNow)
+        .clamp(0, sale.grandTotal)
+        .toDouble();
+
+    final paymentsSnap = await _payments.where('saleId', isEqualTo: saleId).get();
+    final netPaidBefore = paymentsSnap.docs
+        .map(paymentFromDoc)
+        .fold<double>(0, (sum, p) => sum + p.amount);
+    final refundAmount =
+        math.max(0, (netPaidBefore - nextGrandTotal)).toDouble();
+
+    final stock = await _stockContext(sale.warehouseId);
+    if (stock.track) {
+      for (final r in restockLines) {
+        _write(_inventory.stockIn(
+          productId: r.productId,
+          warehouseId: stock.warehouseId,
+          quantity: r.qty,
+          note: 'Sale return ${sale.invoiceNo}',
+        ));
+      }
+    }
+
+    if (refundAmount > 0) {
+      final refundId = newIntId();
+      _write(_payments.doc('$refundId').set({
+        'saleId': saleId,
+        'method': refundMethod.trim().isEmpty ? 'refund' : refundMethod.trim(),
+        'amount': -refundAmount,
+        'referenceNo': 'SALE_RETURN_PARTIAL',
+        'note': trimmedReason,
+        'paidAt': FieldValue.serverTimestamp(),
+      }));
+    }
+
+    final netPaidAfter = netPaidBefore - refundAmount;
+    final fullyReturned = nextGrandTotal <= 0.0001;
+    final nextStatus = fullyReturned
+        ? (refundAmount > 0 ? 'refunded' : 'returned')
+        : (netPaidAfter + 0.0001 >= nextGrandTotal
+            ? 'paid'
+            : (netPaidAfter > 0 ? 'partial' : 'credit'));
+
+    _write(_sales.doc('$saleId').set({
+      'grandTotal': nextGrandTotal,
+      'returnedAmount': nextReturnedAmount,
+      'lastReturnQty': returnedQtyTotalNow,
+      'lastReturnAmount': returnedAmountNow,
+      'lastReturnReason': trimmedReason,
+      'paymentStatus': nextStatus,
+      'returnedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true)));
+
+    return SalesReturnResult(
+      returnedAmount: returnedAmountNow,
+      refundAmount: refundAmount,
+      stockRestocked: stock.track,
+      fullyReturned: fullyReturned,
+    );
+  }
+
+  @override
   Future<int> checkout({
     required int cartId,
     required String paymentMode,
@@ -286,6 +508,7 @@ class FirestoreSalesRepository implements SalesRepository {
     }
 
     final stock = await _stockContext(cart.warehouseId);
+    final policy = await _discountPolicy();
 
     double subTotal = 0, discountTotal = 0, taxTotal = 0;
     for (final item in items) {
@@ -296,6 +519,15 @@ class FirestoreSalesRepository implements SalesRepository {
       discountTotal += item.discountAmount;
       taxTotal += taxable * (item.taxPercent / 100);
     }
+    final effectiveDiscountPercent =
+        subTotal <= 0 ? 0.0 : (discountTotal * 100 / subTotal);
+    if (policy.enabled &&
+        effectiveDiscountPercent > policy.maxBillDiscountPercent + 0.0001) {
+      throw Exception(
+        'Bill discount ${effectiveDiscountPercent.toStringAsFixed(2)}% exceeds '
+        'max ${policy.maxBillDiscountPercent.toStringAsFixed(2)}% configured in Settings.',
+      );
+    }
     final grandTotal = subTotal - discountTotal + taxTotal;
     final normalizedPaid = paidAmount < 0 ? 0.0 : paidAmount;
     final isFullyPaid = normalizedPaid + 0.0001 >= grandTotal;
@@ -304,7 +536,7 @@ class FirestoreSalesRepository implements SalesRepository {
     }
     final paymentStatus =
         isFullyPaid ? 'paid' : (normalizedPaid > 0 ? 'partial' : 'credit');
-    final invoiceNo = 'INV-$_now';
+    final invoiceNo = '${await _invoicePrefix()}-$_now';
     final saleId = newIntId();
 
     // Sale + items + payment + cart status in one atomic batch.
@@ -317,6 +549,7 @@ class FirestoreSalesRepository implements SalesRepository {
       'warehouseId': stock.track ? stock.warehouseId : null,
       'subTotal': subTotal,
       'discountTotal': discountTotal,
+      'billDiscountPercent': effectiveDiscountPercent,
       'taxTotal': taxTotal,
       'grandTotal': grandTotal,
       'paymentStatus': paymentStatus,
@@ -399,5 +632,16 @@ class FirestoreSalesRepository implements SalesRepository {
   Future<Map<int, Product>> _productsById() async {
     final snap = await _products.get();
     return {for (final d in snap.docs) (int.tryParse(d.id) ?? 0): productFromDoc(d)};
+  }
+
+  Future<DiscountPolicy> _discountPolicy() async {
+    try {
+      final snap = await storeCollection(_db, _storeId, 'settings')
+          .doc('discount_policy')
+          .get();
+      return DiscountPolicy.fromFirestoreMap(snap.data());
+    } catch (_) {
+      return const DiscountPolicy.defaults();
+    }
   }
 }
