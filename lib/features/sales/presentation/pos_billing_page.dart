@@ -767,6 +767,7 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
             top: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
+<<<<<<< HEAD
               child: Row(
                 children: [
                   IconButton.filledTonal(
@@ -797,6 +798,65 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                     ),
                   ),
                 ],
+=======
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // On narrow screens the full labels don't fit next to the
+                  // Expanded Checkout button (which then collapses and
+                  // overflows). Collapse the secondary actions to icon buttons.
+                  final narrow = constraints.maxWidth < 480;
+                  return Row(
+                    children: [
+                      IconButton.filledTonal(
+                        tooltip: 'Scan barcode (camera)',
+                        onPressed: _scanWithCamera,
+                        icon: const Icon(Icons.qr_code_scanner),
+                      ),
+                      const SizedBox(width: 8),
+                      if (narrow)
+                        IconButton.filledTonal(
+                          tooltip: 'Add item',
+                          onPressed: () => _showAddItemDialog(context, ref),
+                          icon: const Icon(Icons.add_shopping_cart_rounded),
+                        )
+                      else
+                        FilledButton.icon(
+                          onPressed: () => _showAddItemDialog(context, ref),
+                          icon: const Icon(Icons.add_shopping_cart_rounded),
+                          label: const Text('Add Item'),
+                        ),
+                      const SizedBox(width: 8),
+                      if (narrow)
+                        IconButton(
+                          tooltip: 'Bill discount',
+                          onPressed: () => _showBillDiscountDialog(context, ref),
+                          icon: const Icon(Icons.percent_rounded),
+                        )
+                      else ...[
+                        OutlinedButton.icon(
+                          onPressed: () => _showBillDiscountDialog(context, ref),
+                          icon: const Icon(Icons.percent_rounded),
+                          label: const Text('Bill Discount'),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                      Expanded(
+                        child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                              backgroundColor: Colors.green.shade700),
+                          onPressed: () => _showCheckoutDialog(context, ref),
+                          icon: const Icon(Icons.receipt_long_rounded),
+                          label: Text(
+                            narrow ? 'Pay' : 'Checkout & Pay',
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+>>>>>>> aa9f301 (discount module issue fixed)
               ),
             ),
           ),

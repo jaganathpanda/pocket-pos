@@ -82,13 +82,13 @@ class FirestoreSalesRepository implements SalesRepository {
         .where('status', whereIn: ['active', 'hold'])
         .snapshots()
         .map((snap) {
-      var carts = snap.docs.map(cartFromDoc).toList();
-      if (posCounterId != null) {
-        carts = carts.where((c) => c.posCounterId == posCounterId).toList();
-      }
-      carts.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-      return carts;
-    });
+          var carts = snap.docs.map(cartFromDoc).toList();
+          if (posCounterId != null) {
+            carts = carts.where((c) => c.posCounterId == posCounterId).toList();
+          }
+          carts.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+          return carts;
+        });
   }
 
   @override
@@ -111,12 +111,18 @@ class FirestoreSalesRepository implements SalesRepository {
 
   @override
   Future<int> createCart(String name, {int? posCounterId, int? warehouseId}) =>
-      _createCart(name, customerId: null, posCounterId: posCounterId, warehouseId: warehouseId);
+      _createCart(name,
+          customerId: null,
+          posCounterId: posCounterId,
+          warehouseId: warehouseId);
 
   @override
   Future<int> createCartWithCustomer(String name, int customerId,
           {int? posCounterId, int? warehouseId}) =>
-      _createCart(name, customerId: customerId, posCounterId: posCounterId, warehouseId: warehouseId);
+      _createCart(name,
+          customerId: customerId,
+          posCounterId: posCounterId,
+          warehouseId: warehouseId);
 
   Future<int> _createCart(String name,
       {int? customerId, int? posCounterId, int? warehouseId}) async {
@@ -141,25 +147,34 @@ class FirestoreSalesRepository implements SalesRepository {
 
   @override
   Future<void> setCartStatus(int cartId, String status) async =>
-      _write(_carts.doc('$cartId').set({'status': status, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)));
+      _write(_carts.doc('$cartId').set(
+          {'status': status, 'updatedAt': FieldValue.serverTimestamp()},
+          SetOptions(merge: true)));
 
   @override
-  Future<void> setCartCounter(int cartId, int posCounterId) async => _write(_carts
-      .doc('$cartId')
-      .set({'posCounterId': posCounterId, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)));
+  Future<void> setCartCounter(int cartId, int posCounterId) async =>
+      _write(_carts.doc('$cartId').set({
+        'posCounterId': posCounterId,
+        'updatedAt': FieldValue.serverTimestamp()
+      }, SetOptions(merge: true)));
 
   @override
   Future<void> renameCart(int cartId, String name) async =>
-      _write(_carts.doc('$cartId').set({'name': name, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)));
+      _write(_carts.doc('$cartId').set(
+          {'name': name, 'updatedAt': FieldValue.serverTimestamp()},
+          SetOptions(merge: true)));
 
   @override
-  Future<void> updateCartCustomer(int cartId, int customerId) async => _write(_carts
-      .doc('$cartId')
-      .set({'customerId': customerId, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)));
+  Future<void> updateCartCustomer(int cartId, int customerId) async =>
+      _write(_carts.doc('$cartId').set(
+          {'customerId': customerId, 'updatedAt': FieldValue.serverTimestamp()},
+          SetOptions(merge: true)));
 
   @override
   Future<void> updateCartDiscount(int cartId, double totalDiscount) async =>
-      _write(_carts.doc('$cartId').set({'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)));
+      _write(_carts.doc('$cartId').set(
+          {'updatedAt': FieldValue.serverTimestamp()},
+          SetOptions(merge: true)));
 
   @override
   Future<void> updateCartDiscountPercent(int cartId, double percent) async {
@@ -179,8 +194,10 @@ class FirestoreSalesRepository implements SalesRepository {
     for (final d in itemsSnap.docs) {
       final item = cartItemFromDoc(d);
       final lineSub = (item.quantity * item.unitPrice).clamp(0, 999999999);
-      final lineDiscount = (lineSub * (normalized / 100)).clamp(0, lineSub).toDouble();
-      _write(d.reference.set({'discountAmount': lineDiscount}, SetOptions(merge: true)));
+      final lineDiscount =
+          (lineSub * (normalized / 100)).clamp(0, lineSub).toDouble();
+      _write(d.reference
+          .set({'discountAmount': lineDiscount}, SetOptions(merge: true)));
     }
 
     _write(_carts.doc('$cartId').set({
@@ -237,7 +254,8 @@ class FirestoreSalesRepository implements SalesRepository {
         'note': null,
       }));
     }
-    _write(_carts.doc('$cartId').set({'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)));
+    _write(_carts.doc('$cartId').set(
+        {'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)));
   }
 
   @override
@@ -284,8 +302,11 @@ class FirestoreSalesRepository implements SalesRepository {
       'paidAt': FieldValue.serverTimestamp(),
     }));
 
-    final status = newPaid + 0.0001 >= sale.grandTotal ? 'paid' : 'partial';
-    _write(_sales.doc('$saleId').set({'paymentStatus': status}, SetOptions(merge: true)));
+    // Paisa tolerance so a full repayment isn't left labelled 'partial'.
+    final status = newPaid + 0.01 >= sale.grandTotal ? 'paid' : 'partial';
+    _write(_sales
+        .doc('$saleId')
+        .set({'paymentStatus': status}, SetOptions(merge: true)));
   }
 
   @override
@@ -301,8 +322,8 @@ class FirestoreSalesRepository implements SalesRepository {
       final returnedQty = fsNum(doc.data()['returnedQty']);
       final remaining = (item.quantity - returnedQty).clamp(0, item.quantity);
       if (remaining > 0) {
-        lineRequests
-            .add(SaleReturnLineRequest(saleItemId: item.id, quantity: remaining.toDouble()));
+        lineRequests.add(SaleReturnLineRequest(
+            saleItemId: item.id, quantity: remaining.toDouble()));
       }
     }
     if (lineRequests.isEmpty) {
@@ -351,8 +372,7 @@ class FirestoreSalesRepository implements SalesRepository {
 
     final itemsSnap = await _saleItems.where('saleId', isEqualTo: saleId).get();
     final itemDocById = {
-      for (final d in itemsSnap.docs)
-        (int.tryParse(d.id) ?? 0): d,
+      for (final d in itemsSnap.docs) (int.tryParse(d.id) ?? 0): d,
     };
 
     var returnedAmountNow = 0.0;
@@ -383,9 +403,8 @@ class FirestoreSalesRepository implements SalesRepository {
       returnedQtyTotalNow += reqQty;
       restockLines.add((productId: item.productId, qty: reqQty));
 
-      final nextReturnedQty = (alreadyReturnedQty + reqQty)
-          .clamp(0, item.quantity)
-          .toDouble();
+      final nextReturnedQty =
+          (alreadyReturnedQty + reqQty).clamp(0, item.quantity).toDouble();
       final nextReturnedAmount =
           fsNum(itemDoc.data()['returnedAmount']) + lineReturnAmount;
       _write(itemDoc.reference.set({
@@ -399,15 +418,15 @@ class FirestoreSalesRepository implements SalesRepository {
       throw Exception('Nothing to return for selected quantities.');
     }
 
-    final currentReturnedAmount = (saleDoc.data()?['returnedAmount'] as num?)
-            ?.toDouble() ??
-        0.0;
+    final currentReturnedAmount =
+        (saleDoc.data()?['returnedAmount'] as num?)?.toDouble() ?? 0.0;
     final nextReturnedAmount = currentReturnedAmount + returnedAmountNow;
     final nextGrandTotal = (sale.grandTotal - returnedAmountNow)
         .clamp(0, sale.grandTotal)
         .toDouble();
 
-    final paymentsSnap = await _payments.where('saleId', isEqualTo: saleId).get();
+    final paymentsSnap =
+        await _payments.where('saleId', isEqualTo: saleId).get();
     final netPaidBefore = paymentsSnap.docs
         .map(paymentFromDoc)
         .fold<double>(0, (sum, p) => sum + p.amount);
@@ -483,8 +502,10 @@ class FirestoreSalesRepository implements SalesRepository {
     int? customerId = cart.customerId;
     if (customerMobile != null && customerMobile.isNotEmpty) {
       try {
-        final existing =
-            await _customers.where('mobile', isEqualTo: customerMobile).limit(1).get();
+        final existing = await _customers
+            .where('mobile', isEqualTo: customerMobile)
+            .limit(1)
+            .get();
         if (existing.docs.isNotEmpty) {
           customerId = int.tryParse(existing.docs.first.id);
           if (customerName != null && customerName.isNotEmpty) {
@@ -528,11 +549,17 @@ class FirestoreSalesRepository implements SalesRepository {
         'max ${policy.maxBillDiscountPercent.toStringAsFixed(2)}% configured in Settings.',
       );
     }
-    final grandTotal = subTotal - discountTotal + taxTotal;
+    // Round money to 2 decimals (paisa). The paid amount from the UI is already
+    // a 2-decimal value, so comparing it against a raw fractional total (which a
+    // percentage bill discount easily produces) would wrongly reject a full
+    // payment. Compare at paisa precision with a 1-paisa tolerance.
+    final grandTotal =
+        ((subTotal - discountTotal + taxTotal) * 100).roundToDouble() / 100;
     final normalizedPaid = paidAmount < 0 ? 0.0 : paidAmount;
-    final isFullyPaid = normalizedPaid + 0.0001 >= grandTotal;
+    final isFullyPaid = normalizedPaid + 0.01 >= grandTotal;
     if (!isFullyPaid && paymentMode != 'credit') {
-      throw Exception('Paid amount is less than total. Select Credit payment mode for udhar.');
+      throw Exception(
+          'Paid amount is less than total. Select Credit payment mode for udhar.');
     }
     final paymentStatus =
         isFullyPaid ? 'paid' : (normalizedPaid > 0 ? 'partial' : 'credit');
@@ -579,7 +606,8 @@ class FirestoreSalesRepository implements SalesRepository {
       'referenceNo': null,
       'paidAt': FieldValue.serverTimestamp(),
     });
-    batch.set(_carts.doc('$cartId'), {'status': 'completed'}, SetOptions(merge: true));
+    batch.set(_carts.doc('$cartId'), {'status': 'completed'},
+        SetOptions(merge: true));
     // Offline-first: the batch is applied to the local cache immediately (so the
     // sale, its items and the completed-cart status are all visible at once) and
     // syncs on reconnect. Do NOT await server acknowledgement — that would hang
@@ -603,14 +631,16 @@ class FirestoreSalesRepository implements SalesRepository {
 
   // ── helpers ────────────────────────────────────────────────────────────────
 
-  Future<({bool track, int warehouseId})> _stockContext(int? cartWarehouseId) async {
+  Future<({bool track, int warehouseId})> _stockContext(
+      int? cartWarehouseId) async {
     final mode = await _warehouse.getMode();
-    final warehouseId = cartWarehouseId ?? await _warehouse.defaultWarehouseId();
+    final warehouseId =
+        cartWarehouseId ?? await _warehouse.defaultWarehouseId();
     return (track: mode.tracksStock, warehouseId: warehouseId);
   }
 
-  Future<void> _assertStock(
-      int productId, double requestedQty, ({bool track, int warehouseId}) stock) async {
+  Future<void> _assertStock(int productId, double requestedQty,
+      ({bool track, int warehouseId}) stock) async {
     if (requestedQty < 0) throw Exception('Quantity cannot be negative');
     if (!stock.track) return;
     double available;
@@ -624,14 +654,17 @@ class FirestoreSalesRepository implements SalesRepository {
       rethrow;
     }
     if (requestedQty > available) {
-      throw Exception('Insufficient stock. Available: ${available.toStringAsFixed(2)}, '
+      throw Exception(
+          'Insufficient stock. Available: ${available.toStringAsFixed(2)}, '
           'requested: ${requestedQty.toStringAsFixed(2)}');
     }
   }
 
   Future<Map<int, Product>> _productsById() async {
     final snap = await _products.get();
-    return {for (final d in snap.docs) (int.tryParse(d.id) ?? 0): productFromDoc(d)};
+    return {
+      for (final d in snap.docs) (int.tryParse(d.id) ?? 0): productFromDoc(d)
+    };
   }
 
   Future<DiscountPolicy> _discountPolicy() async {
