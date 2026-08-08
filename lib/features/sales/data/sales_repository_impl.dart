@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'dart:math' as math;
 
 import '../../../core/database/app_database.dart';
 import '../domain/sales_repository.dart';
@@ -72,6 +73,22 @@ class SalesRepositoryImpl implements SalesRepository {
   @override
   Future<void> updateCartDiscount(int cartId, double totalDiscount) {
     return (_db.update(_db.carts)..where((c) => c.id.equals(cartId))).write(
+      CartsCompanion(updatedAt: Value(DateTime.now())),
+    );
+  }
+
+  @override
+  Future<void> updateCartDiscountPercent(int cartId, double percent) async {
+    final normalized = percent.clamp(0, 100).toDouble();
+    final items = await (_db.select(_db.cartItems)..where((i) => i.cartId.equals(cartId))).get();
+    for (final item in items) {
+      final lineSub = (item.quantity * item.unitPrice).clamp(0, 999999999);
+      final lineDiscount = (lineSub * (normalized / 100)).clamp(0, lineSub).toDouble();
+      await (_db.update(_db.cartItems)..where((i) => i.id.equals(item.id))).write(
+        CartItemsCompanion(discountAmount: Value(lineDiscount)),
+      );
+    }
+    await (_db.update(_db.carts)..where((c) => c.id.equals(cartId))).write(
       CartsCompanion(updatedAt: Value(DateTime.now())),
     );
   }
@@ -213,6 +230,192 @@ class SalesRepositoryImpl implements SalesRepository {
       final nextStatus = newPaid + 0.0001 >= sale.grandTotal ? 'paid' : 'partial';
       await (_db.update(_db.sales)..where((s) => s.id.equals(saleId))).write(
         SalesCompanion(paymentStatus: Value(nextStatus)),
+      );
+    });
+  }
+
+  @override
+  Future<SalesReturnResult> processSaleReturn({
+    required int saleId,
+    required String reason,
+    required String refundMethod,
+  }) async {
+    final items = await (_db.select(_db.saleItems)
+          ..where((i) => i.saleId.equals(saleId)))
+        .get();
+    if (items.isEmpty) {
+      throw Exception('Sale items not found for this invoice.');
+    }
+    return processPartialSaleReturn(
+      saleId: saleId,
+      lines: [
+        for (final i in items)
+          SaleReturnLineRequest(saleItemId: i.id, quantity: i.quantity),
+      ],
+      reason: reason,
+      refundMethod: refundMethod,
+    );
+  }
+
+  @override
+  Future<SalesReturnResult> processPartialSaleReturn({
+    required int saleId,
+    required List<SaleReturnLineRequest> lines,
+    required String reason,
+    required String refundMethod,
+  }) async {
+    final trimmedReason = reason.trim();
+    if (trimmedReason.isEmpty) {
+      throw Exception('Return reason is required');
+    }
+    if (lines.isEmpty) {
+      throw Exception('Select at least one line item quantity to return.');
+    }
+
+    return _db.transaction(() async {
+      final sale = await (_db.select(_db.sales)..where((s) => s.id.equals(saleId)))
+          .getSingleOrNull();
+      if (sale == null) throw Exception('Sale not found');
+
+      final status = sale.paymentStatus.trim().toLowerCase();
+      if (status == 'returned' || status == 'refunded') {
+        throw Exception('This invoice is already returned.');
+      }
+
+      final priorReturnPayment = await (_db.select(_db.payments)
+            ..where((p) =>
+                p.saleId.equals(saleId) &
+                p.referenceNo.isIn(const ['SALE_RETURN', 'SALE_RETURN_PARTIAL']))
+            ..limit(1))
+          .getSingleOrNull();
+      if (priorReturnPayment != null) {
+        throw Exception(
+          'Multiple partial returns are not supported in local mode yet. Use one consolidated return.',
+        );
+      }
+
+      final itemById = {
+        for (final item in await (_db.select(_db.saleItems)
+              ..where((i) => i.saleId.equals(saleId)))
+            .get())
+          item.id: item,
+      };
+
+      final reqQtyById = <int, double>{};
+      for (final line in lines) {
+        if (line.quantity <= 0) continue;
+        reqQtyById[line.saleItemId] =
+            (reqQtyById[line.saleItemId] ?? 0) + line.quantity;
+      }
+      if (reqQtyById.isEmpty) {
+        throw Exception('Return quantity must be greater than 0.');
+      }
+
+      var returnedAmountNow = 0.0;
+      final stock = await _stockContext(sale.warehouseId);
+
+      for (final entry in reqQtyById.entries) {
+        final item = itemById[entry.key];
+        if (item == null) throw Exception('Sale item not found: ${entry.key}');
+        final reqQty = entry.value;
+        if (reqQty > item.quantity + 0.0001) {
+          throw Exception(
+            'Return qty exceeds sold qty for item ${item.productId}. Sold: '
+            '${item.quantity.toStringAsFixed(2)}',
+          );
+        }
+
+        final lineReturnAmount =
+            (item.lineTotal * (reqQty / item.quantity)).clamp(0, item.lineTotal);
+        returnedAmountNow += lineReturnAmount;
+
+        if (stock.track) {
+          final inv = await (_db.select(_db.inventory)
+                ..where((i) =>
+                    i.productId.equals(item.productId) &
+                    i.variantId.isNull() &
+                    i.warehouseId.equals(stock.warehouseId)))
+              .getSingleOrNull();
+          if (inv == null) {
+            await _db.into(_db.inventory).insert(
+                  InventoryCompanion.insert(
+                    productId: item.productId,
+                    variantId: const Value(null),
+                    warehouseId: Value(stock.warehouseId),
+                    currentStock: Value(reqQty),
+                    availableStock: Value(reqQty),
+                    lowStockThreshold: const Value(5),
+                    updatedAt: Value(DateTime.now()),
+                  ),
+                );
+          } else {
+            final next = (inv.availableStock + reqQty).clamp(0, 99999999).toDouble();
+            await (_db.update(_db.inventory)..where((i) => i.id.equals(inv.id))).write(
+              InventoryCompanion(
+                currentStock: Value(next),
+                availableStock: Value(next),
+                updatedAt: Value(DateTime.now()),
+              ),
+            );
+          }
+          await _db.into(_db.inventoryTransactions).insert(
+                InventoryTransactionsCompanion.insert(
+                  productId: item.productId,
+                  variantId: const Value(null),
+                  warehouseId: Value(stock.warehouseId),
+                  type: 'return',
+                  quantity: reqQty,
+                  note: Value('Sale return ${sale.invoiceNo}: $trimmedReason'),
+                ),
+              );
+        }
+      }
+
+      if (returnedAmountNow <= 0) {
+        throw Exception('Nothing to return for selected quantities.');
+      }
+
+      final nextGrandTotal =
+          (sale.grandTotal - returnedAmountNow).clamp(0, sale.grandTotal).toDouble();
+      final payments = await (_db.select(_db.payments)
+            ..where((p) => p.saleId.equals(saleId)))
+          .get();
+      final netPaidBefore = payments.fold<double>(0, (sum, p) => sum + p.amount);
+      final refundAmount = math.max(0, (netPaidBefore - nextGrandTotal)).toDouble();
+
+      if (refundAmount > 0) {
+        await _db.into(_db.payments).insert(
+              PaymentsCompanion.insert(
+                saleId: saleId,
+                method: refundMethod.trim().isEmpty
+                    ? 'refund'
+                    : refundMethod.trim(),
+                amount: -refundAmount,
+                referenceNo: const Value('SALE_RETURN_PARTIAL'),
+              ),
+            );
+      }
+
+      final netPaidAfter = netPaidBefore - refundAmount;
+      final fullyReturned = nextGrandTotal <= 0.0001;
+      final nextStatus = fullyReturned
+          ? (refundAmount > 0 ? 'refunded' : 'returned')
+          : (netPaidAfter + 0.0001 >= nextGrandTotal
+              ? 'paid'
+              : (netPaidAfter > 0 ? 'partial' : 'credit'));
+
+      await (_db.update(_db.sales)..where((s) => s.id.equals(saleId))).write(
+        SalesCompanion(
+          grandTotal: Value(nextGrandTotal),
+          paymentStatus: Value(nextStatus),
+        ),
+      );
+
+      return SalesReturnResult(
+        returnedAmount: returnedAmountNow,
+        refundAmount: refundAmount,
+        stockRestocked: stock.track,
+        fullyReturned: fullyReturned,
       );
     });
   }
