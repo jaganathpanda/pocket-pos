@@ -109,6 +109,15 @@ class StoreCatalogSeeder {
 
     batch.set(settings.doc('demo'), {'type': type.name});
 
+    // Permanently record the business type chosen at registration.
+    // Use SetOptions(merge: false) only when the document doesn't already exist
+    // so that a later catalog reload (Settings → Sample Data) never overwrites
+    // the original business identity.
+    final profileSnap = await settings.doc('store_profile').get();
+    if (!profileSnap.exists) {
+      batch.set(settings.doc('store_profile'), {'businessType': type.name});
+    }
+
     await batch.commit();
     // With offline persistence, commit() resolves against the local cache and
     // returns before the write reaches the server. Block until the backend has

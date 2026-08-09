@@ -4,6 +4,7 @@ enum DemoBusinessType {
   garment,
   electronics,
   bakery,
+  riceMill,
 }
 
 extension DemoBusinessTypeLabel on DemoBusinessType {
@@ -13,5 +14,6 @@ extension DemoBusinessTypeLabel on DemoBusinessType {
         DemoBusinessType.garment => 'Garment / Apparel',
         DemoBusinessType.electronics => 'Electronics',
         DemoBusinessType.bakery => 'Bakery',
+        DemoBusinessType.riceMill => 'Rice Mill',
       };
 }
