@@ -116,14 +116,8 @@ class _DiscountPolicyCardState extends ConsumerState<_DiscountPolicyCard> {
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD
-    final policy =
-        ref.watch(discountPolicyProvider).valueOrNull ??
-            const DiscountPolicy.defaults();
-=======
     final policy = ref.watch(discountPolicyProvider).valueOrNull ??
         const DiscountPolicy.defaults();
->>>>>>> aa9f301 (discount module issue fixed)
     _loadOnce(policy);
 
     return Card(
@@ -202,12 +196,8 @@ class _PrinterIntegrationCard extends ConsumerStatefulWidget {
       _PrinterIntegrationCardState();
 }
 
-<<<<<<< HEAD
-class _PrinterIntegrationCardState extends ConsumerState<_PrinterIntegrationCard> {
-=======
 class _PrinterIntegrationCardState
     extends ConsumerState<_PrinterIntegrationCard> {
->>>>>>> aa9f301 (discount module issue fixed)
   final _deviceCtrl = TextEditingController();
   bool _loaded = false;
   bool _enabled = false;
@@ -334,17 +324,10 @@ class _PrinterIntegrationCardState
         connection: _connection,
         deviceIdentifier: _deviceCtrl.text.trim(),
       );
-<<<<<<< HEAD
-      final branding =
-          ref.read(invoiceBrandingProvider).valueOrNull ??
-              const InvoiceBranding.defaults();
-      final storeName = ref.read(storeSessionProvider)?.storeName ?? 'Pocket POS';
-=======
       final branding = ref.read(invoiceBrandingProvider).valueOrNull ??
           const InvoiceBranding.defaults();
       final storeName =
           ref.read(storeSessionProvider)?.storeName ?? 'Pocket POS';
->>>>>>> aa9f301 (discount module issue fixed)
       await ref.read(printerServiceProvider).printInvoice(
             config: config,
             branding: branding,
@@ -378,14 +361,8 @@ class _PrinterIntegrationCardState
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD
-    final config =
-        ref.watch(printerConfigProvider).valueOrNull ??
-            const PrinterConfig.defaults();
-=======
     final config = ref.watch(printerConfigProvider).valueOrNull ??
         const PrinterConfig.defaults();
->>>>>>> aa9f301 (discount module issue fixed)
     final mode = _effectiveMode();
     _loadOnce(config);
 
@@ -405,13 +382,8 @@ class _PrinterIntegrationCardState
                     children: [
                       const Text(
                         'Bluetooth / USB Printer Integration',
-<<<<<<< HEAD
-                        style:
-                            TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
-=======
                         style: TextStyle(
                             fontWeight: FontWeight.w600, fontSize: 18),
->>>>>>> aa9f301 (discount module issue fixed)
                       ),
                       const SizedBox(height: 6),
                       Align(
@@ -466,12 +438,8 @@ class _PrinterIntegrationCardState
             ),
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
-<<<<<<< HEAD
-              title: const Text('Allow PDF fallback when direct print is unavailable'),
-=======
               title: const Text(
                   'Allow PDF fallback when direct print is unavailable'),
->>>>>>> aa9f301 (discount module issue fixed)
               subtitle: const Text(
                 'Keeps print action available using PDF share/print flows.',
                 style: TextStyle(fontSize: 12),
@@ -597,12 +565,7 @@ class _InvoiceBrandingCardState extends ConsumerState<_InvoiceBrandingCard> {
     if (prefix.isEmpty || prefix.length > 8) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-<<<<<<< HEAD
-            content:
-                Text('Invoice prefix must be 1–8 uppercase characters.')),
-=======
             content: Text('Invoice prefix must be 1–8 uppercase characters.')),
->>>>>>> aa9f301 (discount module issue fixed)
       );
       return;
     }

@@ -741,7 +741,9 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                               'Bill Discount %',
                               summary.subTotal <= 0
                                   ? 0
-                                  : (summary.discountTotal * 100 / summary.subTotal),
+                                  : (summary.discountTotal *
+                                      100 /
+                                      summary.subTotal),
                               suffix: '%',
                             ),
                             _sumRow('Sub Total', summary.subTotal),
@@ -767,38 +769,6 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
             top: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
-<<<<<<< HEAD
-              child: Row(
-                children: [
-                  IconButton.filledTonal(
-                    tooltip: 'Scan barcode (camera)',
-                    onPressed: _scanWithCamera,
-                    icon: const Icon(Icons.qr_code_scanner),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton.icon(
-                    onPressed: () => _showAddItemDialog(context, ref),
-                    icon: const Icon(Icons.add_shopping_cart_rounded),
-                    label: const Text('Add Item'),
-                  ),
-                  const SizedBox(width: 12),
-                  OutlinedButton.icon(
-                    onPressed: () => _showBillDiscountDialog(context, ref),
-                    icon: const Icon(Icons.percent_rounded),
-                    label: const Text('Bill Discount'),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                          backgroundColor: Colors.green.shade700),
-                      onPressed: () => _showCheckoutDialog(context, ref),
-                      icon: const Icon(Icons.receipt_long_rounded),
-                      label: const Text('Checkout & Pay'),
-                    ),
-                  ),
-                ],
-=======
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   // On narrow screens the full labels don't fit next to the
@@ -829,12 +799,14 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                       if (narrow)
                         IconButton(
                           tooltip: 'Bill discount',
-                          onPressed: () => _showBillDiscountDialog(context, ref),
+                          onPressed: () =>
+                              _showBillDiscountDialog(context, ref),
                           icon: const Icon(Icons.percent_rounded),
                         )
                       else ...[
                         OutlinedButton.icon(
-                          onPressed: () => _showBillDiscountDialog(context, ref),
+                          onPressed: () =>
+                              _showBillDiscountDialog(context, ref),
                           icon: const Icon(Icons.percent_rounded),
                           label: const Text('Bill Discount'),
                         ),
@@ -856,7 +828,6 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
                     ],
                   );
                 },
->>>>>>> aa9f301 (discount module issue fixed)
               ),
             ),
           ),
@@ -866,7 +837,10 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
   }
 
   static Widget _sumRow(String label, double value,
-      {bool isBold = false, Color? color, String prefix = '₹', String suffix = ''}) {
+      {bool isBold = false,
+      Color? color,
+      String prefix = '₹',
+      String suffix = ''}) {
     final style = TextStyle(
       fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
       fontSize: isBold ? 16 : 14,
@@ -884,7 +858,8 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
     );
   }
 
-  Future<void> _showBillDiscountDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showBillDiscountDialog(
+      BuildContext context, WidgetRef ref) async {
     final items = await ref
         .read(salesRepositoryProvider)
         .watchCartItems(widget.cartId)
@@ -902,9 +877,8 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
     final currentPercent = summary.subTotal <= 0
         ? 0.0
         : (summary.discountTotal * 100 / summary.subTotal);
-    final policy =
-        ref.read(discountPolicyProvider).valueOrNull ??
-            const DiscountPolicy.defaults();
+    final policy = ref.read(discountPolicyProvider).valueOrNull ??
+        const DiscountPolicy.defaults();
 
     if (!policy.enabled) {
       if (context.mounted) {
@@ -978,7 +952,9 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
           .updateCartDiscountPercent(widget.cartId, percent);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Applied ${percent.toStringAsFixed(2)}% bill discount.')),
+          SnackBar(
+              content: Text(
+                  'Applied ${percent.toStringAsFixed(2)}% bill discount.')),
         );
       }
     } catch (e) {
