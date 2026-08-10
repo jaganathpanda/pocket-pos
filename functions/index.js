@@ -174,6 +174,10 @@ exports.sendWelcomeEmailOnStoreRegistration = onDocumentCreated(
       typeof store.ownerName === "string" && store.ownerName.trim().length > 0
         ? store.ownerName.trim()
         : "Store Owner";
+    const ownerUsername =
+      typeof store.ownerUsername === "string" && store.ownerUsername.trim().length > 0
+        ? store.ownerUsername.trim()
+        : "";
 
     const fromAddress =
       emailCfg.fromAddress || "Pocket POS <onboarding@updates.mypocketpos.in>";
@@ -200,6 +204,7 @@ exports.sendWelcomeEmailOnStoreRegistration = onDocumentCreated(
         <p>Hi ${ownerName},</p>
         <p>Welcome to Pocket POS for <strong>${storeName}</strong>.</p>
         <p>Your Store ID is: <strong>${storeId}</strong></p>
+        <p>Your Store Username is: <strong>${ownerUsername}</strong></p>
         <p>Your store is currently pending platform approval.<br/>Once approved, you can log in and start billing.</p>
         <p>Regards,<br/>Pocket POS Team</p>
       </div>
