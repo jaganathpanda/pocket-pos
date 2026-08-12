@@ -1,10 +1,12 @@
 rules_version = '2';
 
 // Pocket POS multi-tenant rules.
-// - A signed-in user may read/write their own store's data.
-// - Store data (subcollections) is only accessible once the store is approved.
-// - Platform admins (docs in /platform_admins/{uid}) can read all stores and
-//   change a store's status (approve / suspend).
+// - Staff/owner login: a signed-in store member may read/write their store data.
+// - Customer cart sessions: issued by the Apps Script Web App (appscript/cart_session.js)
+//   which mints a Firebase Custom Token carrying claims:
+//     { role: "customer_cart", storeId: "STR-XXXXXX", cartId: <int> }
+//   Rules verify only these claims — no get() lookups needed for customer paths.
+// - Platform admins (docs in /platform_admins/{uid}) manage store approvals.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -17,10 +19,19 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/platform_admins/$(request.auth.uid));
     }
 
-    // Is the caller a member of this store?
+    // Is the caller a member of this store (staff/owner)?
     function isStoreMember(storeId) {
       return isSignedIn()
         && exists(/databases/$(database)/documents/stores/$(storeId)/users/$(request.auth.uid));
+    }
+
+    // Does this request carry a valid scoped customer-cart custom token?
+    // The Apps Script backend verified all business rules before minting.
+    function isCustomerCartToken(storeId, cartId) {
+      return isSignedIn()
+        && request.auth.token.role == 'customer_cart'
+        && request.auth.token.storeId == storeId
+        && request.auth.token.cartId == cartId;
     }
 
     // Lets a user find their store on session-restore (uid -> storeId).
@@ -30,12 +41,11 @@ service cloud.firestore {
     }
 
     match /platform_admins/{uid} {
-      // A user may check their own admin doc; only admins manage the list.
       allow get: if isSignedIn() && request.auth.uid == uid;
       allow list, write: if isPlatformAdmin();
     }
 
-    // Global platform feature flags/configuration.
+    // Platform config — platform admins only.
     match /platform_config/{docId} {
       allow read, write: if isPlatformAdmin();
     }
@@ -46,24 +56,55 @@ service cloud.firestore {
         && request.resource.data.status == 'pending'
         && request.resource.data.ownerUid == request.auth.uid;
 
-      // Members can read their store; admins can read any (for approvals).
+      // Members and admins can read the store doc.
       allow get: if isStoreMember(storeId) || isPlatformAdmin();
       allow list: if isPlatformAdmin();
-
-      // Only platform admins flip status (approve / suspend). Members may not
-      // change their own approval state.
       allow update: if isPlatformAdmin();
 
-      // Store-scoped user directory.
+      // Store-scoped user directory (staff/owner only).
       match /users/{uid} {
         allow read: if isStoreMember(storeId) || isPlatformAdmin();
         allow create: if isSignedIn() && request.auth.uid == uid;
         allow update, delete: if isStoreMember(storeId);
       }
 
-      // All other store data: members of the store only. (App access for
-      // unapproved stores is gated client-side; store `status` stays
-      // admin-only above, and registration seeds its catalog here.)
+      // Customer carts: staff OR a holder of a matching customer-cart token.
+      match /carts/{cartId} {
+        allow read:   if isStoreMember(storeId) || isPlatformAdmin()
+                       || isCustomerCartToken(storeId, int(cartId));
+        allow create: if isStoreMember(storeId)
+                       || (
+                            isCustomerCartToken(storeId, int(cartId))
+                            && request.resource.data.source == 'customer'
+                            && request.resource.data.createdByUid == request.auth.uid
+                            && request.resource.data.status == 'active'
+                            && request.resource.data.posCounterId == null
+                          );
+        allow update: if isStoreMember(storeId)
+                       || (
+                            isCustomerCartToken(storeId, int(cartId))
+                            && request.resource.data.source == 'customer'
+                            && request.resource.data.createdByUid == request.auth.uid
+                          );
+        allow delete: if isStoreMember(storeId)
+                       || isCustomerCartToken(storeId, int(cartId));
+      }
+
+      // Cart items: staff OR holder of the token whose cartId matches.
+      match /cart_items/{itemId} {
+        allow read:   if isStoreMember(storeId) || isPlatformAdmin()
+                       || isCustomerCartToken(storeId, resource.data.cartId);
+        allow create: if isStoreMember(storeId)
+                       || (
+                            isCustomerCartToken(storeId, request.resource.data.cartId)
+                          );
+        allow update: if isStoreMember(storeId)
+                       || isCustomerCartToken(storeId, resource.data.cartId);
+        allow delete: if isStoreMember(storeId)
+                       || isCustomerCartToken(storeId, resource.data.cartId);
+      }
+
+      // All other store data: members only.
       match /{document=**} {
         allow read, write: if isStoreMember(storeId);
       }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/models/storefront_shopping_config.dart';
 import '../../notifications/domain/domain.dart';
 import '../domain/store_models.dart';
 import 'store_auth_controller.dart';
@@ -22,6 +23,11 @@ final _notificationFeaturesProvider =
   return ref.watch(storeAuthServiceProvider).watchNotificationFeatures();
 });
 
+final _storefrontFeatureFlagProvider =
+    StreamProvider<StorefrontShoppingConfig>((ref) {
+  return ref.watch(storeAuthServiceProvider).watchStorefrontFeatureFlag();
+});
+
 class AdminApprovalPage extends ConsumerWidget {
   const AdminApprovalPage({super.key});
 
@@ -30,6 +36,7 @@ class AdminApprovalPage extends ConsumerWidget {
     final pending = ref.watch(_pendingStoresProvider);
     final approved = ref.watch(_approvedStoresProvider);
     final notificationFeatures = ref.watch(_notificationFeaturesProvider);
+    final storefrontFeature = ref.watch(_storefrontFeatureFlagProvider);
     final service = ref.watch(storeAuthServiceProvider);
 
     Future<void> setStatus(StoreRecord s, StoreStatus status) async {
@@ -54,6 +61,19 @@ class AdminApprovalPage extends ConsumerWidget {
       }
     }
 
+    Future<void> updateStorefrontFeatureFlag(
+      StorefrontShoppingConfig next,
+    ) async {
+      try {
+        await service.setStorefrontFeatureFlag(next);
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('$e')));
+        }
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Store Approvals'),
@@ -61,7 +81,8 @@ class AdminApprovalPage extends ConsumerWidget {
           IconButton(
             tooltip: 'Logout',
             icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(storeAuthControllerProvider.notifier).logout(),
+            onPressed: () =>
+                ref.read(storeAuthControllerProvider.notifier).logout(),
           ),
         ],
       ),
@@ -87,6 +108,23 @@ class AdminApprovalPage extends ConsumerWidget {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => _Empty('Notification flags error: $e'),
           ),
+          const SizedBox(height: 12),
+          storefrontFeature.when(
+            data: (cfg) => Card(
+              child: SwitchListTile.adaptive(
+                title: const Text('Enable Public Storefront Shopping'),
+                subtitle: const Text(
+                  'Global master switch. When OFF, the customer storefront link '
+                  'is hidden from store login for all stores.',
+                ),
+                value: cfg.allowAnonymousShopping,
+                onChanged: (v) => updateStorefrontFeatureFlag(
+                    cfg.copyWith(allowAnonymousShopping: v)),
+              ),
+            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => _Empty('Storefront feature flag error: $e'),
+          ),
           const SizedBox(height: 20),
           const _SectionHeader('Pending approval'),
           pending.when(
@@ -103,7 +141,8 @@ class AdminApprovalPage extends ConsumerWidget {
                             subtitle: Text(
                                 'Owner: ${s.ownerName}${s.mobile != null && s.mobile!.isNotEmpty ? ' • ${s.mobile}' : ''}'),
                             trailing: FilledButton(
-                              onPressed: () => setStatus(s, StoreStatus.approved),
+                              onPressed: () =>
+                                  setStatus(s, StoreStatus.approved),
                               child: const Text('Approve'),
                             ),
                           ),
@@ -128,7 +167,8 @@ class AdminApprovalPage extends ConsumerWidget {
                             title: Text('${s.name}  (${s.storeId})'),
                             subtitle: Text('Owner: ${s.ownerName}'),
                             trailing: TextButton(
-                              onPressed: () => setStatus(s, StoreStatus.suspended),
+                              onPressed: () =>
+                                  setStatus(s, StoreStatus.suspended),
                               child: const Text('Suspend'),
                             ),
                           ),
@@ -179,7 +219,8 @@ class _NotificationConfigCard extends ConsumerStatefulWidget {
       _NotificationConfigCardState();
 }
 
-class _NotificationConfigCardState extends ConsumerState<_NotificationConfigCard> {
+class _NotificationConfigCardState
+    extends ConsumerState<_NotificationConfigCard> {
   late final TextEditingController _emailFromCtrl;
   late final TextEditingController _emailApiKeyCtrl;
   late final TextEditingController _smsFromCtrl;
@@ -196,17 +237,17 @@ class _NotificationConfigCardState extends ConsumerState<_NotificationConfigCard
     _emailFromCtrl =
         TextEditingController(text: widget.features.emailFromAddress ?? '');
     _emailApiKeyCtrl =
-      TextEditingController(text: widget.features.emailApiKey ?? '');
+        TextEditingController(text: widget.features.emailApiKey ?? '');
     _smsFromCtrl =
         TextEditingController(text: widget.features.smsFromNumber ?? '');
     _smsAccountSidCtrl =
-      TextEditingController(text: widget.features.smsAccountSid ?? '');
+        TextEditingController(text: widget.features.smsAccountSid ?? '');
     _smsAuthTokenCtrl =
-      TextEditingController(text: widget.features.smsAuthToken ?? '');
+        TextEditingController(text: widget.features.smsAuthToken ?? '');
     _whatsappFromCtrl =
         TextEditingController(text: widget.features.whatsappFromNumber ?? '');
     _whatsappAccountSidCtrl =
-      TextEditingController(text: widget.features.whatsappAccountSid ?? '');
+        TextEditingController(text: widget.features.whatsappAccountSid ?? '');
     _whatsappAuthTokenCtrl = TextEditingController(
       text: widget.features.whatsappAuthToken ?? '',
     );
@@ -215,7 +256,8 @@ class _NotificationConfigCardState extends ConsumerState<_NotificationConfigCard
   @override
   void didUpdateWidget(covariant _NotificationConfigCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.features.emailFromAddress != widget.features.emailFromAddress) {
+    if (oldWidget.features.emailFromAddress !=
+        widget.features.emailFromAddress) {
       _emailFromCtrl.text = widget.features.emailFromAddress ?? '';
     }
     if (oldWidget.features.emailApiKey != widget.features.emailApiKey) {

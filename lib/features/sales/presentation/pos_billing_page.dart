@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pocket_pos/features/store/presentation/store_auth_controller.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/firestore/store_scope.dart';
 import '../../../core/models/discount_policy.dart';
 import '../../barcode/presentation/barcode_scanner_page.dart';
 import '../../barcode/presentation/hid_scanner_listener.dart';
@@ -1447,13 +1449,14 @@ class _CartMetaText extends ConsumerWidget {
   final Cart cart;
   final String? counterName;
 
-  Widget _wrap({String? mobile}) {
+  Widget _wrap({String? mobile, bool isCustomerCart = false}) {
     return Wrap(
       spacing: 6,
       runSpacing: 4,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         if (counterName != null) _CounterChip(name: counterName!),
+        if (isCustomerCart) const _CartSourceChip(label: 'CUSTOMER'),
         if (mobile != null && mobile.isNotEmpty)
           Text(mobile, style: const TextStyle(fontSize: 11)),
         _CartStatusChip(status: cart.status),
@@ -1461,15 +1464,67 @@ class _CartMetaText extends ConsumerWidget {
     );
   }
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (cart.customerId == null) {
-      return _wrap();
+  Future<({bool isCustomerCart, String? mobile})> _loadMeta(
+      WidgetRef ref) async {
+    final storeId = ref.read(activeStoreIdProvider);
+    if (storeId != null && storeId.isNotEmpty) {
+      final snap = await storeCollection(
+        ref.read(firestoreProvider),
+        storeId,
+        'carts',
+      ).doc('${cart.id}').get();
+      final data = snap.data();
+      if (data != null && data['source'] == 'customer') {
+        return (
+          isCustomerCart: true,
+          mobile: (data['customerMobile'] as String?)?.trim(),
+        );
+      }
     }
 
-    return FutureBuilder<Customer?>(
-      future: ref.read(customerRepositoryProvider).getById(cart.customerId!),
-      builder: (_, snap) => _wrap(mobile: snap.data?.mobile),
+    if (cart.customerId == null) {
+      return (isCustomerCart: false, mobile: null);
+    }
+
+    final customer =
+        await ref.read(customerRepositoryProvider).getById(cart.customerId!);
+    return (isCustomerCart: false, mobile: customer?.mobile);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return FutureBuilder<({bool isCustomerCart, String? mobile})>(
+      future: _loadMeta(ref),
+      builder: (_, snap) => _wrap(
+        mobile: snap.data?.mobile,
+        isCustomerCart: snap.data?.isCustomerCart ?? false,
+      ),
+    );
+  }
+}
+
+class _CartSourceChip extends StatelessWidget {
+  const _CartSourceChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.teal.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.teal.shade200),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: Colors.teal.shade700,
+        ),
+      ),
     );
   }
 }

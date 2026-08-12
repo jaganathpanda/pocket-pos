@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/database/seed/demo_business_type.dart';
+import '../../../core/models/storefront_shopping_config.dart';
 import '../../notifications/domain/domain.dart';
 import '../../../core/firestore/store_catalog_seeder.dart';
 import '../domain/store_models.dart';
@@ -56,8 +57,11 @@ class StoreAuthService {
   DocumentReference<Map<String, dynamic>> _storeDoc(String storeId) =>
       _db.collection('stores').doc(storeId);
 
-    DocumentReference<Map<String, dynamic>> _notificationConfigDoc() =>
+  DocumentReference<Map<String, dynamic>> _notificationConfigDoc() =>
       _db.collection('platform_config').doc('notifications');
+
+  DocumentReference<Map<String, dynamic>> _publicFeaturesDoc() =>
+      _db.collection('platform_config').doc('public_features');
 
   /// Registers a new store (status = pending) and its owner login.
   /// Returns the generated store id.
@@ -86,24 +90,24 @@ class StoreAuthService {
           email: _emailFor(storeId, ownerUsername),
           password: password,
         )
-        .timeout(_netTimeout, onTimeout: () => _timedOut('Creating your account'));
+        .timeout(_netTimeout,
+            onTimeout: () => _timedOut('Creating your account'));
     final uid = cred.user!.uid;
 
     // Reserve the email atomically. The transaction fails (and no store is
     // created) if another store already registered this address.
     final emailRef = _db.collection('email_index').doc(emailKey);
     try {
-      await _db
-          .runTransaction((tx) async {
-            final snap = await tx.get(emailRef);
-            if (snap.exists) throw const _EmailTakenException();
-            tx.set(emailRef, {
-              'storeId': storeId,
-              'uid': uid,
-              'createdAt': FieldValue.serverTimestamp(),
-            });
-          })
-          .timeout(_netTimeout, onTimeout: () => _timedOut('Checking your email'));
+      await _db.runTransaction((tx) async {
+        final snap = await tx.get(emailRef);
+        if (snap.exists) throw const _EmailTakenException();
+        tx.set(emailRef, {
+          'storeId': storeId,
+          'uid': uid,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }).timeout(_netTimeout,
+          onTimeout: () => _timedOut('Checking your email'));
     } on _EmailTakenException {
       await _safeDeleteUser(cred.user);
       throw Exception(
@@ -137,7 +141,10 @@ class StoreAuthService {
       });
 
       // Index for session restore (uid -> storeId).
-      await _db.collection('user_store_index').doc(uid).set({'storeId': storeId});
+      await _db
+          .collection('user_store_index')
+          .doc(uid)
+          .set({'storeId': storeId});
 
       // Seed the chosen business type's demo catalog (categories, products,
       // opening stock) into the new store.
@@ -182,7 +189,8 @@ class StoreAuthService {
     return session;
   }
 
-  Future<StoreSession> _sessionFor(String storeId, String uid, String username) async {
+  Future<StoreSession> _sessionFor(
+      String storeId, String uid, String username) async {
     final storeRef = _storeDoc(storeId);
     final storeSnap = await _getWithCacheFallback(
       serverAndCacheRead: () => storeRef.get(),
@@ -254,7 +262,8 @@ class StoreAuthService {
     }
     final session = await _sessionFor(storeId, user.uid, '');
     return StoreAuthState(
-      stage: session.isApproved ? StoreAuthStage.active : StoreAuthStage.pending,
+      stage:
+          session.isApproved ? StoreAuthStage.active : StoreAuthStage.pending,
       session: session,
     );
   }
@@ -291,6 +300,19 @@ class StoreAuthService {
     );
   }
 
+  Stream<StorefrontShoppingConfig> watchStorefrontFeatureFlag() {
+    return _publicFeaturesDoc().snapshots().map((snap) {
+      return StorefrontShoppingConfig.fromFirestoreMap(snap.data());
+    });
+  }
+
+  Future<void> setStorefrontFeatureFlag(StorefrontShoppingConfig features) {
+    return _publicFeaturesDoc().set(
+      features.toFirestoreMap(),
+      SetOptions(merge: true),
+    );
+  }
+
   Future<void> setStoreStatus(String storeId, StoreStatus status) {
     return _storeDoc(storeId).update({'status': status.name});
   }
@@ -305,7 +327,8 @@ class StoreAuthService {
   Future<DocumentSnapshot<Map<String, dynamic>>> _getWithCacheFallback({
     required Future<DocumentSnapshot<Map<String, dynamic>>> Function()
         serverAndCacheRead,
-    required Future<DocumentSnapshot<Map<String, dynamic>>> Function() cacheRead,
+    required Future<DocumentSnapshot<Map<String, dynamic>>> Function()
+        cacheRead,
     required String timeoutLabel,
   }) async {
     try {

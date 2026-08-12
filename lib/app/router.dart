@@ -24,6 +24,7 @@ import '../features/store/domain/store_models.dart';
 import '../features/store/presentation/admin_approval_page.dart';
 import '../features/store/presentation/admin_login_page.dart';
 import '../features/store/presentation/pending_approval_page.dart';
+import '../features/store/presentation/public_storefront_page.dart';
 import '../features/store/presentation/shop_owner_profile_page.dart';
 import '../features/store/presentation/store_auth_controller.dart';
 import '../features/store/presentation/store_login_page.dart';
@@ -46,7 +47,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final stage = ref.read(storeAuthControllerProvider).stage;
       final loc = state.matchedLocation;
-      const authRoutes = {'/store-login', '/store-register', '/admin-login'};
+      const authRoutes = {
+        '/store-login',
+        '/store-register',
+        '/admin-login',
+        '/storefront',
+      };
       switch (stage) {
         case StoreAuthStage.unknown:
           return null; // brief; controller resolves on start
@@ -57,25 +63,51 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         case StoreAuthStage.admin:
           return loc == '/admin' ? null : '/admin';
         case StoreAuthStage.active:
-          if (authRoutes.contains(loc) || loc == '/pending') return '/dashboard';
+          if (authRoutes.contains(loc) || loc == '/pending')
+            return '/dashboard';
           return null;
       }
     },
     routes: [
-      GoRoute(path: '/store-login', builder: (context, state) => const StoreLoginPage()),
-      GoRoute(path: '/store-register', builder: (context, state) => const StoreRegisterPage()),
-      GoRoute(path: '/pending', builder: (context, state) => const PendingApprovalPage()),
-      GoRoute(path: '/admin-login', builder: (context, state) => const AdminLoginPage()),
-      GoRoute(path: '/admin', builder: (context, state) => const AdminApprovalPage()),
+      GoRoute(
+          path: '/store-login',
+          builder: (context, state) => const StoreLoginPage()),
+      GoRoute(
+          path: '/store-register',
+          builder: (context, state) => const StoreRegisterPage()),
+      GoRoute(
+          path: '/pending',
+          builder: (context, state) => const PendingApprovalPage()),
+      GoRoute(
+          path: '/admin-login',
+          builder: (context, state) => const AdminLoginPage()),
+      GoRoute(
+          path: '/admin',
+          builder: (context, state) => const AdminApprovalPage()),
+      GoRoute(
+          path: '/storefront',
+          builder: (context, state) => const PublicStorefrontPage()),
       ShellRoute(
         builder: (context, state, child) => _AppShell(child: child),
         routes: [
-          GoRoute(path: '/dashboard', builder: (context, state) => const DashboardPage()),
-          GoRoute(path: '/categories', builder: (context, state) => const CategoryPage()),
-          GoRoute(path: '/products', builder: (context, state) => const ProductPage()),
-          GoRoute(path: '/inventory', builder: (context, state) => const InventoryPage()),
-          GoRoute(path: '/billing', builder: (context, state) => const PosBillingPage()),
-          GoRoute(path: '/customers', builder: (context, state) => const CustomerListPage()),
+          GoRoute(
+              path: '/dashboard',
+              builder: (context, state) => const DashboardPage()),
+          GoRoute(
+              path: '/categories',
+              builder: (context, state) => const CategoryPage()),
+          GoRoute(
+              path: '/products',
+              builder: (context, state) => const ProductPage()),
+          GoRoute(
+              path: '/inventory',
+              builder: (context, state) => const InventoryPage()),
+          GoRoute(
+              path: '/billing',
+              builder: (context, state) => const PosBillingPage()),
+          GoRoute(
+              path: '/customers',
+              builder: (context, state) => const CustomerListPage()),
           GoRoute(
             path: '/customer/:id',
             builder: (context, state) {
@@ -99,7 +131,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               return CustomerInvoiceDetailPage(saleId: saleId);
             },
           ),
-          GoRoute(path: '/suppliers', builder: (context, state) => const SupplierPage()),
+          GoRoute(
+              path: '/suppliers',
+              builder: (context, state) => const SupplierPage()),
           GoRoute(
             path: '/purchases',
             builder: (context, state) {
@@ -107,19 +141,38 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               return PurchasePage(initialSupplierId: supplierId);
             },
           ),
-          GoRoute(path: '/reports', builder: (context, state) => const SalesReportPage()),
-          GoRoute(path: '/ledger', builder: (context, state) => const CreditLedgerPage()),
-          GoRoute(path: '/expenses', builder: (context, state) => const ExpensePage()),
-          GoRoute(path: '/staff', builder: (context, state) => const StaffPage()),
-            GoRoute(
+          GoRoute(
+              path: '/reports',
+              builder: (context, state) => const SalesReportPage()),
+          GoRoute(
+              path: '/ledger',
+              builder: (context, state) => const CreditLedgerPage()),
+          GoRoute(
+              path: '/expenses',
+              builder: (context, state) => const ExpensePage()),
+          GoRoute(
+              path: '/staff', builder: (context, state) => const StaffPage()),
+          GoRoute(
               path: '/owner-profile',
               builder: (context, state) => const ShopOwnerProfilePage()),
-          GoRoute(path: '/counters', builder: (context, state) => const PosCountersPage()),
-          GoRoute(path: '/warehouses', builder: (context, state) => const WarehousePage()),
-          GoRoute(path: '/settings', builder: (context, state) => const SettingsPage()),
-          GoRoute(path: '/mill-runs', builder: (context, state) => const MillRunPage()),
-          GoRoute(path: '/milling-charges', builder: (context, state) => const MillingChargePage()),
-          GoRoute(path: '/milling-contracts', builder: (context, state) => const MillingContractsPage()),
+          GoRoute(
+              path: '/counters',
+              builder: (context, state) => const PosCountersPage()),
+          GoRoute(
+              path: '/warehouses',
+              builder: (context, state) => const WarehousePage()),
+          GoRoute(
+              path: '/settings',
+              builder: (context, state) => const SettingsPage()),
+          GoRoute(
+              path: '/mill-runs',
+              builder: (context, state) => const MillRunPage()),
+          GoRoute(
+              path: '/milling-charges',
+              builder: (context, state) => const MillingChargePage()),
+          GoRoute(
+              path: '/milling-contracts',
+              builder: (context, state) => const MillingContractsPage()),
         ],
       ),
     ],
@@ -140,7 +193,8 @@ class _AppShell extends ConsumerWidget {
     // everything plus the Counters/Users management screen.
     final scoped = user?.isCounterScoped ?? false;
     final canManage = user?.canManagePos ?? false;
-    final mode = ref.watch(inventoryModeProvider).valueOrNull ?? InventoryMode.single;
+    final mode =
+        ref.watch(inventoryModeProvider).valueOrNull ?? InventoryMode.single;
     final isRiceMill = ref.watch(isRiceMillProvider);
 
     // Keep the warehouse + inventory caches warm for the whole authenticated
@@ -155,41 +209,90 @@ class _AppShell extends ConsumerWidget {
 
     final destinations = <({String route, String label, IconData icon})>[
       (route: '/dashboard', label: 'Dashboard', icon: Icons.dashboard_rounded),
-      if (!scoped) (route: '/categories', label: 'Categories', icon: Icons.category_rounded),
-      (route: '/products', label: isRiceMill ? 'Products / Stock' : 'Products', icon: Icons.inventory_2_rounded),
+      if (!scoped)
+        (
+          route: '/categories',
+          label: 'Categories',
+          icon: Icons.category_rounded
+        ),
+      (
+        route: '/products',
+        label: isRiceMill ? 'Products / Stock' : 'Products',
+        icon: Icons.inventory_2_rounded
+      ),
       if (!scoped && mode.tracksStock)
-        (route: '/inventory', label: 'Inventory', icon: Icons.inventory_rounded),
+        (
+          route: '/inventory',
+          label: 'Inventory',
+          icon: Icons.inventory_rounded
+        ),
       if (!scoped && mode.usesWarehouses)
-        (route: '/warehouses', label: isRiceMill ? 'Godowns' : 'Warehouses', icon: Icons.warehouse_rounded),
-      (route: '/billing', label: isRiceMill ? 'Rice Sales' : 'POS', icon: Icons.point_of_sale_rounded),
-      (route: '/customers', label: isRiceMill ? 'Rice Parties' : 'Customers', icon: Icons.person_rounded),
-      if (!scoped) (route: '/suppliers', label: isRiceMill ? 'Farmers / Mandi' : 'Vendors', icon: Icons.storefront_rounded),
-      if (!scoped) (route: '/purchases', label: isRiceMill ? 'Paddy Procurement' : 'Purchases', icon: Icons.shopping_bag_rounded),
+        (
+          route: '/warehouses',
+          label: isRiceMill ? 'Godowns' : 'Warehouses',
+          icon: Icons.warehouse_rounded
+        ),
+      (
+        route: '/billing',
+        label: isRiceMill ? 'Rice Sales' : 'POS',
+        icon: Icons.point_of_sale_rounded
+      ),
+      (
+        route: '/customers',
+        label: isRiceMill ? 'Rice Parties' : 'Customers',
+        icon: Icons.person_rounded
+      ),
+      if (!scoped)
+        (
+          route: '/suppliers',
+          label: isRiceMill ? 'Farmers / Mandi' : 'Vendors',
+          icon: Icons.storefront_rounded
+        ),
+      if (!scoped)
+        (
+          route: '/purchases',
+          label: isRiceMill ? 'Paddy Procurement' : 'Purchases',
+          icon: Icons.shopping_bag_rounded
+        ),
       // Rice mill-only menu items
       if (!scoped && isRiceMill)
         (route: '/mill-runs', label: 'Mill Runs', icon: Icons.factory_rounded),
       if (!scoped && isRiceMill)
-        (route: '/milling-charges', label: 'Milling Charges', icon: Icons.receipt_long_rounded),
+        (
+          route: '/milling-charges',
+          label: 'Milling Charges',
+          icon: Icons.receipt_long_rounded
+        ),
       (route: '/reports', label: 'Reports', icon: Icons.analytics_rounded),
-      (route: '/ledger', label: isRiceMill ? 'Khata / Udhar' : 'Udhar', icon: Icons.account_balance_wallet_rounded),
-      if (!scoped) (route: '/expenses', label: 'Expenses', icon: Icons.receipt_outlined),
+      (
+        route: '/ledger',
+        label: isRiceMill ? 'Khata / Udhar' : 'Udhar',
+        icon: Icons.account_balance_wallet_rounded
+      ),
+      if (!scoped)
+        (route: '/expenses', label: 'Expenses', icon: Icons.receipt_outlined),
       if (!scoped) (route: '/staff', label: 'Staff', icon: Icons.badge_rounded),
-      if (!scoped) (route: '/owner-profile', label: 'Owner', icon: Icons.badge_outlined),
-      if (!scoped) (route: '/settings', label: 'Settings', icon: Icons.settings_rounded),
-      if (canManage) (route: '/counters', label: 'Counters', icon: Icons.storefront_rounded),
+      if (!scoped)
+        (route: '/owner-profile', label: 'Owner', icon: Icons.badge_outlined),
+      if (!scoped)
+        (route: '/settings', label: 'Settings', icon: Icons.settings_rounded),
+      if (canManage)
+        (route: '/counters', label: 'Counters', icon: Icons.storefront_rounded),
     ];
 
     final isWide = MediaQuery.sizeOf(context).width >= 600;
 
     // ── Tablet / desktop: keep the left navigation rail ──────────────────────
     if (isWide) {
-      final selectedIndex = destinations.indexWhere((d) => location.startsWith(d.route));
+      final selectedIndex =
+          destinations.indexWhere((d) => location.startsWith(d.route));
       return Scaffold(
         body: Row(
           children: [
             NavigationRail(
               selectedIndex: selectedIndex < 0 ? 0 : selectedIndex,
-              onDestinationSelected: (index) => context.go(destinations[index].route),
+              onDestinationSelected: (index) =>
+                  context.go(destinations[index].route),
               labelType: NavigationRailLabelType.all,
               scrollable: true,
               trailing: Padding(
@@ -252,7 +355,8 @@ class _AppShell extends ConsumerWidget {
         destinations: [
           for (final d in primary)
             NavigationDestination(icon: Icon(d.icon), label: d.label),
-          const NavigationDestination(icon: Icon(Icons.menu_rounded), label: 'Menu'),
+          const NavigationDestination(
+              icon: Icon(Icons.menu_rounded), label: 'Menu'),
         ],
       ),
     );
@@ -281,66 +385,68 @@ class _AppShell extends ConsumerWidget {
         return SafeArea(
           child: SingleChildScrollView(
             child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const CircleAvatar(child: Icon(Icons.person)),
-                  title: Text(user?.username ?? 'User'),
-                  subtitle: Text(user?.posCounterName != null
-                      ? 'Counter: ${user!.posCounterName}'
-                      : 'All counters'),
-                  trailing: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(sheetContext);
-                      _logout(context, ref);
-                    },
-                    icon: const Icon(Icons.logout, size: 18),
-                    label: const Text('Logout'),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const CircleAvatar(child: Icon(Icons.person)),
+                    title: Text(user?.username ?? 'User'),
+                    subtitle: Text(user?.posCounterName != null
+                        ? 'Counter: ${user!.posCounterName}'
+                        : 'All counters'),
+                    trailing: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(sheetContext);
+                        _logout(context, ref);
+                      },
+                      icon: const Icon(Icons.logout, size: 18),
+                      label: const Text('Logout'),
+                    ),
                   ),
-                ),
-                const Divider(),
-                const Padding(
-                  padding: EdgeInsets.only(left: 4, bottom: 12),
-                  child: Text('All Sections',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                ),
-                GridView.count(
-                  crossAxisCount: 4,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 0.85,
-                  children: [
-                    for (final d in destinations)
-                      InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () {
-                          Navigator.pop(sheetContext);
-                          context.go(d.route);
-                        },
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircleAvatar(radius: 24, child: Icon(d.icon, size: 22)),
-                            const SizedBox(height: 6),
-                            Text(d.label,
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 11)),
-                          ],
+                  const Divider(),
+                  const Padding(
+                    padding: EdgeInsets.only(left: 4, bottom: 12),
+                    child: Text('All Sections',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                  ),
+                  GridView.count(
+                    crossAxisCount: 4,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 8,
+                    childAspectRatio: 0.85,
+                    children: [
+                      for (final d in destinations)
+                        InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () {
+                            Navigator.pop(sheetContext);
+                            context.go(d.route);
+                          },
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircleAvatar(
+                                  radius: 24, child: Icon(d.icon, size: 22)),
+                              const SizedBox(height: 6),
+                              Text(d.label,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 11)),
+                            ],
+                          ),
                         ),
-                      ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
           ),
         );
       },
