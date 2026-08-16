@@ -5,6 +5,9 @@ enum DemoBusinessType {
   electronics,
   bakery,
   riceMill,
+  hardwareSanitary,
+  hotel,
+  other,
 }
 
 extension DemoBusinessTypeLabel on DemoBusinessType {
@@ -15,5 +18,8 @@ extension DemoBusinessTypeLabel on DemoBusinessType {
         DemoBusinessType.electronics => 'Electronics',
         DemoBusinessType.bakery => 'Bakery',
         DemoBusinessType.riceMill => 'Rice Mill',
+        DemoBusinessType.hardwareSanitary => 'Hardware / Sanitary',
+        DemoBusinessType.hotel => 'Hotel',
+        DemoBusinessType.other => 'Other',
       };
 }

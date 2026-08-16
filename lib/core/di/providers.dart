@@ -41,6 +41,7 @@ import '../firestore/store_scope.dart';
 import '../models/discount_policy.dart';
 import '../models/invoice_branding.dart';
 import '../models/printer_config.dart';
+import '../models/storefront_shopping_config.dart';
 import '../services/printer_service.dart';
 
 final authControllerProvider =
@@ -537,4 +538,35 @@ final discountPolicyProvider = StreamProvider<DiscountPolicy>((ref) {
       .doc('discount_policy')
       .snapshots()
       .map((snap) => DiscountPolicy.fromFirestoreMap(snap.data()));
+});
+
+/// Platform-wide public storefront gate at `platform_config/public_features`.
+/// When false, the customer storefront entry point should be hidden.
+final platformStorefrontShoppingConfigProvider =
+    StreamProvider<StorefrontShoppingConfig>((ref) {
+  return ref
+      .watch(firestoreProvider)
+      .collection('platform_config')
+      .doc('public_features')
+      .snapshots()
+      .map((snap) => StorefrontShoppingConfig.fromFirestoreMap(snap.data()));
+});
+
+final platformAnonymousShoppingEnabledProvider = Provider<bool>((ref) {
+  final cfg = ref.watch(platformStorefrontShoppingConfigProvider).valueOrNull;
+  return cfg?.allowAnonymousShopping ?? false;
+});
+
+/// Store-level opt-in for the public storefront.
+/// Stored in `stores/{storeId}/settings/storefront`.
+final storeStorefrontShoppingConfigProvider =
+    StreamProvider<StorefrontShoppingConfig>((ref) {
+  final storeId = ref.watch(activeStoreIdProvider);
+  if (storeId == null) {
+    return Stream.value(const StorefrontShoppingConfig.defaults());
+  }
+  return storeCollection(ref.watch(firestoreProvider), storeId, 'settings')
+      .doc('storefront')
+      .snapshots()
+      .map((snap) => StorefrontShoppingConfig.fromFirestoreMap(snap.data()));
 });

@@ -4,6 +4,9 @@ import 'demo_catalog.dart';
 import 'electronics_demo_data.dart';
 import 'garment_demo_data.dart';
 import 'grocery_demo_data.dart';
+import 'hardware_sanitary_demo_data.dart';
+import 'hotel_demo_data.dart';
+import 'other_demo_data.dart';
 import 'pharmacy_demo_data.dart';
 import 'rice_mill_demo_data.dart';
 
@@ -19,16 +22,30 @@ class DemoDataLoader {
     switch (type) {
       case DemoBusinessType.grocery:
         return groceryCatalog;
+
       case DemoBusinessType.pharmacy:
         return pharmacyCatalog;
+
       case DemoBusinessType.garment:
         return garmentCatalog;
+
       case DemoBusinessType.electronics:
         return electronicsCatalog;
+
       case DemoBusinessType.bakery:
         return bakeryCatalog;
+
       case DemoBusinessType.riceMill:
         return riceMillCatalog;
+
+      case DemoBusinessType.hardwareSanitary:
+        return hardwareSanitaryCatalog;
+
+      case DemoBusinessType.hotel:
+        return hotelCatalog;
+
+      case DemoBusinessType.other:
+        return otherCatalog;
     }
   }
 }

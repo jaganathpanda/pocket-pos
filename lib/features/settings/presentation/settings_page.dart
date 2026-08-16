@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../core/database/seed/demo_business_type.dart';
 import '../../../core/di/providers.dart';
@@ -9,6 +10,7 @@ import '../../../core/firestore/store_scope.dart';
 import '../../../core/models/discount_policy.dart';
 import '../../../core/models/invoice_branding.dart';
 import '../../../core/models/printer_config.dart';
+import '../../../core/models/storefront_shopping_config.dart';
 import '../../mill_run/domain/milling_config.dart';
 import '../../store/presentation/store_auth_controller.dart';
 import '../../warehouse/domain/inventory_mode.dart';
@@ -31,6 +33,8 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: 16),
           _PrinterIntegrationCard(),
           const SizedBox(height: 16),
+          _StorefrontShoppingCard(),
+          const SizedBox(height: 16),
           _BusinessTypeCard(),
           const SizedBox(height: 16),
           _InventoryModeCard(),
@@ -41,6 +45,359 @@ class SettingsPage extends ConsumerWidget {
           ],
           _DemoDataCard(),
         ],
+      ),
+    );
+  }
+}
+
+// ── Storefront Shopping Card ────────────────────────────────────────────────
+
+class _StorefrontShoppingCard extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_StorefrontShoppingCard> createState() =>
+      _StorefrontShoppingCardState();
+}
+
+class _StorefrontShoppingCardState
+    extends ConsumerState<_StorefrontShoppingCard> {
+  bool _loaded = false;
+  bool _enabled = false;
+  bool _autoWindowEnabled = false;
+  DateTime? _windowStartLocal;
+  DateTime? _windowEndLocal;
+  bool _saving = false;
+
+  void _loadOnce(StorefrontShoppingConfig cfg) {
+    if (_loaded) return;
+    _loaded = true;
+    _enabled = cfg.allowAnonymousShopping;
+    _autoWindowEnabled = cfg.autoWindowEnabled;
+    _windowStartLocal = cfg.windowStartAtUtc?.toLocal();
+    _windowEndLocal = cfg.windowEndAtUtc?.toLocal();
+  }
+
+  String _fmt(DateTime? dt) {
+    if (dt == null) return 'Not set';
+    final d = dt.toLocal();
+    final hh = d.hour.toString().padLeft(2, '0');
+    final mm = d.minute.toString().padLeft(2, '0');
+    return '${d.day}/${d.month}/${d.year} $hh:$mm';
+  }
+
+  /// Returns a record describing the current open/closed status and a
+  /// contextual hint line (e.g. "Opens in 2 h 15 m" or "Closes in 45 m").
+  ({
+    bool isOpen,
+    String label,
+    String hint,
+    Color color,
+  }) _liveStatus() {
+    if (!_enabled) {
+      return (
+        isOpen: false,
+        label: 'Closed — shopping disabled',
+        hint: 'Enable anonymous shopping to allow customers.',
+        color: Colors.red,
+      );
+    }
+    if (!_autoWindowEnabled) {
+      return (
+        isOpen: true,
+        label: 'Open — always on',
+        hint: 'No time window set. Shopping allowed at any time.',
+        color: Colors.green,
+      );
+    }
+    final start = _windowStartLocal;
+    final end = _windowEndLocal;
+    if (start == null || end == null || !end.isAfter(start)) {
+      return (
+        isOpen: false,
+        label: 'Closed — schedule not configured',
+        hint: 'Set valid start and stop times to activate.',
+        color: Colors.orange,
+      );
+    }
+    final now = DateTime.now();
+    if (now.isBefore(start)) {
+      final diff = start.difference(now);
+      final h = diff.inHours;
+      final m = diff.inMinutes.remainder(60);
+      final hintStr = h > 0 ? 'Opens in ${h}h ${m}m' : 'Opens in ${m}m';
+      return (
+        isOpen: false,
+        label: 'Closed — not yet open',
+        hint: hintStr,
+        color: Colors.orange,
+      );
+    }
+    if (now.isAfter(end)) {
+      return (
+        isOpen: false,
+        label: 'Closed — window ended',
+        hint: 'Update schedule to re-open shopping.',
+        color: Colors.red,
+      );
+    }
+    final diff = end.difference(now);
+    final h = diff.inHours;
+    final m = diff.inMinutes.remainder(60);
+    final hintStr = h > 0 ? 'Closes in ${h}h ${m}m' : 'Closes in ${m}m';
+    return (
+      isOpen: true,
+      label: 'Open now',
+      hint: hintStr,
+      color: Colors.green,
+    );
+  }
+
+  Future<DateTime?> _pickDateTime(DateTime? initial) async {
+    final now = DateTime.now();
+    final base = initial ?? now;
+    final date = await showDatePicker(
+      context: context,
+      initialDate: base,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 5),
+    );
+    if (date == null || !mounted) return null;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(base),
+    );
+    if (time == null) return null;
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
+  Future<void> _save() async {
+    final storeId = ref.read(activeStoreIdProvider);
+    if (storeId == null) return;
+
+    if (_autoWindowEnabled) {
+      if (_windowStartLocal == null || _windowEndLocal == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Set both start and stop time for auto schedule.'),
+          ),
+        );
+        return;
+      }
+      if (!_windowEndLocal!.isAfter(_windowStartLocal!)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Stop time must be after start time.'),
+          ),
+        );
+        return;
+      }
+    }
+
+    setState(() => _saving = true);
+    try {
+      final config = StorefrontShoppingConfig(
+        allowAnonymousShopping: _enabled,
+        autoWindowEnabled: _autoWindowEnabled,
+        windowStartAtUtc: _windowStartLocal?.toUtc(),
+        windowEndAtUtc: _windowEndLocal?.toUtc(),
+      );
+      await storeCollection(ref.read(firestoreProvider), storeId, 'settings')
+          .doc('storefront')
+          .set(config.toFirestoreMap(), SetOptions(merge: true));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Storefront settings saved.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cfg = ref.watch(storeStorefrontShoppingConfigProvider).valueOrNull ??
+        const StorefrontShoppingConfig.defaults();
+    final globalEnabled = ref.watch(platformAnonymousShoppingEnabledProvider);
+    _loadOnce(cfg);
+
+    final status = _liveStatus();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.storefront_rounded, size: 20),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Public Storefront Shopping',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // ── Live status badge ──────────────────────────────
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: status.color.withOpacity(0.12),
+                    border: Border.all(color: status.color.withOpacity(0.40)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        status.isOpen ? Icons.circle : Icons.circle_outlined,
+                        size: 8,
+                        color: status.color,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        status.isOpen ? 'Open' : 'Closed',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: status.color,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                if (_saving)
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  TextButton.icon(
+                    onPressed: _save,
+                    icon: const Icon(Icons.save_outlined, size: 16),
+                    label: const Text('Save'),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              globalEnabled
+                  ? 'Allow customers to create and manage their own cart from the public storefront.'
+                  : 'Platform admin has disabled this feature globally. Turn ON the global flag in Admin panel first.',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              title: const Text(
+                  'Allow anonymous customer shopping for this store'),
+              value: _enabled,
+              onChanged:
+                  globalEnabled ? (v) => setState(() => _enabled = v) : null,
+            ),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Auto start/stop by time window'),
+              subtitle: const Text(
+                'When enabled, shopping is allowed only between start and stop time.',
+                style: TextStyle(fontSize: 12),
+              ),
+              value: _autoWindowEnabled,
+              onChanged: (globalEnabled && _enabled)
+                  ? (v) => setState(() => _autoWindowEnabled = v)
+                  : null,
+            ),
+            if (_autoWindowEnabled) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: (globalEnabled && _enabled)
+                          ? () async {
+                              final picked =
+                                  await _pickDateTime(_windowStartLocal);
+                              if (picked != null) {
+                                setState(() => _windowStartLocal = picked);
+                              }
+                            }
+                          : null,
+                      icon: const Icon(Icons.play_arrow_rounded, size: 18),
+                      label: const Text('Set Start Time'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: (globalEnabled && _enabled)
+                          ? () async {
+                              final picked =
+                                  await _pickDateTime(_windowEndLocal);
+                              if (picked != null) {
+                                setState(() => _windowEndLocal = picked);
+                              }
+                            }
+                          : null,
+                      icon: const Icon(Icons.stop_rounded, size: 18),
+                      label: const Text('Set Stop Time'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.blueGrey.shade50,
+                  border: Border.all(color: Colors.blueGrey.shade100),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Start: ${_fmt(_windowStartLocal)}',
+                        style: const TextStyle(fontSize: 12)),
+                    const SizedBox(height: 4),
+                    Text('Stop:  ${_fmt(_windowEndLocal)}',
+                        style: const TextStyle(fontSize: 12)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                            status.isOpen
+                                ? Icons.check_circle_outline
+                                : Icons.schedule_rounded,
+                            size: 14,
+                            color: status.color),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '${status.label}  •  ${status.hint}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: status.color,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
