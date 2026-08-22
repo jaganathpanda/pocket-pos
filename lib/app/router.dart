@@ -1,25 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pocket_pos/features/farmers/presentation/farmer_list_page.dart';
+import 'package:pocket_pos/features/mill_run/presentation/milling_config_page.dart';
+import 'package:pocket_pos/features/paddy_procurement/presentation/paddy_procurement_form.dart';
+import 'package:pocket_pos/features/weighbridge/presentation/vehicle_entry_detail_page.dart';
+import 'package:pocket_pos/features/weighbridge/presentation/vehicle_entry_list_page.dart';
 
+import '../core/di/providers.dart';
 import '../features/auth/domain/auth_models.dart';
 import '../features/categories/presentation/category_page.dart';
 import '../features/customers/presentation/customer_details_page.dart';
 import '../features/customers/presentation/customer_invoice_detail_page.dart';
 import '../features/customers/presentation/customer_list_page.dart';
 import '../features/customers/presentation/customer_orders_page.dart';
-import '../core/di/providers.dart';
 import '../features/dashboard/presentation/dashboard_page.dart';
+import '../features/expense/presentation/expense_page.dart';
 import '../features/inventory/presentation/inventory_page.dart';
+import '../features/ledger/presentation/credit_ledger_page.dart';
+import '../features/mill_run/presentation/mill_run_page.dart';
+import '../features/mill_run/presentation/milling_charge_page.dart';
+import '../features/mill_run/presentation/milling_contracts_page.dart';
 import '../features/pos_counters/presentation/pos_counters_page.dart';
 import '../features/products/presentation/product_page.dart';
 import '../features/purchases/presentation/purchase_page.dart';
-import '../features/ledger/presentation/credit_ledger_page.dart';
 import '../features/reports/presentation/sales_report_page.dart';
 import '../features/sales/presentation/pos_billing_page.dart';
-import '../features/expense/presentation/expense_page.dart';
-import '../features/staff/presentation/staff_page.dart';
 import '../features/settings/presentation/settings_page.dart';
+import '../features/staff/presentation/staff_page.dart';
 import '../features/store/domain/store_models.dart';
 import '../features/store/presentation/admin_approval_page.dart';
 import '../features/store/presentation/admin_login_page.dart';
@@ -32,9 +40,6 @@ import '../features/store/presentation/store_register_page.dart';
 import '../features/suppliers/presentation/supplier_page.dart';
 import '../features/warehouse/domain/inventory_mode.dart';
 import '../features/warehouse/presentation/warehouse_page.dart';
-import '../features/mill_run/presentation/mill_run_page.dart';
-import '../features/mill_run/presentation/milling_charge_page.dart';
-import '../features/mill_run/presentation/milling_contracts_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
@@ -173,6 +178,36 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
               path: '/milling-contracts',
               builder: (context, state) => const MillingContractsPage()),
+          GoRoute(
+            path: '/milling-config',
+            builder: (context, state) => const MillingConfigPage(),
+          ),
+          GoRoute(
+            path: '/weighbridge',
+            builder: (context, state) => const VehicleEntryListPage(),
+          ),
+          GoRoute(
+            path: '/weighbridge/:id',
+            builder: (context, state) {
+              final id = int.tryParse(state.pathParameters['id'] ?? '');
+              return VehicleEntryDetailPage(entryId: id);
+            },
+          ),
+          GoRoute(
+            path: '/paddy-procurement',
+            builder: (context, state) => const PaddyProcurementForm(),
+          ),
+          GoRoute(
+            path: '/paddy-procurement/:id',
+            builder: (context, state) {
+              final id = int.tryParse(state.pathParameters['id'] ?? '');
+              return PaddyProcurementForm(procurementId: id);
+            },
+          ),
+          GoRoute(
+            path: '/farmers',
+            builder: (context, state) => const FarmerListPage(),
+          ),
         ],
       ),
     ],
@@ -242,12 +277,22 @@ class _AppShell extends ConsumerWidget {
         label: isRiceMill ? 'Rice Parties' : 'Customers',
         icon: Icons.person_rounded
       ),
-      if (!scoped)
+      if (!scoped && isRiceMill)
         (
-          route: '/suppliers',
-          label: isRiceMill ? 'Farmers / Mandi' : 'Vendors',
+          route: '/farmers',
+          label: 'Farmers / Mandi',
           icon: Icons.storefront_rounded
         ),
+      // Paddy Procurement (rice mill only)
+      if (!scoped && isRiceMill)
+        (
+          route: '/paddy-procurement',
+          label: 'Paddy Procurement',
+          icon: Icons.grass_rounded
+        ),
+
+      if (!scoped && !isRiceMill)
+        (route: '/suppliers', label: 'Vendors', icon: Icons.storefront_rounded),
       if (!scoped)
         (
           route: '/purchases',
@@ -259,9 +304,21 @@ class _AppShell extends ConsumerWidget {
         (route: '/mill-runs', label: 'Mill Runs', icon: Icons.factory_rounded),
       if (!scoped && isRiceMill)
         (
+          route: '/milling-config',
+          label: 'Milling Config',
+          icon: Icons.settings_rounded
+        ),
+      if (!scoped && isRiceMill)
+        (
           route: '/milling-charges',
           label: 'Milling Charges',
           icon: Icons.receipt_long_rounded
+        ),
+      if (!scoped && isRiceMill)
+        (
+          route: '/weighbridge',
+          label: 'Weighbridge',
+          icon: Icons.scale_rounded
         ),
       (route: '/reports', label: 'Reports', icon: Icons.analytics_rounded),
       (

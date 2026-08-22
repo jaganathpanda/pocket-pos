@@ -17,6 +17,7 @@ class ProductPage extends ConsumerStatefulWidget {
 
 class _ProductPageState extends ConsumerState<ProductPage> {
   final _search = TextEditingController();
+  Offset _fabPosition = const Offset(20, 20);
 
   @override
   void dispose() {
@@ -42,14 +43,17 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                 decoration: InputDecoration(
                   hintText: 'Search product / barcode',
                   isDense: true,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8)),
                   prefixIcon: const Icon(Icons.search, size: 18),
                   suffixIcon: _search.text.isNotEmpty
                       ? IconButton(
                           icon: const Icon(Icons.close, size: 16),
                           onPressed: () {
                             _search.clear();
-                            ref.read(productSearchQueryProvider.notifier).state = '';
+                            ref
+                                .read(productSearchQueryProvider.notifier)
+                                .state = '';
                             setState(() {});
                           },
                         )
@@ -64,76 +68,104 @@ class _ProductPageState extends ConsumerState<ProductPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showProductDialog(context, ref),
-        label: const Text('Add Product'),
-        icon: const Icon(Icons.add),
-      ),
-      body: products.when(
-        data: (list) {
-          final categoryById = {
-            for (final c in (categories.valueOrNull ?? const <Category>[])) c.id: c.name,
-          };
+      body: Stack(
+        children: [
+          products.when(
+            data: (list) {
+              final categoryById = {
+                for (final c in (categories.valueOrNull ?? const <Category>[]))
+                  c.id: c.name,
+              };
 
-          if (list.isEmpty) {
-            return const Center(child: Text('No products found. Tap + to add one.'));
-          }
-          return ListView.separated(
-            itemCount: list.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final p = list[index];
-              return ListTile(
-                title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w500)),
-                subtitle: Text(
-                  'Category: ${p.categoryId == null ? '-' : (categoryById[p.categoryId] ?? '-')}  |  '
-                  'Code: ${p.productCode}  |  Barcode: ${p.barcode ?? '-'}  |  Tax: ${p.taxPercent}%  |  Unit: ${p.unit}',
-                  style: const TextStyle(fontSize: 12),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
+              if (list.isEmpty) {
+                return const Center(
+                    child: Text('No products found. Tap + to add one.'));
+              }
+              return ListView.separated(
+                itemCount: list.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final p = list[index];
+                  return ListTile(
+                    title: Text(p.name,
+                        style: const TextStyle(fontWeight: FontWeight.w500)),
+                    subtitle: Text(
+                      'Category: ${p.categoryId == null ? '-' : (categoryById[p.categoryId] ?? '-')}  |  '
+                      'Code: ${p.productCode}  |  Barcode: ${p.barcode ?? '-'}  |  Tax: ${p.taxPercent}%  |  Unit: ${p.unit}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('₹${p.sellingPrice.toStringAsFixed(2)}',
-                            style: const TextStyle(fontWeight: FontWeight.bold)),
-                        Text('Cost: ₹${p.purchasePrice.toStringAsFixed(2)}',
-                            style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text('₹${p.sellingPrice.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold)),
+                            Text('Cost: ₹${p.purchasePrice.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                    fontSize: 11, color: Colors.grey)),
+                          ],
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          tooltip: 'Edit',
+                          icon: const Icon(Icons.edit_outlined, size: 20),
+                          onPressed: () =>
+                              _showProductDialog(context, ref, product: p),
+                        ),
+                        IconButton(
+                          tooltip: 'Delete',
+                          icon: const Icon(Icons.delete_outline,
+                              size: 20, color: Colors.red),
+                          onPressed: () => _confirmDelete(context, ref, p),
+                        ),
                       ],
                     ),
-                    const SizedBox(width: 4),
-                    IconButton(
-                      tooltip: 'Edit',
-                      icon: const Icon(Icons.edit_outlined, size: 20),
-                      onPressed: () => _showProductDialog(context, ref, product: p),
-                    ),
-                    IconButton(
-                      tooltip: 'Delete',
-                      icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                      onPressed: () => _confirmDelete(context, ref, p),
-                    ),
-                  ],
-                ),
+                  );
+                },
               );
             },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text('Error: $e')),
+          ),
+          Positioned(
+            right: _fabPosition.dx,
+            bottom: _fabPosition.dy,
+            child: GestureDetector(
+              onPanUpdate: (details) {
+                setState(() {
+                  _fabPosition = Offset(
+                    _fabPosition.dx - details.delta.dx,
+                    _fabPosition.dy - details.delta.dy,
+                  );
+                });
+              },
+              child: FloatingActionButton.extended(
+                onPressed: () => _showProductDialog(context, ref),
+                label: const Text('Add Product'),
+                icon: const Icon(Icons.add),
+              ),
+            ),
+          )
+        ],
       ),
     );
   }
 
-  Future<void> _confirmDelete(BuildContext context, WidgetRef ref, Product p) async {
+  Future<void> _confirmDelete(
+      BuildContext context, WidgetRef ref, Product p) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Product'),
         content: Text('Delete "${p.name}"? This cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(ctx, true),
@@ -145,22 +177,28 @@ class _ProductPageState extends ConsumerState<ProductPage> {
     if (confirmed == true) {
       await ref.read(productRepositoryProvider).delete(p.id);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('"${p.name}" deleted')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('"${p.name}" deleted')));
       }
     }
   }
 
-  Future<void> _showProductDialog(BuildContext context, WidgetRef ref, {Product? product}) async {
-    final allCategories = await ref.read(categoryRepositoryProvider).watchAll().first;
+  Future<void> _showProductDialog(BuildContext context, WidgetRef ref,
+      {Product? product}) async {
+    final allCategories =
+        await ref.read(categoryRepositoryProvider).watchAll().first;
     final isEdit = product != null;
     final name = TextEditingController(text: product?.name ?? '');
     // New products get an auto-generated (editable) code.
     final code = TextEditingController(
         text: product?.productCode ?? _generateProductCode());
     final barcode = TextEditingController(text: product?.barcode ?? '');
-    final selling = TextEditingController(text: (product?.sellingPrice ?? 0).toStringAsFixed(2));
-    final purchase = TextEditingController(text: (product?.purchasePrice ?? 0).toStringAsFixed(2));
-    final tax = TextEditingController(text: (product?.taxPercent ?? 0).toStringAsFixed(1));
+    final selling = TextEditingController(
+        text: (product?.sellingPrice ?? 0).toStringAsFixed(2));
+    final purchase = TextEditingController(
+        text: (product?.purchasePrice ?? 0).toStringAsFixed(2));
+    final tax = TextEditingController(
+        text: (product?.taxPercent ?? 0).toStringAsFixed(1));
     final unit = TextEditingController(text: product?.unit ?? 'piece');
     final opening = TextEditingController(text: '0');
     final purchaseFocus = FocusNode();
@@ -195,7 +233,8 @@ class _ProductPageState extends ConsumerState<ProductPage> {
         String raw, void Function(VoidCallback) setLocal) async {
       final value = raw.trim();
       if (value.isEmpty) return;
-      final match = await ref.read(productRepositoryProvider).findByBarcode(value);
+      final match =
+          await ref.read(productRepositoryProvider).findByBarcode(value);
       if (match == null || match.id == product?.id) return;
       name.text = match.name;
       code.text = match.productCode;
@@ -205,9 +244,9 @@ class _ProductPageState extends ConsumerState<ProductPage> {
       unit.text = match.unit;
       setLocal(() => selectedCategoryId = match.categoryId);
       messenger.showSnackBar(SnackBar(
-          content: Text('Filled details from existing product "${match.name}".')));
+          content:
+              Text('Filled details from existing product "${match.name}".')));
     }
-
 
     await showDialog<void>(
       context: context,
@@ -287,9 +326,11 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                           const DropdownMenuItem<int?>(
                               value: null, child: Text('No category')),
                           for (final c in allCategories)
-                            DropdownMenuItem<int?>(value: c.id, child: Text(c.name)),
+                            DropdownMenuItem<int?>(
+                                value: c.id, child: Text(c.name)),
                         ],
-                        onChanged: (v) => setLocal(() => selectedCategoryId = v),
+                        onChanged: (v) =>
+                            setLocal(() => selectedCategoryId = v),
                       ),
                       const SizedBox(height: 8),
                       TextFormField(
@@ -307,13 +348,15 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                               IconButton(
                                 tooltip: 'Generate barcode',
                                 icon: const Icon(Icons.qr_code_2_rounded),
-                                onPressed: () => barcode.text = _generateEan13(),
+                                onPressed: () =>
+                                    barcode.text = _generateEan13(),
                               ),
                               IconButton(
                                 tooltip: 'Scan with camera',
                                 icon: const Icon(Icons.qr_code_scanner),
                                 onPressed: () async {
-                                  final scanned = await scanBarcodeWithCamera(ctx);
+                                  final scanned =
+                                      await scanBarcodeWithCamera(ctx);
                                   if (scanned != null) {
                                     barcode.text = scanned;
                                     await applyBarcode(scanned, setLocal);
@@ -351,7 +394,8 @@ class _ProductPageState extends ConsumerState<ProductPage> {
             ),
             actions: [
               TextButton(
-                  onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel')),
               FilledButton(
                 onPressed: () async {
                   if (!formKey.currentState!.validate()) return;
@@ -428,8 +472,7 @@ class _ProductPageState extends ConsumerState<ProductPage> {
     return '$body$check';
   }
 
-  Widget _priceField(
-      TextEditingController ctrl, FocusNode node, String label) {
+  Widget _priceField(TextEditingController ctrl, FocusNode node, String label) {
     return TextFormField(
       controller: ctrl,
       focusNode: node,
@@ -444,9 +487,14 @@ class _ProductPageState extends ConsumerState<ProductPage> {
       {bool required = false, bool numeric = false}) {
     return TextFormField(
       controller: ctrl,
-      keyboardType: numeric ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
-      decoration: InputDecoration(labelText: label, isDense: true, border: const OutlineInputBorder()),
-      validator: required ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null : null,
+      keyboardType: numeric
+          ? const TextInputType.numberWithOptions(decimal: true)
+          : TextInputType.text,
+      decoration: InputDecoration(
+          labelText: label, isDense: true, border: const OutlineInputBorder()),
+      validator: required
+          ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+          : null,
     );
   }
 }

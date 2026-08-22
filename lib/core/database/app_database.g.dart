@@ -11188,6 +11188,1055 @@ class AuditLogsCompanion extends UpdateCompanion<AuditLog> {
   }
 }
 
+class $VehicleEntriesTable extends VehicleEntries
+    with TableInfo<$VehicleEntriesTable, VehicleEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VehicleEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
+      'date', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _slipNoMeta = const VerificationMeta('slipNo');
+  @override
+  late final GeneratedColumn<String> slipNo = GeneratedColumn<String>(
+      'slip_no', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _voucherNoMeta =
+      const VerificationMeta('voucherNo');
+  @override
+  late final GeneratedColumn<String> voucherNo = GeneratedColumn<String>(
+      'voucher_no', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _vehicleNoMeta =
+      const VerificationMeta('vehicleNo');
+  @override
+  late final GeneratedColumn<String> vehicleNo = GeneratedColumn<String>(
+      'vehicle_no', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _rstManualMeta =
+      const VerificationMeta('rstManual');
+  @override
+  late final GeneratedColumn<String> rstManual = GeneratedColumn<String>(
+      'rst_manual', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _partyNameMeta =
+      const VerificationMeta('partyName');
+  @override
+  late final GeneratedColumn<String> partyName = GeneratedColumn<String>(
+      'party_name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _partyIdMeta =
+      const VerificationMeta('partyId');
+  @override
+  late final GeneratedColumn<int> partyId = GeneratedColumn<int>(
+      'party_id', aliasedName, true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES suppliers (id)'));
+  static const VerificationMeta _productIdMeta =
+      const VerificationMeta('productId');
+  @override
+  late final GeneratedColumn<int> productId = GeneratedColumn<int>(
+      'product_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES products (id)'));
+  static const VerificationMeta _entryTypeMeta =
+      const VerificationMeta('entryType');
+  @override
+  late final GeneratedColumn<String> entryType = GeneratedColumn<String>(
+      'entry_type', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('inward'));
+  static const VerificationMeta _firstWeightMeta =
+      const VerificationMeta('firstWeight');
+  @override
+  late final GeneratedColumn<double> firstWeight = GeneratedColumn<double>(
+      'first_weight', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _firstWeightTimeMeta =
+      const VerificationMeta('firstWeightTime');
+  @override
+  late final GeneratedColumn<DateTime> firstWeightTime =
+      GeneratedColumn<DateTime>('first_weight_time', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _secondWeightMeta =
+      const VerificationMeta('secondWeight');
+  @override
+  late final GeneratedColumn<double> secondWeight = GeneratedColumn<double>(
+      'second_weight', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _secondWeightTimeMeta =
+      const VerificationMeta('secondWeightTime');
+  @override
+  late final GeneratedColumn<DateTime> secondWeightTime =
+      GeneratedColumn<DateTime>('second_weight_time', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _netWeightMeta =
+      const VerificationMeta('netWeight');
+  @override
+  late final GeneratedColumn<double> netWeight = GeneratedColumn<double>(
+      'net_weight', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _bagsMeta = const VerificationMeta('bags');
+  @override
+  late final GeneratedColumn<int> bags = GeneratedColumn<int>(
+      'bags', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _lotNumberMeta =
+      const VerificationMeta('lotNumber');
+  @override
+  late final GeneratedColumn<String> lotNumber = GeneratedColumn<String>(
+      'lot_number', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _completeMeta =
+      const VerificationMeta('complete');
+  @override
+  late final GeneratedColumn<bool> complete = GeneratedColumn<bool>(
+      'complete', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("complete" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _completeCodeMeta =
+      const VerificationMeta('completeCode');
+  @override
+  late final GeneratedColumn<String> completeCode = GeneratedColumn<String>(
+      'complete_code', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _completeDateMeta =
+      const VerificationMeta('completeDate');
+  @override
+  late final GeneratedColumn<DateTime> completeDate = GeneratedColumn<DateTime>(
+      'complete_date', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _remarkMeta = const VerificationMeta('remark');
+  @override
+  late final GeneratedColumn<String> remark = GeneratedColumn<String>(
+      'remark', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      clientDefault: () => DateTime.now());
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      clientDefault: () => DateTime.now());
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        date,
+        slipNo,
+        voucherNo,
+        vehicleNo,
+        rstManual,
+        partyName,
+        partyId,
+        productId,
+        entryType,
+        firstWeight,
+        firstWeightTime,
+        secondWeight,
+        secondWeightTime,
+        netWeight,
+        bags,
+        lotNumber,
+        complete,
+        completeCode,
+        completeDate,
+        remark,
+        createdAt,
+        updatedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'vehicle_entries';
+  @override
+  VerificationContext validateIntegrity(Insertable<VehicleEntry> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+          _dateMeta, date.isAcceptableOrUnknown(data['date']!, _dateMeta));
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('slip_no')) {
+      context.handle(_slipNoMeta,
+          slipNo.isAcceptableOrUnknown(data['slip_no']!, _slipNoMeta));
+    } else if (isInserting) {
+      context.missing(_slipNoMeta);
+    }
+    if (data.containsKey('voucher_no')) {
+      context.handle(_voucherNoMeta,
+          voucherNo.isAcceptableOrUnknown(data['voucher_no']!, _voucherNoMeta));
+    }
+    if (data.containsKey('vehicle_no')) {
+      context.handle(_vehicleNoMeta,
+          vehicleNo.isAcceptableOrUnknown(data['vehicle_no']!, _vehicleNoMeta));
+    } else if (isInserting) {
+      context.missing(_vehicleNoMeta);
+    }
+    if (data.containsKey('rst_manual')) {
+      context.handle(_rstManualMeta,
+          rstManual.isAcceptableOrUnknown(data['rst_manual']!, _rstManualMeta));
+    }
+    if (data.containsKey('party_name')) {
+      context.handle(_partyNameMeta,
+          partyName.isAcceptableOrUnknown(data['party_name']!, _partyNameMeta));
+    } else if (isInserting) {
+      context.missing(_partyNameMeta);
+    }
+    if (data.containsKey('party_id')) {
+      context.handle(_partyIdMeta,
+          partyId.isAcceptableOrUnknown(data['party_id']!, _partyIdMeta));
+    }
+    if (data.containsKey('product_id')) {
+      context.handle(_productIdMeta,
+          productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta));
+    } else if (isInserting) {
+      context.missing(_productIdMeta);
+    }
+    if (data.containsKey('entry_type')) {
+      context.handle(_entryTypeMeta,
+          entryType.isAcceptableOrUnknown(data['entry_type']!, _entryTypeMeta));
+    }
+    if (data.containsKey('first_weight')) {
+      context.handle(
+          _firstWeightMeta,
+          firstWeight.isAcceptableOrUnknown(
+              data['first_weight']!, _firstWeightMeta));
+    } else if (isInserting) {
+      context.missing(_firstWeightMeta);
+    }
+    if (data.containsKey('first_weight_time')) {
+      context.handle(
+          _firstWeightTimeMeta,
+          firstWeightTime.isAcceptableOrUnknown(
+              data['first_weight_time']!, _firstWeightTimeMeta));
+    }
+    if (data.containsKey('second_weight')) {
+      context.handle(
+          _secondWeightMeta,
+          secondWeight.isAcceptableOrUnknown(
+              data['second_weight']!, _secondWeightMeta));
+    } else if (isInserting) {
+      context.missing(_secondWeightMeta);
+    }
+    if (data.containsKey('second_weight_time')) {
+      context.handle(
+          _secondWeightTimeMeta,
+          secondWeightTime.isAcceptableOrUnknown(
+              data['second_weight_time']!, _secondWeightTimeMeta));
+    }
+    if (data.containsKey('net_weight')) {
+      context.handle(_netWeightMeta,
+          netWeight.isAcceptableOrUnknown(data['net_weight']!, _netWeightMeta));
+    } else if (isInserting) {
+      context.missing(_netWeightMeta);
+    }
+    if (data.containsKey('bags')) {
+      context.handle(
+          _bagsMeta, bags.isAcceptableOrUnknown(data['bags']!, _bagsMeta));
+    }
+    if (data.containsKey('lot_number')) {
+      context.handle(_lotNumberMeta,
+          lotNumber.isAcceptableOrUnknown(data['lot_number']!, _lotNumberMeta));
+    }
+    if (data.containsKey('complete')) {
+      context.handle(_completeMeta,
+          complete.isAcceptableOrUnknown(data['complete']!, _completeMeta));
+    }
+    if (data.containsKey('complete_code')) {
+      context.handle(
+          _completeCodeMeta,
+          completeCode.isAcceptableOrUnknown(
+              data['complete_code']!, _completeCodeMeta));
+    }
+    if (data.containsKey('complete_date')) {
+      context.handle(
+          _completeDateMeta,
+          completeDate.isAcceptableOrUnknown(
+              data['complete_date']!, _completeDateMeta));
+    }
+    if (data.containsKey('remark')) {
+      context.handle(_remarkMeta,
+          remark.isAcceptableOrUnknown(data['remark']!, _remarkMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  VehicleEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VehicleEntry(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      date: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}date'])!,
+      slipNo: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}slip_no'])!,
+      voucherNo: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}voucher_no']),
+      vehicleNo: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}vehicle_no'])!,
+      rstManual: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}rst_manual']),
+      partyName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}party_name'])!,
+      partyId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}party_id']),
+      productId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}product_id'])!,
+      entryType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}entry_type'])!,
+      firstWeight: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}first_weight'])!,
+      firstWeightTime: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}first_weight_time']),
+      secondWeight: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}second_weight'])!,
+      secondWeightTime: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}second_weight_time']),
+      netWeight: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}net_weight'])!,
+      bags: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}bags']),
+      lotNumber: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}lot_number']),
+      complete: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}complete'])!,
+      completeCode: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}complete_code']),
+      completeDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}complete_date']),
+      remark: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}remark']),
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $VehicleEntriesTable createAlias(String alias) {
+    return $VehicleEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class VehicleEntry extends DataClass implements Insertable<VehicleEntry> {
+  final int id;
+  final DateTime date;
+  final String slipNo;
+  final String? voucherNo;
+  final String vehicleNo;
+  final String? rstManual;
+  final String partyName;
+  final int? partyId;
+  final int productId;
+  final String entryType;
+  final double firstWeight;
+  final DateTime? firstWeightTime;
+  final double secondWeight;
+  final DateTime? secondWeightTime;
+  final double netWeight;
+  final int? bags;
+  final String? lotNumber;
+  final bool complete;
+  final String? completeCode;
+  final DateTime? completeDate;
+  final String? remark;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const VehicleEntry(
+      {required this.id,
+      required this.date,
+      required this.slipNo,
+      this.voucherNo,
+      required this.vehicleNo,
+      this.rstManual,
+      required this.partyName,
+      this.partyId,
+      required this.productId,
+      required this.entryType,
+      required this.firstWeight,
+      this.firstWeightTime,
+      required this.secondWeight,
+      this.secondWeightTime,
+      required this.netWeight,
+      this.bags,
+      this.lotNumber,
+      required this.complete,
+      this.completeCode,
+      this.completeDate,
+      this.remark,
+      required this.createdAt,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['date'] = Variable<DateTime>(date);
+    map['slip_no'] = Variable<String>(slipNo);
+    if (!nullToAbsent || voucherNo != null) {
+      map['voucher_no'] = Variable<String>(voucherNo);
+    }
+    map['vehicle_no'] = Variable<String>(vehicleNo);
+    if (!nullToAbsent || rstManual != null) {
+      map['rst_manual'] = Variable<String>(rstManual);
+    }
+    map['party_name'] = Variable<String>(partyName);
+    if (!nullToAbsent || partyId != null) {
+      map['party_id'] = Variable<int>(partyId);
+    }
+    map['product_id'] = Variable<int>(productId);
+    map['entry_type'] = Variable<String>(entryType);
+    map['first_weight'] = Variable<double>(firstWeight);
+    if (!nullToAbsent || firstWeightTime != null) {
+      map['first_weight_time'] = Variable<DateTime>(firstWeightTime);
+    }
+    map['second_weight'] = Variable<double>(secondWeight);
+    if (!nullToAbsent || secondWeightTime != null) {
+      map['second_weight_time'] = Variable<DateTime>(secondWeightTime);
+    }
+    map['net_weight'] = Variable<double>(netWeight);
+    if (!nullToAbsent || bags != null) {
+      map['bags'] = Variable<int>(bags);
+    }
+    if (!nullToAbsent || lotNumber != null) {
+      map['lot_number'] = Variable<String>(lotNumber);
+    }
+    map['complete'] = Variable<bool>(complete);
+    if (!nullToAbsent || completeCode != null) {
+      map['complete_code'] = Variable<String>(completeCode);
+    }
+    if (!nullToAbsent || completeDate != null) {
+      map['complete_date'] = Variable<DateTime>(completeDate);
+    }
+    if (!nullToAbsent || remark != null) {
+      map['remark'] = Variable<String>(remark);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  VehicleEntriesCompanion toCompanion(bool nullToAbsent) {
+    return VehicleEntriesCompanion(
+      id: Value(id),
+      date: Value(date),
+      slipNo: Value(slipNo),
+      voucherNo: voucherNo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(voucherNo),
+      vehicleNo: Value(vehicleNo),
+      rstManual: rstManual == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rstManual),
+      partyName: Value(partyName),
+      partyId: partyId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(partyId),
+      productId: Value(productId),
+      entryType: Value(entryType),
+      firstWeight: Value(firstWeight),
+      firstWeightTime: firstWeightTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(firstWeightTime),
+      secondWeight: Value(secondWeight),
+      secondWeightTime: secondWeightTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(secondWeightTime),
+      netWeight: Value(netWeight),
+      bags: bags == null && nullToAbsent ? const Value.absent() : Value(bags),
+      lotNumber: lotNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lotNumber),
+      complete: Value(complete),
+      completeCode: completeCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completeCode),
+      completeDate: completeDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completeDate),
+      remark:
+          remark == null && nullToAbsent ? const Value.absent() : Value(remark),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory VehicleEntry.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VehicleEntry(
+      id: serializer.fromJson<int>(json['id']),
+      date: serializer.fromJson<DateTime>(json['date']),
+      slipNo: serializer.fromJson<String>(json['slipNo']),
+      voucherNo: serializer.fromJson<String?>(json['voucherNo']),
+      vehicleNo: serializer.fromJson<String>(json['vehicleNo']),
+      rstManual: serializer.fromJson<String?>(json['rstManual']),
+      partyName: serializer.fromJson<String>(json['partyName']),
+      partyId: serializer.fromJson<int?>(json['partyId']),
+      productId: serializer.fromJson<int>(json['productId']),
+      entryType: serializer.fromJson<String>(json['entryType']),
+      firstWeight: serializer.fromJson<double>(json['firstWeight']),
+      firstWeightTime: serializer.fromJson<DateTime?>(json['firstWeightTime']),
+      secondWeight: serializer.fromJson<double>(json['secondWeight']),
+      secondWeightTime:
+          serializer.fromJson<DateTime?>(json['secondWeightTime']),
+      netWeight: serializer.fromJson<double>(json['netWeight']),
+      bags: serializer.fromJson<int?>(json['bags']),
+      lotNumber: serializer.fromJson<String?>(json['lotNumber']),
+      complete: serializer.fromJson<bool>(json['complete']),
+      completeCode: serializer.fromJson<String?>(json['completeCode']),
+      completeDate: serializer.fromJson<DateTime?>(json['completeDate']),
+      remark: serializer.fromJson<String?>(json['remark']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'date': serializer.toJson<DateTime>(date),
+      'slipNo': serializer.toJson<String>(slipNo),
+      'voucherNo': serializer.toJson<String?>(voucherNo),
+      'vehicleNo': serializer.toJson<String>(vehicleNo),
+      'rstManual': serializer.toJson<String?>(rstManual),
+      'partyName': serializer.toJson<String>(partyName),
+      'partyId': serializer.toJson<int?>(partyId),
+      'productId': serializer.toJson<int>(productId),
+      'entryType': serializer.toJson<String>(entryType),
+      'firstWeight': serializer.toJson<double>(firstWeight),
+      'firstWeightTime': serializer.toJson<DateTime?>(firstWeightTime),
+      'secondWeight': serializer.toJson<double>(secondWeight),
+      'secondWeightTime': serializer.toJson<DateTime?>(secondWeightTime),
+      'netWeight': serializer.toJson<double>(netWeight),
+      'bags': serializer.toJson<int?>(bags),
+      'lotNumber': serializer.toJson<String?>(lotNumber),
+      'complete': serializer.toJson<bool>(complete),
+      'completeCode': serializer.toJson<String?>(completeCode),
+      'completeDate': serializer.toJson<DateTime?>(completeDate),
+      'remark': serializer.toJson<String?>(remark),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  VehicleEntry copyWith(
+          {int? id,
+          DateTime? date,
+          String? slipNo,
+          Value<String?> voucherNo = const Value.absent(),
+          String? vehicleNo,
+          Value<String?> rstManual = const Value.absent(),
+          String? partyName,
+          Value<int?> partyId = const Value.absent(),
+          int? productId,
+          String? entryType,
+          double? firstWeight,
+          Value<DateTime?> firstWeightTime = const Value.absent(),
+          double? secondWeight,
+          Value<DateTime?> secondWeightTime = const Value.absent(),
+          double? netWeight,
+          Value<int?> bags = const Value.absent(),
+          Value<String?> lotNumber = const Value.absent(),
+          bool? complete,
+          Value<String?> completeCode = const Value.absent(),
+          Value<DateTime?> completeDate = const Value.absent(),
+          Value<String?> remark = const Value.absent(),
+          DateTime? createdAt,
+          DateTime? updatedAt}) =>
+      VehicleEntry(
+        id: id ?? this.id,
+        date: date ?? this.date,
+        slipNo: slipNo ?? this.slipNo,
+        voucherNo: voucherNo.present ? voucherNo.value : this.voucherNo,
+        vehicleNo: vehicleNo ?? this.vehicleNo,
+        rstManual: rstManual.present ? rstManual.value : this.rstManual,
+        partyName: partyName ?? this.partyName,
+        partyId: partyId.present ? partyId.value : this.partyId,
+        productId: productId ?? this.productId,
+        entryType: entryType ?? this.entryType,
+        firstWeight: firstWeight ?? this.firstWeight,
+        firstWeightTime: firstWeightTime.present
+            ? firstWeightTime.value
+            : this.firstWeightTime,
+        secondWeight: secondWeight ?? this.secondWeight,
+        secondWeightTime: secondWeightTime.present
+            ? secondWeightTime.value
+            : this.secondWeightTime,
+        netWeight: netWeight ?? this.netWeight,
+        bags: bags.present ? bags.value : this.bags,
+        lotNumber: lotNumber.present ? lotNumber.value : this.lotNumber,
+        complete: complete ?? this.complete,
+        completeCode:
+            completeCode.present ? completeCode.value : this.completeCode,
+        completeDate:
+            completeDate.present ? completeDate.value : this.completeDate,
+        remark: remark.present ? remark.value : this.remark,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  VehicleEntry copyWithCompanion(VehicleEntriesCompanion data) {
+    return VehicleEntry(
+      id: data.id.present ? data.id.value : this.id,
+      date: data.date.present ? data.date.value : this.date,
+      slipNo: data.slipNo.present ? data.slipNo.value : this.slipNo,
+      voucherNo: data.voucherNo.present ? data.voucherNo.value : this.voucherNo,
+      vehicleNo: data.vehicleNo.present ? data.vehicleNo.value : this.vehicleNo,
+      rstManual: data.rstManual.present ? data.rstManual.value : this.rstManual,
+      partyName: data.partyName.present ? data.partyName.value : this.partyName,
+      partyId: data.partyId.present ? data.partyId.value : this.partyId,
+      productId: data.productId.present ? data.productId.value : this.productId,
+      entryType: data.entryType.present ? data.entryType.value : this.entryType,
+      firstWeight:
+          data.firstWeight.present ? data.firstWeight.value : this.firstWeight,
+      firstWeightTime: data.firstWeightTime.present
+          ? data.firstWeightTime.value
+          : this.firstWeightTime,
+      secondWeight: data.secondWeight.present
+          ? data.secondWeight.value
+          : this.secondWeight,
+      secondWeightTime: data.secondWeightTime.present
+          ? data.secondWeightTime.value
+          : this.secondWeightTime,
+      netWeight: data.netWeight.present ? data.netWeight.value : this.netWeight,
+      bags: data.bags.present ? data.bags.value : this.bags,
+      lotNumber: data.lotNumber.present ? data.lotNumber.value : this.lotNumber,
+      complete: data.complete.present ? data.complete.value : this.complete,
+      completeCode: data.completeCode.present
+          ? data.completeCode.value
+          : this.completeCode,
+      completeDate: data.completeDate.present
+          ? data.completeDate.value
+          : this.completeDate,
+      remark: data.remark.present ? data.remark.value : this.remark,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VehicleEntry(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('slipNo: $slipNo, ')
+          ..write('voucherNo: $voucherNo, ')
+          ..write('vehicleNo: $vehicleNo, ')
+          ..write('rstManual: $rstManual, ')
+          ..write('partyName: $partyName, ')
+          ..write('partyId: $partyId, ')
+          ..write('productId: $productId, ')
+          ..write('entryType: $entryType, ')
+          ..write('firstWeight: $firstWeight, ')
+          ..write('firstWeightTime: $firstWeightTime, ')
+          ..write('secondWeight: $secondWeight, ')
+          ..write('secondWeightTime: $secondWeightTime, ')
+          ..write('netWeight: $netWeight, ')
+          ..write('bags: $bags, ')
+          ..write('lotNumber: $lotNumber, ')
+          ..write('complete: $complete, ')
+          ..write('completeCode: $completeCode, ')
+          ..write('completeDate: $completeDate, ')
+          ..write('remark: $remark, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+        id,
+        date,
+        slipNo,
+        voucherNo,
+        vehicleNo,
+        rstManual,
+        partyName,
+        partyId,
+        productId,
+        entryType,
+        firstWeight,
+        firstWeightTime,
+        secondWeight,
+        secondWeightTime,
+        netWeight,
+        bags,
+        lotNumber,
+        complete,
+        completeCode,
+        completeDate,
+        remark,
+        createdAt,
+        updatedAt
+      ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VehicleEntry &&
+          other.id == this.id &&
+          other.date == this.date &&
+          other.slipNo == this.slipNo &&
+          other.voucherNo == this.voucherNo &&
+          other.vehicleNo == this.vehicleNo &&
+          other.rstManual == this.rstManual &&
+          other.partyName == this.partyName &&
+          other.partyId == this.partyId &&
+          other.productId == this.productId &&
+          other.entryType == this.entryType &&
+          other.firstWeight == this.firstWeight &&
+          other.firstWeightTime == this.firstWeightTime &&
+          other.secondWeight == this.secondWeight &&
+          other.secondWeightTime == this.secondWeightTime &&
+          other.netWeight == this.netWeight &&
+          other.bags == this.bags &&
+          other.lotNumber == this.lotNumber &&
+          other.complete == this.complete &&
+          other.completeCode == this.completeCode &&
+          other.completeDate == this.completeDate &&
+          other.remark == this.remark &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class VehicleEntriesCompanion extends UpdateCompanion<VehicleEntry> {
+  final Value<int> id;
+  final Value<DateTime> date;
+  final Value<String> slipNo;
+  final Value<String?> voucherNo;
+  final Value<String> vehicleNo;
+  final Value<String?> rstManual;
+  final Value<String> partyName;
+  final Value<int?> partyId;
+  final Value<int> productId;
+  final Value<String> entryType;
+  final Value<double> firstWeight;
+  final Value<DateTime?> firstWeightTime;
+  final Value<double> secondWeight;
+  final Value<DateTime?> secondWeightTime;
+  final Value<double> netWeight;
+  final Value<int?> bags;
+  final Value<String?> lotNumber;
+  final Value<bool> complete;
+  final Value<String?> completeCode;
+  final Value<DateTime?> completeDate;
+  final Value<String?> remark;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const VehicleEntriesCompanion({
+    this.id = const Value.absent(),
+    this.date = const Value.absent(),
+    this.slipNo = const Value.absent(),
+    this.voucherNo = const Value.absent(),
+    this.vehicleNo = const Value.absent(),
+    this.rstManual = const Value.absent(),
+    this.partyName = const Value.absent(),
+    this.partyId = const Value.absent(),
+    this.productId = const Value.absent(),
+    this.entryType = const Value.absent(),
+    this.firstWeight = const Value.absent(),
+    this.firstWeightTime = const Value.absent(),
+    this.secondWeight = const Value.absent(),
+    this.secondWeightTime = const Value.absent(),
+    this.netWeight = const Value.absent(),
+    this.bags = const Value.absent(),
+    this.lotNumber = const Value.absent(),
+    this.complete = const Value.absent(),
+    this.completeCode = const Value.absent(),
+    this.completeDate = const Value.absent(),
+    this.remark = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  VehicleEntriesCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime date,
+    required String slipNo,
+    this.voucherNo = const Value.absent(),
+    required String vehicleNo,
+    this.rstManual = const Value.absent(),
+    required String partyName,
+    this.partyId = const Value.absent(),
+    required int productId,
+    this.entryType = const Value.absent(),
+    required double firstWeight,
+    this.firstWeightTime = const Value.absent(),
+    required double secondWeight,
+    this.secondWeightTime = const Value.absent(),
+    required double netWeight,
+    this.bags = const Value.absent(),
+    this.lotNumber = const Value.absent(),
+    this.complete = const Value.absent(),
+    this.completeCode = const Value.absent(),
+    this.completeDate = const Value.absent(),
+    this.remark = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  })  : date = Value(date),
+        slipNo = Value(slipNo),
+        vehicleNo = Value(vehicleNo),
+        partyName = Value(partyName),
+        productId = Value(productId),
+        firstWeight = Value(firstWeight),
+        secondWeight = Value(secondWeight),
+        netWeight = Value(netWeight);
+  static Insertable<VehicleEntry> custom({
+    Expression<int>? id,
+    Expression<DateTime>? date,
+    Expression<String>? slipNo,
+    Expression<String>? voucherNo,
+    Expression<String>? vehicleNo,
+    Expression<String>? rstManual,
+    Expression<String>? partyName,
+    Expression<int>? partyId,
+    Expression<int>? productId,
+    Expression<String>? entryType,
+    Expression<double>? firstWeight,
+    Expression<DateTime>? firstWeightTime,
+    Expression<double>? secondWeight,
+    Expression<DateTime>? secondWeightTime,
+    Expression<double>? netWeight,
+    Expression<int>? bags,
+    Expression<String>? lotNumber,
+    Expression<bool>? complete,
+    Expression<String>? completeCode,
+    Expression<DateTime>? completeDate,
+    Expression<String>? remark,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (date != null) 'date': date,
+      if (slipNo != null) 'slip_no': slipNo,
+      if (voucherNo != null) 'voucher_no': voucherNo,
+      if (vehicleNo != null) 'vehicle_no': vehicleNo,
+      if (rstManual != null) 'rst_manual': rstManual,
+      if (partyName != null) 'party_name': partyName,
+      if (partyId != null) 'party_id': partyId,
+      if (productId != null) 'product_id': productId,
+      if (entryType != null) 'entry_type': entryType,
+      if (firstWeight != null) 'first_weight': firstWeight,
+      if (firstWeightTime != null) 'first_weight_time': firstWeightTime,
+      if (secondWeight != null) 'second_weight': secondWeight,
+      if (secondWeightTime != null) 'second_weight_time': secondWeightTime,
+      if (netWeight != null) 'net_weight': netWeight,
+      if (bags != null) 'bags': bags,
+      if (lotNumber != null) 'lot_number': lotNumber,
+      if (complete != null) 'complete': complete,
+      if (completeCode != null) 'complete_code': completeCode,
+      if (completeDate != null) 'complete_date': completeDate,
+      if (remark != null) 'remark': remark,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  VehicleEntriesCompanion copyWith(
+      {Value<int>? id,
+      Value<DateTime>? date,
+      Value<String>? slipNo,
+      Value<String?>? voucherNo,
+      Value<String>? vehicleNo,
+      Value<String?>? rstManual,
+      Value<String>? partyName,
+      Value<int?>? partyId,
+      Value<int>? productId,
+      Value<String>? entryType,
+      Value<double>? firstWeight,
+      Value<DateTime?>? firstWeightTime,
+      Value<double>? secondWeight,
+      Value<DateTime?>? secondWeightTime,
+      Value<double>? netWeight,
+      Value<int?>? bags,
+      Value<String?>? lotNumber,
+      Value<bool>? complete,
+      Value<String?>? completeCode,
+      Value<DateTime?>? completeDate,
+      Value<String?>? remark,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt}) {
+    return VehicleEntriesCompanion(
+      id: id ?? this.id,
+      date: date ?? this.date,
+      slipNo: slipNo ?? this.slipNo,
+      voucherNo: voucherNo ?? this.voucherNo,
+      vehicleNo: vehicleNo ?? this.vehicleNo,
+      rstManual: rstManual ?? this.rstManual,
+      partyName: partyName ?? this.partyName,
+      partyId: partyId ?? this.partyId,
+      productId: productId ?? this.productId,
+      entryType: entryType ?? this.entryType,
+      firstWeight: firstWeight ?? this.firstWeight,
+      firstWeightTime: firstWeightTime ?? this.firstWeightTime,
+      secondWeight: secondWeight ?? this.secondWeight,
+      secondWeightTime: secondWeightTime ?? this.secondWeightTime,
+      netWeight: netWeight ?? this.netWeight,
+      bags: bags ?? this.bags,
+      lotNumber: lotNumber ?? this.lotNumber,
+      complete: complete ?? this.complete,
+      completeCode: completeCode ?? this.completeCode,
+      completeDate: completeDate ?? this.completeDate,
+      remark: remark ?? this.remark,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<DateTime>(date.value);
+    }
+    if (slipNo.present) {
+      map['slip_no'] = Variable<String>(slipNo.value);
+    }
+    if (voucherNo.present) {
+      map['voucher_no'] = Variable<String>(voucherNo.value);
+    }
+    if (vehicleNo.present) {
+      map['vehicle_no'] = Variable<String>(vehicleNo.value);
+    }
+    if (rstManual.present) {
+      map['rst_manual'] = Variable<String>(rstManual.value);
+    }
+    if (partyName.present) {
+      map['party_name'] = Variable<String>(partyName.value);
+    }
+    if (partyId.present) {
+      map['party_id'] = Variable<int>(partyId.value);
+    }
+    if (productId.present) {
+      map['product_id'] = Variable<int>(productId.value);
+    }
+    if (entryType.present) {
+      map['entry_type'] = Variable<String>(entryType.value);
+    }
+    if (firstWeight.present) {
+      map['first_weight'] = Variable<double>(firstWeight.value);
+    }
+    if (firstWeightTime.present) {
+      map['first_weight_time'] = Variable<DateTime>(firstWeightTime.value);
+    }
+    if (secondWeight.present) {
+      map['second_weight'] = Variable<double>(secondWeight.value);
+    }
+    if (secondWeightTime.present) {
+      map['second_weight_time'] = Variable<DateTime>(secondWeightTime.value);
+    }
+    if (netWeight.present) {
+      map['net_weight'] = Variable<double>(netWeight.value);
+    }
+    if (bags.present) {
+      map['bags'] = Variable<int>(bags.value);
+    }
+    if (lotNumber.present) {
+      map['lot_number'] = Variable<String>(lotNumber.value);
+    }
+    if (complete.present) {
+      map['complete'] = Variable<bool>(complete.value);
+    }
+    if (completeCode.present) {
+      map['complete_code'] = Variable<String>(completeCode.value);
+    }
+    if (completeDate.present) {
+      map['complete_date'] = Variable<DateTime>(completeDate.value);
+    }
+    if (remark.present) {
+      map['remark'] = Variable<String>(remark.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VehicleEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('slipNo: $slipNo, ')
+          ..write('voucherNo: $voucherNo, ')
+          ..write('vehicleNo: $vehicleNo, ')
+          ..write('rstManual: $rstManual, ')
+          ..write('partyName: $partyName, ')
+          ..write('partyId: $partyId, ')
+          ..write('productId: $productId, ')
+          ..write('entryType: $entryType, ')
+          ..write('firstWeight: $firstWeight, ')
+          ..write('firstWeightTime: $firstWeightTime, ')
+          ..write('secondWeight: $secondWeight, ')
+          ..write('secondWeightTime: $secondWeightTime, ')
+          ..write('netWeight: $netWeight, ')
+          ..write('bags: $bags, ')
+          ..write('lotNumber: $lotNumber, ')
+          ..write('complete: $complete, ')
+          ..write('completeCode: $completeCode, ')
+          ..write('completeDate: $completeDate, ')
+          ..write('remark: $remark, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -11222,6 +12271,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $StaffSalaryPaymentsTable(this);
   late final $NotificationsTable notifications = $NotificationsTable(this);
   late final $AuditLogsTable auditLogs = $AuditLogsTable(this);
+  late final $VehicleEntriesTable vehicleEntries = $VehicleEntriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -11253,7 +12303,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         staffPayrolls,
         staffSalaryPayments,
         notifications,
-        auditLogs
+        auditLogs,
+        vehicleEntries
       ];
 }
 
@@ -13659,6 +14710,21 @@ final class $$ProductsTableReferences
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
+
+  static MultiTypedResultKey<$VehicleEntriesTable, List<VehicleEntry>>
+      _vehicleEntriesRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.vehicleEntries,
+              aliasName: $_aliasNameGenerator(
+                  db.products.id, db.vehicleEntries.productId));
+
+  $$VehicleEntriesTableProcessedTableManager get vehicleEntriesRefs {
+    final manager = $$VehicleEntriesTableTableManager($_db, $_db.vehicleEntries)
+        .filter((f) => f.productId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_vehicleEntriesRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
 }
 
 class $$ProductsTableFilterComposer
@@ -13855,6 +14921,27 @@ class $$ProductsTableFilterComposer
             $$SaleItemsTableFilterComposer(
               $db: $db,
               $table: $db.saleItems,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> vehicleEntriesRefs(
+      Expression<bool> Function($$VehicleEntriesTableFilterComposer f) f) {
+    final $$VehicleEntriesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.vehicleEntries,
+        getReferencedColumn: (t) => t.productId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$VehicleEntriesTableFilterComposer(
+              $db: $db,
+              $table: $db.vehicleEntries,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -14142,6 +15229,27 @@ class $$ProductsTableAnnotationComposer
             ));
     return f(composer);
   }
+
+  Expression<T> vehicleEntriesRefs<T extends Object>(
+      Expression<T> Function($$VehicleEntriesTableAnnotationComposer a) f) {
+    final $$VehicleEntriesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.vehicleEntries,
+        getReferencedColumn: (t) => t.productId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$VehicleEntriesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.vehicleEntries,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$ProductsTableTableManager extends RootTableManager<
@@ -14162,7 +15270,8 @@ class $$ProductsTableTableManager extends RootTableManager<
         bool inventoryTransactionsRefs,
         bool purchaseItemsRefs,
         bool cartItemsRefs,
-        bool saleItemsRefs})> {
+        bool saleItemsRefs,
+        bool vehicleEntriesRefs})> {
   $$ProductsTableTableManager(_$AppDatabase db, $ProductsTable table)
       : super(TableManagerState(
           db: db,
@@ -14256,7 +15365,8 @@ class $$ProductsTableTableManager extends RootTableManager<
               inventoryTransactionsRefs = false,
               purchaseItemsRefs = false,
               cartItemsRefs = false,
-              saleItemsRefs = false}) {
+              saleItemsRefs = false,
+              vehicleEntriesRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
@@ -14265,7 +15375,8 @@ class $$ProductsTableTableManager extends RootTableManager<
                 if (inventoryTransactionsRefs) db.inventoryTransactions,
                 if (purchaseItemsRefs) db.purchaseItems,
                 if (cartItemsRefs) db.cartItems,
-                if (saleItemsRefs) db.saleItems
+                if (saleItemsRefs) db.saleItems,
+                if (vehicleEntriesRefs) db.vehicleEntries
               ],
               addJoins: <
                   T extends TableManagerState<
@@ -14372,6 +15483,19 @@ class $$ProductsTableTableManager extends RootTableManager<
                         referencedItemsForCurrentItem:
                             (item, referencedItems) => referencedItems
                                 .where((e) => e.productId == item.id),
+                        typedResults: items),
+                  if (vehicleEntriesRefs)
+                    await $_getPrefetchedData<Product, $ProductsTable,
+                            VehicleEntry>(
+                        currentTable: table,
+                        referencedTable: $$ProductsTableReferences
+                            ._vehicleEntriesRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$ProductsTableReferences(db, table, p0)
+                                .vehicleEntriesRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.productId == item.id),
                         typedResults: items)
                 ];
               },
@@ -14398,7 +15522,8 @@ typedef $$ProductsTableProcessedTableManager = ProcessedTableManager<
         bool inventoryTransactionsRefs,
         bool purchaseItemsRefs,
         bool cartItemsRefs,
-        bool saleItemsRefs})>;
+        bool saleItemsRefs,
+        bool vehicleEntriesRefs})>;
 typedef $$ProductVariantsTableCreateCompanionBuilder = ProductVariantsCompanion
     Function({
   Value<int> id,
@@ -16139,6 +17264,21 @@ final class $$SuppliersTableReferences
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
+
+  static MultiTypedResultKey<$VehicleEntriesTable, List<VehicleEntry>>
+      _vehicleEntriesRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.vehicleEntries,
+              aliasName: $_aliasNameGenerator(
+                  db.suppliers.id, db.vehicleEntries.partyId));
+
+  $$VehicleEntriesTableProcessedTableManager get vehicleEntriesRefs {
+    final manager = $$VehicleEntriesTableTableManager($_db, $_db.vehicleEntries)
+        .filter((f) => f.partyId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_vehicleEntriesRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
 }
 
 class $$SuppliersTableFilterComposer
@@ -16194,6 +17334,27 @@ class $$SuppliersTableFilterComposer
             $$PurchasesTableFilterComposer(
               $db: $db,
               $table: $db.purchases,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> vehicleEntriesRefs(
+      Expression<bool> Function($$VehicleEntriesTableFilterComposer f) f) {
+    final $$VehicleEntriesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.vehicleEntries,
+        getReferencedColumn: (t) => t.partyId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$VehicleEntriesTableFilterComposer(
+              $db: $db,
+              $table: $db.vehicleEntries,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -16304,6 +17465,27 @@ class $$SuppliersTableAnnotationComposer
             ));
     return f(composer);
   }
+
+  Expression<T> vehicleEntriesRefs<T extends Object>(
+      Expression<T> Function($$VehicleEntriesTableAnnotationComposer a) f) {
+    final $$VehicleEntriesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.vehicleEntries,
+        getReferencedColumn: (t) => t.partyId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$VehicleEntriesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.vehicleEntries,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$SuppliersTableTableManager extends RootTableManager<
@@ -16317,7 +17499,7 @@ class $$SuppliersTableTableManager extends RootTableManager<
     $$SuppliersTableUpdateCompanionBuilder,
     (Supplier, $$SuppliersTableReferences),
     Supplier,
-    PrefetchHooks Function({bool purchasesRefs})> {
+    PrefetchHooks Function({bool purchasesRefs, bool vehicleEntriesRefs})> {
   $$SuppliersTableTableManager(_$AppDatabase db, $SuppliersTable table)
       : super(TableManagerState(
           db: db,
@@ -16382,10 +17564,14 @@ class $$SuppliersTableTableManager extends RootTableManager<
                     $$SuppliersTableReferences(db, table, e)
                   ))
               .toList(),
-          prefetchHooksCallback: ({purchasesRefs = false}) {
+          prefetchHooksCallback: (
+              {purchasesRefs = false, vehicleEntriesRefs = false}) {
             return PrefetchHooks(
               db: db,
-              explicitlyWatchedTables: [if (purchasesRefs) db.purchases],
+              explicitlyWatchedTables: [
+                if (purchasesRefs) db.purchases,
+                if (vehicleEntriesRefs) db.vehicleEntries
+              ],
               addJoins: null,
               getPrefetchedDataCallback: (items) async {
                 return [
@@ -16401,6 +17587,19 @@ class $$SuppliersTableTableManager extends RootTableManager<
                         referencedItemsForCurrentItem:
                             (item, referencedItems) => referencedItems
                                 .where((e) => e.supplierId == item.id),
+                        typedResults: items),
+                  if (vehicleEntriesRefs)
+                    await $_getPrefetchedData<Supplier, $SuppliersTable,
+                            VehicleEntry>(
+                        currentTable: table,
+                        referencedTable: $$SuppliersTableReferences
+                            ._vehicleEntriesRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$SuppliersTableReferences(db, table, p0)
+                                .vehicleEntriesRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.partyId == item.id),
                         typedResults: items)
                 ];
               },
@@ -16420,7 +17619,7 @@ typedef $$SuppliersTableProcessedTableManager = ProcessedTableManager<
     $$SuppliersTableUpdateCompanionBuilder,
     (Supplier, $$SuppliersTableReferences),
     Supplier,
-    PrefetchHooks Function({bool purchasesRefs})>;
+    PrefetchHooks Function({bool purchasesRefs, bool vehicleEntriesRefs})>;
 typedef $$PurchasesTableCreateCompanionBuilder = PurchasesCompanion Function({
   Value<int> id,
   Value<int?> supplierId,
@@ -22552,6 +23751,630 @@ typedef $$AuditLogsTableProcessedTableManager = ProcessedTableManager<
     (AuditLog, $$AuditLogsTableReferences),
     AuditLog,
     PrefetchHooks Function({bool userId})>;
+typedef $$VehicleEntriesTableCreateCompanionBuilder = VehicleEntriesCompanion
+    Function({
+  Value<int> id,
+  required DateTime date,
+  required String slipNo,
+  Value<String?> voucherNo,
+  required String vehicleNo,
+  Value<String?> rstManual,
+  required String partyName,
+  Value<int?> partyId,
+  required int productId,
+  Value<String> entryType,
+  required double firstWeight,
+  Value<DateTime?> firstWeightTime,
+  required double secondWeight,
+  Value<DateTime?> secondWeightTime,
+  required double netWeight,
+  Value<int?> bags,
+  Value<String?> lotNumber,
+  Value<bool> complete,
+  Value<String?> completeCode,
+  Value<DateTime?> completeDate,
+  Value<String?> remark,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+});
+typedef $$VehicleEntriesTableUpdateCompanionBuilder = VehicleEntriesCompanion
+    Function({
+  Value<int> id,
+  Value<DateTime> date,
+  Value<String> slipNo,
+  Value<String?> voucherNo,
+  Value<String> vehicleNo,
+  Value<String?> rstManual,
+  Value<String> partyName,
+  Value<int?> partyId,
+  Value<int> productId,
+  Value<String> entryType,
+  Value<double> firstWeight,
+  Value<DateTime?> firstWeightTime,
+  Value<double> secondWeight,
+  Value<DateTime?> secondWeightTime,
+  Value<double> netWeight,
+  Value<int?> bags,
+  Value<String?> lotNumber,
+  Value<bool> complete,
+  Value<String?> completeCode,
+  Value<DateTime?> completeDate,
+  Value<String?> remark,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+});
+
+final class $$VehicleEntriesTableReferences
+    extends BaseReferences<_$AppDatabase, $VehicleEntriesTable, VehicleEntry> {
+  $$VehicleEntriesTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $SuppliersTable _partyIdTable(_$AppDatabase db) =>
+      db.suppliers.createAlias(
+          $_aliasNameGenerator(db.vehicleEntries.partyId, db.suppliers.id));
+
+  $$SuppliersTableProcessedTableManager? get partyId {
+    final $_column = $_itemColumn<int>('party_id');
+    if ($_column == null) return null;
+    final manager = $$SuppliersTableTableManager($_db, $_db.suppliers)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_partyIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $ProductsTable _productIdTable(_$AppDatabase db) =>
+      db.products.createAlias(
+          $_aliasNameGenerator(db.vehicleEntries.productId, db.products.id));
+
+  $$ProductsTableProcessedTableManager get productId {
+    final $_column = $_itemColumn<int>('product_id')!;
+
+    final manager = $$ProductsTableTableManager($_db, $_db.products)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_productIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$VehicleEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $VehicleEntriesTable> {
+  $$VehicleEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get date => $composableBuilder(
+      column: $table.date, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get slipNo => $composableBuilder(
+      column: $table.slipNo, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get voucherNo => $composableBuilder(
+      column: $table.voucherNo, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get vehicleNo => $composableBuilder(
+      column: $table.vehicleNo, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get rstManual => $composableBuilder(
+      column: $table.rstManual, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get partyName => $composableBuilder(
+      column: $table.partyName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get entryType => $composableBuilder(
+      column: $table.entryType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get firstWeight => $composableBuilder(
+      column: $table.firstWeight, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get firstWeightTime => $composableBuilder(
+      column: $table.firstWeightTime,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get secondWeight => $composableBuilder(
+      column: $table.secondWeight, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get secondWeightTime => $composableBuilder(
+      column: $table.secondWeightTime,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get netWeight => $composableBuilder(
+      column: $table.netWeight, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get bags => $composableBuilder(
+      column: $table.bags, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get lotNumber => $composableBuilder(
+      column: $table.lotNumber, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get complete => $composableBuilder(
+      column: $table.complete, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get completeCode => $composableBuilder(
+      column: $table.completeCode, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get completeDate => $composableBuilder(
+      column: $table.completeDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get remark => $composableBuilder(
+      column: $table.remark, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  $$SuppliersTableFilterComposer get partyId {
+    final $$SuppliersTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.partyId,
+        referencedTable: $db.suppliers,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SuppliersTableFilterComposer(
+              $db: $db,
+              $table: $db.suppliers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$ProductsTableFilterComposer get productId {
+    final $$ProductsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.productId,
+        referencedTable: $db.products,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ProductsTableFilterComposer(
+              $db: $db,
+              $table: $db.products,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$VehicleEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $VehicleEntriesTable> {
+  $$VehicleEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get date => $composableBuilder(
+      column: $table.date, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get slipNo => $composableBuilder(
+      column: $table.slipNo, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get voucherNo => $composableBuilder(
+      column: $table.voucherNo, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get vehicleNo => $composableBuilder(
+      column: $table.vehicleNo, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get rstManual => $composableBuilder(
+      column: $table.rstManual, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get partyName => $composableBuilder(
+      column: $table.partyName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get entryType => $composableBuilder(
+      column: $table.entryType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get firstWeight => $composableBuilder(
+      column: $table.firstWeight, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get firstWeightTime => $composableBuilder(
+      column: $table.firstWeightTime,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get secondWeight => $composableBuilder(
+      column: $table.secondWeight,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get secondWeightTime => $composableBuilder(
+      column: $table.secondWeightTime,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get netWeight => $composableBuilder(
+      column: $table.netWeight, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get bags => $composableBuilder(
+      column: $table.bags, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get lotNumber => $composableBuilder(
+      column: $table.lotNumber, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get complete => $composableBuilder(
+      column: $table.complete, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get completeCode => $composableBuilder(
+      column: $table.completeCode,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get completeDate => $composableBuilder(
+      column: $table.completeDate,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get remark => $composableBuilder(
+      column: $table.remark, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  $$SuppliersTableOrderingComposer get partyId {
+    final $$SuppliersTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.partyId,
+        referencedTable: $db.suppliers,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SuppliersTableOrderingComposer(
+              $db: $db,
+              $table: $db.suppliers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$ProductsTableOrderingComposer get productId {
+    final $$ProductsTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.productId,
+        referencedTable: $db.products,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ProductsTableOrderingComposer(
+              $db: $db,
+              $table: $db.products,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$VehicleEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $VehicleEntriesTable> {
+  $$VehicleEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<String> get slipNo =>
+      $composableBuilder(column: $table.slipNo, builder: (column) => column);
+
+  GeneratedColumn<String> get voucherNo =>
+      $composableBuilder(column: $table.voucherNo, builder: (column) => column);
+
+  GeneratedColumn<String> get vehicleNo =>
+      $composableBuilder(column: $table.vehicleNo, builder: (column) => column);
+
+  GeneratedColumn<String> get rstManual =>
+      $composableBuilder(column: $table.rstManual, builder: (column) => column);
+
+  GeneratedColumn<String> get partyName =>
+      $composableBuilder(column: $table.partyName, builder: (column) => column);
+
+  GeneratedColumn<String> get entryType =>
+      $composableBuilder(column: $table.entryType, builder: (column) => column);
+
+  GeneratedColumn<double> get firstWeight => $composableBuilder(
+      column: $table.firstWeight, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get firstWeightTime => $composableBuilder(
+      column: $table.firstWeightTime, builder: (column) => column);
+
+  GeneratedColumn<double> get secondWeight => $composableBuilder(
+      column: $table.secondWeight, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get secondWeightTime => $composableBuilder(
+      column: $table.secondWeightTime, builder: (column) => column);
+
+  GeneratedColumn<double> get netWeight =>
+      $composableBuilder(column: $table.netWeight, builder: (column) => column);
+
+  GeneratedColumn<int> get bags =>
+      $composableBuilder(column: $table.bags, builder: (column) => column);
+
+  GeneratedColumn<String> get lotNumber =>
+      $composableBuilder(column: $table.lotNumber, builder: (column) => column);
+
+  GeneratedColumn<bool> get complete =>
+      $composableBuilder(column: $table.complete, builder: (column) => column);
+
+  GeneratedColumn<String> get completeCode => $composableBuilder(
+      column: $table.completeCode, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get completeDate => $composableBuilder(
+      column: $table.completeDate, builder: (column) => column);
+
+  GeneratedColumn<String> get remark =>
+      $composableBuilder(column: $table.remark, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$SuppliersTableAnnotationComposer get partyId {
+    final $$SuppliersTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.partyId,
+        referencedTable: $db.suppliers,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SuppliersTableAnnotationComposer(
+              $db: $db,
+              $table: $db.suppliers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$ProductsTableAnnotationComposer get productId {
+    final $$ProductsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.productId,
+        referencedTable: $db.products,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ProductsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.products,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$VehicleEntriesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $VehicleEntriesTable,
+    VehicleEntry,
+    $$VehicleEntriesTableFilterComposer,
+    $$VehicleEntriesTableOrderingComposer,
+    $$VehicleEntriesTableAnnotationComposer,
+    $$VehicleEntriesTableCreateCompanionBuilder,
+    $$VehicleEntriesTableUpdateCompanionBuilder,
+    (VehicleEntry, $$VehicleEntriesTableReferences),
+    VehicleEntry,
+    PrefetchHooks Function({bool partyId, bool productId})> {
+  $$VehicleEntriesTableTableManager(
+      _$AppDatabase db, $VehicleEntriesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VehicleEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VehicleEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VehicleEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<DateTime> date = const Value.absent(),
+            Value<String> slipNo = const Value.absent(),
+            Value<String?> voucherNo = const Value.absent(),
+            Value<String> vehicleNo = const Value.absent(),
+            Value<String?> rstManual = const Value.absent(),
+            Value<String> partyName = const Value.absent(),
+            Value<int?> partyId = const Value.absent(),
+            Value<int> productId = const Value.absent(),
+            Value<String> entryType = const Value.absent(),
+            Value<double> firstWeight = const Value.absent(),
+            Value<DateTime?> firstWeightTime = const Value.absent(),
+            Value<double> secondWeight = const Value.absent(),
+            Value<DateTime?> secondWeightTime = const Value.absent(),
+            Value<double> netWeight = const Value.absent(),
+            Value<int?> bags = const Value.absent(),
+            Value<String?> lotNumber = const Value.absent(),
+            Value<bool> complete = const Value.absent(),
+            Value<String?> completeCode = const Value.absent(),
+            Value<DateTime?> completeDate = const Value.absent(),
+            Value<String?> remark = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+          }) =>
+              VehicleEntriesCompanion(
+            id: id,
+            date: date,
+            slipNo: slipNo,
+            voucherNo: voucherNo,
+            vehicleNo: vehicleNo,
+            rstManual: rstManual,
+            partyName: partyName,
+            partyId: partyId,
+            productId: productId,
+            entryType: entryType,
+            firstWeight: firstWeight,
+            firstWeightTime: firstWeightTime,
+            secondWeight: secondWeight,
+            secondWeightTime: secondWeightTime,
+            netWeight: netWeight,
+            bags: bags,
+            lotNumber: lotNumber,
+            complete: complete,
+            completeCode: completeCode,
+            completeDate: completeDate,
+            remark: remark,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required DateTime date,
+            required String slipNo,
+            Value<String?> voucherNo = const Value.absent(),
+            required String vehicleNo,
+            Value<String?> rstManual = const Value.absent(),
+            required String partyName,
+            Value<int?> partyId = const Value.absent(),
+            required int productId,
+            Value<String> entryType = const Value.absent(),
+            required double firstWeight,
+            Value<DateTime?> firstWeightTime = const Value.absent(),
+            required double secondWeight,
+            Value<DateTime?> secondWeightTime = const Value.absent(),
+            required double netWeight,
+            Value<int?> bags = const Value.absent(),
+            Value<String?> lotNumber = const Value.absent(),
+            Value<bool> complete = const Value.absent(),
+            Value<String?> completeCode = const Value.absent(),
+            Value<DateTime?> completeDate = const Value.absent(),
+            Value<String?> remark = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+          }) =>
+              VehicleEntriesCompanion.insert(
+            id: id,
+            date: date,
+            slipNo: slipNo,
+            voucherNo: voucherNo,
+            vehicleNo: vehicleNo,
+            rstManual: rstManual,
+            partyName: partyName,
+            partyId: partyId,
+            productId: productId,
+            entryType: entryType,
+            firstWeight: firstWeight,
+            firstWeightTime: firstWeightTime,
+            secondWeight: secondWeight,
+            secondWeightTime: secondWeightTime,
+            netWeight: netWeight,
+            bags: bags,
+            lotNumber: lotNumber,
+            complete: complete,
+            completeCode: completeCode,
+            completeDate: completeDate,
+            remark: remark,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$VehicleEntriesTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({partyId = false, productId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (partyId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.partyId,
+                    referencedTable:
+                        $$VehicleEntriesTableReferences._partyIdTable(db),
+                    referencedColumn:
+                        $$VehicleEntriesTableReferences._partyIdTable(db).id,
+                  ) as T;
+                }
+                if (productId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.productId,
+                    referencedTable:
+                        $$VehicleEntriesTableReferences._productIdTable(db),
+                    referencedColumn:
+                        $$VehicleEntriesTableReferences._productIdTable(db).id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$VehicleEntriesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $VehicleEntriesTable,
+    VehicleEntry,
+    $$VehicleEntriesTableFilterComposer,
+    $$VehicleEntriesTableOrderingComposer,
+    $$VehicleEntriesTableAnnotationComposer,
+    $$VehicleEntriesTableCreateCompanionBuilder,
+    $$VehicleEntriesTableUpdateCompanionBuilder,
+    (VehicleEntry, $$VehicleEntriesTableReferences),
+    VehicleEntry,
+    PrefetchHooks Function({bool partyId, bool productId})>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -22610,4 +24433,6 @@ class $AppDatabaseManager {
       $$NotificationsTableTableManager(_db, _db.notifications);
   $$AuditLogsTableTableManager get auditLogs =>
       $$AuditLogsTableTableManager(_db, _db.auditLogs);
+  $$VehicleEntriesTableTableManager get vehicleEntries =>
+      $$VehicleEntriesTableTableManager(_db, _db.vehicleEntries);
 }

@@ -14,8 +14,8 @@ class MillRunPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final runsAsync = ref.watch(millRunsProvider);
-    final config = ref.watch(millingConfigProvider).valueOrNull ??
-        MillingConfig.defaults();
+    final config =
+        ref.watch(millingConfigProvider).valueOrNull ?? MillingConfig.defaults();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Mill Runs')),
@@ -61,28 +61,31 @@ class MillRunPage extends ConsumerWidget {
 
     if (products.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Add products before creating a mill run.')),
+        const SnackBar(content: Text('Add products before creating a mill run.')),
       );
       return;
     }
 
     // Pre-select paddy products (category heuristic: name contains 'Paddy').
-    final paddyProducts =
-        products.where((p) => p.name.toLowerCase().contains('paddy')).toList();
+    final paddyProducts = products
+        .where((p) => p.name.toLowerCase().contains('paddy'))
+        .toList();
     final allProducts = products;
 
     final paddyCtrl = TextEditingController(
         text: existing?.run.paddyConsumedKg.toString() ?? '');
-    final lotCtrl = TextEditingController(text: existing?.run.lotNumber ?? '');
-    final noteCtrl = TextEditingController(text: existing?.run.note ?? '');
+    final lotCtrl =
+        TextEditingController(text: existing?.run.lotNumber ?? '');
+    final noteCtrl =
+        TextEditingController(text: existing?.run.note ?? '');
 
     int? selectedPaddyProductId = existing?.run.paddyProductId ??
         (paddyProducts.isNotEmpty ? paddyProducts.first.id : null);
     int? selectedWarehouseId = existing?.run.warehouseId ??
         (warehouses.isNotEmpty
             ? warehouses
-                .firstWhere((w) => w.isDefault, orElse: () => warehouses.first)
+                .firstWhere((w) => w.isDefault,
+                    orElse: () => warehouses.first)
                 .id
             : null);
     DateTime runDate = existing?.run.runDate ?? DateTime.now();
@@ -151,10 +154,9 @@ class MillRunPage extends ConsumerWidget {
 
                     // Paddy product
                     DropdownButtonFormField<int>(
-                      value:
-                          allProducts.any((p) => p.id == selectedPaddyProductId)
-                              ? selectedPaddyProductId
-                              : null,
+                      value: allProducts.any((p) => p.id == selectedPaddyProductId)
+                          ? selectedPaddyProductId
+                          : null,
                       decoration: const InputDecoration(
                         labelText: 'Paddy (Input) Product',
                         border: OutlineInputBorder(),
@@ -173,8 +175,8 @@ class MillRunPage extends ConsumerWidget {
                     // Paddy qty
                     TextField(
                       controller: paddyCtrl,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true),
                       decoration: const InputDecoration(
                         labelText: 'Paddy consumed (qty)',
                         border: OutlineInputBorder(),
@@ -301,8 +303,8 @@ class MillRunPage extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (ctx) =>
-          _OutputsSheet(millRunId: millRunId, products: products, ref: ref),
+      builder: (ctx) => _OutputsSheet(
+          millRunId: millRunId, products: products, ref: ref),
     );
   }
 }
@@ -346,7 +348,8 @@ class _MillRunTile extends ConsumerWidget {
         style: const TextStyle(fontSize: 12),
       ),
       trailing: Chip(
-        label: Text(run.status.label, style: const TextStyle(fontSize: 11)),
+        label: Text(run.status.label,
+            style: const TextStyle(fontSize: 11)),
         backgroundColor: _statusColor(run.status).withOpacity(0.12),
         side: BorderSide.none,
         padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -387,14 +390,14 @@ class _MillRunTile extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 3),
                       child: Text(
-                        mw.outputProducts[o.productId] ??
-                            'Product ${o.productId}',
+                        mw.outputProducts[o.productId] ?? 'Product ${o.productId}',
                         style: const TextStyle(fontSize: 13),
                       ),
                     ),
                     Text('${o.quantityKg}',
                         style: const TextStyle(fontSize: 13)),
-                    Text(o.grade ?? '—', style: const TextStyle(fontSize: 13)),
+                    Text(o.grade ?? '—',
+                        style: const TextStyle(fontSize: 13)),
                   ]),
               ],
             ),
@@ -410,7 +413,8 @@ class _MillRunTile extends ConsumerWidget {
         if (run.status == MillRunStatus.completed &&
             mw.yieldPercent < config.yieldWarningThresholdPercent)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
               children: [
                 const Icon(Icons.warning_amber_rounded,
@@ -419,7 +423,8 @@ class _MillRunTile extends ConsumerWidget {
                 Text(
                   'Yield ${mw.yieldPercent.toStringAsFixed(1)}% is below '
                   'warning threshold (${config.yieldWarningThresholdPercent}%)',
-                  style: const TextStyle(fontSize: 12, color: Colors.orange),
+                  style: const TextStyle(
+                      fontSize: 12, color: Colors.orange),
                 ),
               ],
             ),
@@ -428,7 +433,8 @@ class _MillRunTile extends ConsumerWidget {
         // Action row
         if (run.status == MillRunStatus.draft)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+            padding:
+                const EdgeInsets.fromLTRB(16, 4, 16, 12),
             child: Wrap(
               spacing: 8,
               children: [
@@ -441,18 +447,20 @@ class _MillRunTile extends ConsumerWidget {
                   icon: const Icon(Icons.edit_rounded, size: 16),
                   label: const Text('Edit'),
                   onPressed: () =>
-                      MillRunPage()._showRunDialog(context, ref, mw),
+                      MillRunPage().._showRunDialog(context, ref, mw),
                 ),
                 FilledButton.icon(
                   icon: const Icon(Icons.check_circle_rounded, size: 16),
                   label: const Text('Complete'),
-                  style: FilledButton.styleFrom(backgroundColor: Colors.green),
+                  style: FilledButton.styleFrom(
+                      backgroundColor: Colors.green),
                   onPressed: () => _complete(context, ref),
                 ),
                 TextButton.icon(
                   icon: const Icon(Icons.cancel_rounded, size: 16),
                   label: const Text('Cancel'),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  style:
+                      TextButton.styleFrom(foregroundColor: Colors.red),
                   onPressed: () => _cancelRun(context, ref),
                 ),
               ],
@@ -468,8 +476,8 @@ class _MillRunTile extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (ctx) =>
-          _OutputsSheet(millRunId: mw.run.id, products: products, ref: ref),
+      builder: (ctx) => _OutputsSheet(
+          millRunId: mw.run.id, products: products, ref: ref),
     );
   }
 
@@ -494,7 +502,6 @@ class _MillRunTile extends ConsumerWidget {
     if (confirm != true) return;
     try {
       await ref.read(millRunRepositoryProvider).complete(mw.run.id);
-      ref.invalidate(millRunsProvider);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -530,7 +537,6 @@ class _MillRunTile extends ConsumerWidget {
     );
     if (confirm != true) return;
     await ref.read(millRunRepositoryProvider).cancel(mw.run.id);
-    ref.invalidate(millRunsProvider);
   }
 }
 
@@ -563,31 +569,15 @@ class _OutputsSheetState extends ConsumerState<_OutputsSheet> {
     super.dispose();
   }
 
-  // Helper to get current run data
-  MillRunWithOutputs? _getCurrentRun() {
-    final runsAsync = ref.watch(millRunsProvider);
-    return runsAsync.valueOrNull?.firstWhere(
-      (r) => r.run.id == widget.millRunId,
-      orElse: () => MillRunWithOutputs(
-        run: _emptyRun(widget.millRunId),
-        outputs: const [],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Watch the provider to trigger rebuilds
     final runsAsync = ref.watch(millRunsProvider);
-    final mw = runsAsync.valueOrNull?.firstWhere(
-      (r) => r.run.id == widget.millRunId,
-      orElse: () => MillRunWithOutputs(
-        run: _emptyRun(widget.millRunId),
-        outputs: const [],
-      ),
-    );
+    final mw = runsAsync.valueOrNull
+        ?.firstWhere((r) => r.run.id == widget.millRunId,
+            orElse: () => MillRunWithOutputs(
+                run: _emptyRun(widget.millRunId), outputs: const []));
 
-    // Non-paddy products suggested for output
+    // Non-paddy products suggested for output.
     final outputProducts = widget.products
         .where((p) => !p.name.toLowerCase().contains('paddy'))
         .toList();
@@ -597,8 +587,8 @@ class _OutputsSheetState extends ConsumerState<_OutputsSheet> {
       initialChildSize: 0.7,
       maxChildSize: 0.95,
       builder: (ctx, scroll) => Padding(
-        padding:
-            EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom),
         child: Column(
           children: [
             Padding(
@@ -606,8 +596,8 @@ class _OutputsSheetState extends ConsumerState<_OutputsSheet> {
               child: Row(
                 children: [
                   const Text('Mill Run Outputs',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                      style: TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.w600)),
                   const Spacer(),
                   IconButton(
                       icon: const Icon(Icons.close),
@@ -623,7 +613,8 @@ class _OutputsSheetState extends ConsumerState<_OutputsSheet> {
               child: Column(
                 children: [
                   DropdownButtonFormField<int>(
-                    value: outputProducts.any((p) => p.id == _selectedProductId)
+                    value: outputProducts.any(
+                            (p) => p.id == _selectedProductId)
                         ? _selectedProductId
                         : null,
                     decoration: const InputDecoration(
@@ -633,9 +624,11 @@ class _OutputsSheetState extends ConsumerState<_OutputsSheet> {
                     ),
                     items: [
                       for (final p in outputProducts)
-                        DropdownMenuItem(value: p.id, child: Text(p.name)),
+                        DropdownMenuItem(
+                            value: p.id, child: Text(p.name)),
                     ],
-                    onChanged: (v) => setState(() => _selectedProductId = v),
+                    onChanged: (v) =>
+                        setState(() => _selectedProductId = v),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -695,26 +688,15 @@ class _OutputsSheetState extends ConsumerState<_OutputsSheet> {
                         return ListTile(
                           leading: const Icon(Icons.grain_rounded),
                           title: Text(name),
-                          subtitle: Text('Qty: ${o.quantityKg}'
+                          subtitle: Text(
+                              'Qty: ${o.quantityKg}'
                               '${o.grade != null ? '  •  ${o.grade}' : ''}'),
                           trailing: IconButton(
                             icon: const Icon(Icons.delete_outline,
                                 color: Colors.red),
-                            onPressed: () async {
-                              await ref
-                                  .read(millRunRepositoryProvider)
-                                  .removeOutput(o.id);
-                              // Refresh the provider
-                              ref.invalidate(millRunsProvider);
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Output removed'),
-                                    duration: Duration(seconds: 1),
-                                  ),
-                                );
-                              }
-                            },
+                            onPressed: () => ref
+                                .read(millRunRepositoryProvider)
+                                .removeOutput(o.id),
                           ),
                         );
                       },
@@ -725,8 +707,8 @@ class _OutputsSheetState extends ConsumerState<_OutputsSheet> {
             if (mw != null && mw.outputs.isNotEmpty)
               Container(
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 10),
                 child: Row(
                   children: [
                     Text(
@@ -747,51 +729,26 @@ class _OutputsSheetState extends ConsumerState<_OutputsSheet> {
   Future<void> _addOutput() async {
     final qty = double.tryParse(_qtyCtrl.text.trim()) ?? 0;
     if (_selectedProductId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Select an output product.')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Select an output product.')));
       return;
     }
     if (qty <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Enter a valid quantity.')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Enter a valid quantity.')));
       return;
     }
-
-    try {
-      // Add the output
-      await ref.read(millRunRepositoryProvider).addOutput(
-            millRunId: widget.millRunId,
-            productId: _selectedProductId!,
-            quantityKg: qty,
-            grade:
-                _gradeCtrl.text.trim().isEmpty ? null : _gradeCtrl.text.trim(),
-          );
-
-      // Invalidate the provider to refresh the UI
-      ref.invalidate(millRunsProvider);
-
-      // Clear the form
-      setState(() {
-        _selectedProductId = null;
-        _qtyCtrl.clear();
-        _gradeCtrl.clear();
-      });
-
-      // Show success message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Output added successfully'),
-            duration: Duration(seconds: 1),
-          ),
+    await ref.read(millRunRepositoryProvider).addOutput(
+          millRunId: widget.millRunId,
+          productId: _selectedProductId!,
+          quantityKg: qty,
+          grade: _gradeCtrl.text.trim().isEmpty ? null : _gradeCtrl.text.trim(),
         );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
-    }
+    setState(() {
+      _selectedProductId = null;
+      _qtyCtrl.clear();
+      _gradeCtrl.clear();
+    });
   }
 }
 
@@ -806,3 +763,4 @@ MillRun _emptyRun(int id) => MillRun(
       status: MillRunStatus.draft,
       createdAt: DateTime.now(),
     );
+

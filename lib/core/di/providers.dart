@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pocket_pos/features/weighbridge/data/firestore_weighbridge_repository.dart';
+import 'package:pocket_pos/features/weighbridge/data/weighbridge_repository.dart';
 
 import '../../features/auth/domain/auth_models.dart';
 import '../../features/auth/presentation/auth_controller.dart';
@@ -34,7 +36,11 @@ import '../../features/suppliers/domain/supplier_repository.dart';
 import '../../features/warehouse/data/firestore_warehouse_repository.dart';
 import '../../features/warehouse/domain/inventory_mode.dart';
 import '../../features/warehouse/domain/warehouse_repository.dart';
-import '../database/app_database.dart';
+import '../../features/weighbridge/domain/vehicle_entry.dart';
+// The Drift schema generates its own row class named VehicleEntry; the
+// weighbridge providers deal in the domain model (which carries the joined
+// productName / supplier fields), so the generated one is hidden here.
+import '../database/app_database.dart' hide VehicleEntry;
 import '../database/seed/demo_business_type.dart';
 import '../database/seed/demo_data_loader.dart';
 import '../firestore/store_scope.dart';
@@ -288,6 +294,45 @@ final cartGrandTotalProvider =
   return summary.grandTotal;
 });
 
+// ── Weighbridge / Vehicle Entry ─────────────────────────────────────────────
+
+final weighbridgeRepositoryProvider = Provider<WeighbridgeRepository>((ref) {
+  // Use Firestore implementation (or local Drift if needed). All other
+  // repositories use Firestore, so we follow that pattern.
+  return FirestoreWeighbridgeRepository(
+    ref.watch(firestoreProvider),
+    ref.watch(activeStoreIdProvider) ?? '',
+  );
+});
+
+/// Filter state for the vehicle entry list.
+final weighbridgeFilterProvider = StateProvider<WeighbridgeFilter>((ref) {
+  return const WeighbridgeFilter();
+});
+
+/// Stream of vehicle entries filtered by the current filter state.
+final vehicleEntriesStreamProvider = StreamProvider<List<VehicleEntry>>((ref) {
+  final filter = ref.watch(weighbridgeFilterProvider);
+  if (ref.watch(activeStoreIdProvider) == null) {
+    return Stream.value(const []);
+  }
+  return ref.watch(weighbridgeRepositoryProvider).watchAll(
+        fromDate: filter.fromDate,
+        toDate: filter.toDate,
+        vehicleNo: filter.vehicleNo,
+        partyName: filter.partyName,
+      );
+});
+
+/// Fetches a single vehicle entry by ID.
+final vehicleEntryProvider =
+    FutureProvider.family<VehicleEntry?, int>((ref, id) {
+  if (ref.watch(activeStoreIdProvider) == null) {
+    return Future.value(null);
+  }
+  return ref.watch(weighbridgeRepositoryProvider).getEntry(id);
+});
+
 class DashboardMetrics {
   const DashboardMetrics({
     required this.todayRevenue,
@@ -465,6 +510,30 @@ class CreditLedgerRow {
   final double dueAmount;
 }
 
+class WeighbridgeFilter {
+  final DateTime? fromDate;
+  final DateTime? toDate;
+  final String? vehicleNo;
+  final String? partyName;
+
+  const WeighbridgeFilter(
+      {this.fromDate, this.toDate, this.vehicleNo, this.partyName});
+
+  WeighbridgeFilter copyWith({
+    DateTime? fromDate,
+    DateTime? toDate,
+    String? vehicleNo,
+    String? partyName,
+  }) {
+    return WeighbridgeFilter(
+      fromDate: fromDate ?? this.fromDate,
+      toDate: toDate ?? this.toDate,
+      vehicleNo: vehicleNo ?? this.vehicleNo,
+      partyName: partyName ?? this.partyName,
+    );
+  }
+}
+
 final creditLedgerProvider = FutureProvider<List<CreditLedgerRow>>((ref) async {
   if (ref.watch(activeStoreIdProvider) == null) return const [];
   return _reportsRepo(ref).creditLedger();
@@ -549,11 +618,24 @@ final platformStorefrontShoppingConfigProvider =
       .collection('platform_config')
       .doc('public_features')
       .snapshots()
-      .map((snap) => StorefrontShoppingConfig.fromFirestoreMap(snap.data()));
+      .map((snap) {
+    // Handle null data
+    if (!snap.exists || snap.data() == null || snap.data()!.isEmpty) {
+      // Return default config if document doesn't exist
+      return const StorefrontShoppingConfig.defaults();
+    }
+    try {
+      return StorefrontShoppingConfig.fromFirestoreMap(snap.data()!);
+    } catch (e) {
+      // If parsing fails, return default
+      return const StorefrontShoppingConfig.defaults();
+    }
+  });
 });
 
 final platformAnonymousShoppingEnabledProvider = Provider<bool>((ref) {
   final cfg = ref.watch(platformStorefrontShoppingConfigProvider).valueOrNull;
+  // Return false if config is null (loading/error state)
   return cfg?.allowAnonymousShopping ?? false;
 });
 
