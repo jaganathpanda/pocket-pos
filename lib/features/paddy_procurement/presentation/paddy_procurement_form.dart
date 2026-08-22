@@ -1,13 +1,16 @@
+// ── lib/features/paddy_procurement/paddy_procurement_form.dart ──
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import 'package:pocket_pos/core/utilities/tooltips.dart';
+// tooltips.dart also declares a `PaddyProcurement` class; hide it so the bare
+// name resolves to the domain model below.
+import 'package:pocket_pos/core/utilities/tooltips.dart' hide PaddyProcurement;
 import 'package:pocket_pos/core/widgets/DatePickerField.dart';
+import 'package:pocket_pos/core/widgets/help_dialog.dart';
 import 'package:pocket_pos/core/widgets/tooltip_form_field.dart';
-import '../../../core/database/app_database.dart';
-import '../../../core/di/providers.dart';
-import '../domain/paddy_procurement.dart';
-import '../providers/paddy_procurement_providers.dart';
+import 'package:pocket_pos/core/widgets/tooltip_icon.dart';
+import 'package:pocket_pos/features/paddy_procurement/domain/paddy_procurement.dart';
+import 'package:pocket_pos/features/paddy_procurement/providers/paddy_procurement_providers.dart';
 
 class PaddyProcurementForm extends ConsumerStatefulWidget {
   const PaddyProcurementForm({super.key, this.procurementId});
@@ -21,520 +24,203 @@ class PaddyProcurementForm extends ConsumerStatefulWidget {
 
 class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
   final _formKey = GlobalKey<FormState>();
-  bool _isLoading = false;
-  bool _isEdit = false;
+  late final TextEditingController _partyNameCtrl;
+  late final TextEditingController _slipNoCtrl;
+  late final TextEditingController _vehicleNoCtrl;
+  late final TextEditingController _grossWtCtrl;
+  late final TextEditingController _tareWtCtrl;
+  late final TextEditingController _jutePktCtrl;
+  late final TextEditingController _plasticPktCtrl;
+  late final TextEditingController _ratePerQntlCtrl;
+  late final TextEditingController _dustCutCtrl;
+  late final TextEditingController _polCutCtrl;
+  late final TextEditingController _otherCutCtrl;
+  late final TextEditingController _gunnyWtLessCtrl;
+  late final TextEditingController _totalAmountCtrl;
 
-  // ── Controllers ──
-  late TextEditingController _dateCtrl;
-  late TextEditingController _slipNoCtrl;
-  late TextEditingController _voucherCtrl;
-  late TextEditingController _rstCtrl;
-  late TextEditingController _areaCtrl;
-  late TextEditingController _partyCtrl;
-  late TextEditingController _truckCtrl;
-  late TextEditingController _emptyWtCtrl;
-  late TextEditingController _grossWtCtrl;
-  late TextEditingController _tareWtCtrl;
-  late TextEditingController _juteBagsCtrl;
-  late TextEditingController _plasticBagsCtrl;
-  late TextEditingController _otherCutCtrl;
-  late TextEditingController _unloadCtrl;
-  late TextEditingController _eBagCtrl;
-  late TextEditingController _ePktCtrl;
-  late TextEditingController _productCtrl;
-  late TextEditingController _quantityQntlCtrl;
-  late TextEditingController _ratePerQntlCtrl;
-  late TextEditingController _deliveryTypeCtrl;
-  late TextEditingController _truckRentCtrl;
-  late TextEditingController _otherAmountCtrl;
-  late TextEditingController _freightCtrl;
-  late TextEditingController _mandiInvoiceCtrl;
-  late TextEditingController _tenderCtrl;
-  late TextEditingController _commissionAgentCtrl;
-  late TextEditingController _weighbridgeImportCtrl;
-
-  // ── Selected Values ──
   DateTime _date = DateTime.now();
-  String _vType = 'BILL';
-  String _marketType = 'FT';
+  String _procurementType = 'Kharif';
+  String _marketType = 'MKT';
+  String _bagReturn = 'No';
+  String _qualityGrade = 'A';
+  String _vType = 'Bill';
   String _rateCalculation = 'Qntl';
-  String _procurementType = 'local';
-  int? _selectedProductId;
-  int? _selectedPartyId;
-  int? _selectedWarehouseId;
-  bool _gnyWtLess = false;
-  bool _bagReturn = false;
+  String _quantityNew = 'N';
+  String _deliveryType = 'MD';
+  String _truckRentType = 'Qntl';
+  String _transportType = 'Direct';
+  bool _isLoading = false;
+  int? _editingId;
 
-  // ── Quality Cuts ──
-  List<QualityCut> _qualityCuts = [];
-  final List<QualityCut> _deletedCuts = [];
-
-  // ── Gunny Transactions ──
-  List<GunnyTransaction> _gunnyTransactions = [];
-
-  // ── Weighbridge Import ──
-  int? _selectedVehicleEntryId;
-  bool _showWeighbridgeImport = false;
+  // Available options
+  final List<String> _procurementTypes = ['Kharif', 'Rabi', 'Summer'];
+  final List<String> _marketTypes = ['MKT', 'FT'];
+  final List<String> _bagReturnOptions = ['Yes', 'No'];
+  final List<String> _qualityGrades = ['A', 'B', 'C', 'D'];
+  final List<String> _vTypeOptions = ['Bill', 'Challan'];
+  final List<String> _rateCalcOptions = ['Qntl', 'Kg'];
+  final List<String> _quantityNewOptions = ['N', 'Y'];
+  final List<String> _deliveryTypeOptions = ['MD', 'Local', 'Direct'];
+  final List<String> _truckRentTypeOptions = ['Qntl', 'Kg'];
+  final List<String> _transportTypeOptions = ['Direct', 'Indirect'];
 
   @override
   void initState() {
     super.initState();
-    _initControllers();
-    _isEdit = widget.procurementId != null;
-    if (_isEdit) {
-      _loadProcurement();
-    } else {
-      _setDefaults();
-      _addDefaultQualityCut();
-      _initGunnyTransactions();
-    }
-  }
-
-  void _initControllers() {
-    _dateCtrl = TextEditingController();
+    _partyNameCtrl = TextEditingController();
     _slipNoCtrl = TextEditingController();
-    _voucherCtrl = TextEditingController();
-    _rstCtrl = TextEditingController();
-    _areaCtrl = TextEditingController();
-    _partyCtrl = TextEditingController();
-    _truckCtrl = TextEditingController();
-    _emptyWtCtrl = TextEditingController();
+    _vehicleNoCtrl = TextEditingController();
     _grossWtCtrl = TextEditingController();
     _tareWtCtrl = TextEditingController();
-    _juteBagsCtrl = TextEditingController();
-    _plasticBagsCtrl = TextEditingController();
-    _otherCutCtrl = TextEditingController();
-    _unloadCtrl = TextEditingController();
-    _eBagCtrl = TextEditingController();
-    _ePktCtrl = TextEditingController();
-    _productCtrl = TextEditingController();
-    _quantityQntlCtrl = TextEditingController();
+    _jutePktCtrl = TextEditingController();
+    _plasticPktCtrl = TextEditingController();
     _ratePerQntlCtrl = TextEditingController();
-    _deliveryTypeCtrl = TextEditingController(text: 'MD');
-    _truckRentCtrl = TextEditingController();
-    _otherAmountCtrl = TextEditingController();
-    _freightCtrl = TextEditingController();
-    _mandiInvoiceCtrl = TextEditingController();
-    _tenderCtrl = TextEditingController();
-    _commissionAgentCtrl = TextEditingController();
-    _weighbridgeImportCtrl = TextEditingController();
-  }
+    _dustCutCtrl = TextEditingController();
+    _polCutCtrl = TextEditingController();
+    _otherCutCtrl = TextEditingController();
+    _gunnyWtLessCtrl = TextEditingController();
+    _totalAmountCtrl = TextEditingController();
 
-  void _setDefaults() {
-    _date = DateTime.now();
-    _dateCtrl.text = DateFormat('dd/MM/yyyy').format(_date);
-    _slipNoCtrl.text = _generateSlipNo();
-    _voucherCtrl.text = '399';
-    _rstCtrl.text = '112';
-    _areaCtrl.text = 'MADHAPUR';
-    _deliveryTypeCtrl.text = 'MD';
-    _truckRentCtrl.text = '0.00';
-    _otherAmountCtrl.text = '0.00';
-    _freightCtrl.text = '0.00';
-    _eBagCtrl.text = '0.700';
-    _ePktCtrl.text = '0.100';
-    _unloadCtrl.text = '3.00';
-    _otherCutCtrl.text = '0';
-    _selectedWarehouseId = _getDefaultWarehouse();
-  }
-
-  int _getDefaultWarehouse() {
-    final warehouses = ref.read(warehousesProvider).valueOrNull ?? [];
-    return warehouses
-        .firstWhere(
-          (w) => w.isDefault,
-          orElse: () => warehouses.isNotEmpty
-              ? warehouses.first
-              : Warehouse(
-                  id: 0,
-                  name: 'Default',
-                  isDefault: true,
-                  isActive: true,
-                  createdAt: DateTime.now()),
-        )
-        .id;
-  }
-
-  String _generateSlipNo() {
-    final now = DateTime.now();
-    return 'A/${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
-  }
-
-  void _addDefaultQualityCut() {
-    _qualityCuts = [
-      const QualityCut(
-        sl: 1,
-        qualityName: 'Dust & Pol',
-        bagQuantity: 0,
-        cutType: 'Pkts',
-        cutPerUnit: 1.00,
-        difference: 1.00,
-        cutQuantityKg: 0,
-        remark: '',
-      ),
-      const QualityCut(
-        sl: 2,
-        qualityName: 'Other',
-        bagQuantity: 0,
-        cutType: 'Qntl',
-        cutPerUnit: 3.00,
-        difference: 3.00,
-        cutQuantityKg: 0,
-        remark: '',
-      ),
-    ];
-  }
-
-  void _initGunnyTransactions() {
-    _gunnyTransactions = [
-      const GunnyTransaction(bagType: 'J.PKT', receivedQty: 0, issuedQty: 0),
-      const GunnyTransaction(bagType: 'P.PKT', receivedQty: 0, issuedQty: 0),
-      const GunnyTransaction(bagType: 'REJ', receivedQty: 0, issuedQty: 0),
-      const GunnyTransaction(bagType: 'OLD', receivedQty: 0, issuedQty: 0),
-      const GunnyTransaction(bagType: 'Other', receivedQty: 0, issuedQty: 0),
-    ];
+    if (widget.procurementId != null) {
+      _loadProcurement(widget.procurementId!);
+    }
   }
 
   @override
   void dispose() {
-    _dateCtrl.dispose();
+    _partyNameCtrl.dispose();
     _slipNoCtrl.dispose();
-    _voucherCtrl.dispose();
-    _rstCtrl.dispose();
-    _areaCtrl.dispose();
-    _partyCtrl.dispose();
-    _truckCtrl.dispose();
-    _emptyWtCtrl.dispose();
+    _vehicleNoCtrl.dispose();
     _grossWtCtrl.dispose();
     _tareWtCtrl.dispose();
-    _juteBagsCtrl.dispose();
-    _plasticBagsCtrl.dispose();
-    _otherCutCtrl.dispose();
-    _unloadCtrl.dispose();
-    _eBagCtrl.dispose();
-    _ePktCtrl.dispose();
-    _productCtrl.dispose();
-    _quantityQntlCtrl.dispose();
+    _jutePktCtrl.dispose();
+    _plasticPktCtrl.dispose();
     _ratePerQntlCtrl.dispose();
-    _deliveryTypeCtrl.dispose();
-    _truckRentCtrl.dispose();
-    _otherAmountCtrl.dispose();
-    _freightCtrl.dispose();
-    _mandiInvoiceCtrl.dispose();
-    _tenderCtrl.dispose();
-    _commissionAgentCtrl.dispose();
-    _weighbridgeImportCtrl.dispose();
+    _dustCutCtrl.dispose();
+    _polCutCtrl.dispose();
+    _otherCutCtrl.dispose();
+    _gunnyWtLessCtrl.dispose();
+    _totalAmountCtrl.dispose();
     super.dispose();
   }
 
-  // ── Load Existing Procurement ──
-  Future<void> _loadProcurement() async {
-    final procurement =
-        await ref.read(paddyProcurementProvider(widget.procurementId!).future);
-    if (procurement == null) return;
-
-    setState(() {
-      _date = procurement.date;
-      _dateCtrl.text = DateFormat('dd/MM/yyyy').format(_date);
-      _slipNoCtrl.text = procurement.slipNo;
-      _voucherCtrl.text = procurement.voucherNo ?? '';
-      _rstCtrl.text = procurement.rstManual ?? '';
-      _areaCtrl.text = procurement.area ?? '';
-      _partyCtrl.text = procurement.partyName;
-      _selectedPartyId = procurement.partyId;
-      _truckCtrl.text = procurement.truckNo ?? '';
-      _emptyWtCtrl.text = procurement.emptyWeight?.toString() ?? '';
-      _grossWtCtrl.text = procurement.grossWeight?.toString() ?? '';
-      _tareWtCtrl.text = procurement.tareWeight?.toString() ?? '';
-      _juteBagsCtrl.text = procurement.juteBags?.toString() ?? '';
-      _plasticBagsCtrl.text = procurement.plasticBags?.toString() ?? '';
-      _otherCutCtrl.text = procurement.otherCut?.toString() ?? '0';
-      _unloadCtrl.text = procurement.unloadTime?.toString() ?? '3.00';
-      _eBagCtrl.text = procurement.eBag?.toString() ?? '0.700';
-      _ePktCtrl.text = procurement.ePkt?.toString() ?? '0.100';
-      _selectedProductId = procurement.productId;
-      _productCtrl.text = procurement.productName ?? '';
-      _quantityQntlCtrl.text = procurement.quantityQntl?.toString() ?? '';
-      _ratePerQntlCtrl.text = procurement.ratePerQntl?.toString() ?? '';
-      _deliveryTypeCtrl.text = procurement.deliveryType ?? 'MD';
-      _truckRentCtrl.text = procurement.truckRent?.toString() ?? '0.00';
-      _otherAmountCtrl.text = procurement.otherAmount?.toString() ?? '0.00';
-      _freightCtrl.text = procurement.freightAmount?.toString() ?? '0.00';
-      _vType = procurement.vType ?? 'BILL';
-      _marketType = procurement.marketType ?? 'FT';
-      _rateCalculation = procurement.rateCalculation ?? 'Qntl';
-      _gnyWtLess = procurement.gnyWtLess ?? false;
-      _bagReturn = procurement.bagReturn ?? false;
-      _selectedWarehouseId = procurement.warehouseId;
-      _qualityCuts = List.from(procurement.qualityCuts ?? []);
-      _gunnyTransactions = List.from(procurement.gunnyTransactions ?? []);
-      _mandiInvoiceCtrl.text = procurement.mandiInvoiceNo ?? '';
-      _tenderCtrl.text = procurement.tenderNumber ?? '';
-      _commissionAgentCtrl.text =
-          procurement.commissionAgentId?.toString() ?? '';
-    });
-  }
-
-  // ── Calculation Methods (All in Quintals) ──
-
-  double get grossWeight => double.tryParse(_grossWtCtrl.text) ?? 0;
-  double get tareWeight => double.tryParse(_tareWtCtrl.text) ?? 0;
-  double get netWeightKg => grossWeight - tareWeight;
-  double get netWeightQntl => netWeightKg / 100;
-
-  int get totalBags =>
-      (int.tryParse(_juteBagsCtrl.text) ?? 0) +
-      (int.tryParse(_plasticBagsCtrl.text) ?? 0);
-  double get avgBagWeight => totalBags > 0 ? netWeightKg / totalBags : 0;
-
-  double get totalCutKg {
-    return _qualityCuts.fold<double>(0, (sum, cut) => sum + cut.cutQuantityKg);
-  }
-
-  double get finalWeightKg => netWeightKg - totalCutKg;
-  double get finalWeightQntl => finalWeightKg / 100;
-
-  double get quantityQntl => double.tryParse(_quantityQntlCtrl.text) ?? 0;
-  double get ratePerQntl => double.tryParse(_ratePerQntlCtrl.text) ?? 0;
-  double get totalAmount => quantityQntl * ratePerQntl;
-
-  bool get isFTMode => _marketType == 'FT';
-
-  void _updateCalculations() {
-    setState(() {
-      // Auto-calculate based on entered values
-    });
-  }
-
-  // ── Weighbridge Import ──
-  Future<void> _importFromWeighbridge(String slipNo) async {
+  Future<void> _loadProcurement(int id) async {
+    setState(() => _isLoading = true);
     try {
-      final entries = await ref.read(vehicleEntriesStreamProvider.future);
-      final entry = entries.firstWhere(
-        (e) => e.slipNo == slipNo,
-        orElse: () => throw Exception('Vehicle entry not found'),
-      );
-
-      setState(() {
-        _date = entry.date;
-        _dateCtrl.text = DateFormat('dd/MM/yyyy').format(_date);
-        _truckCtrl.text = entry.vehicleNo;
-        _rstCtrl.text = entry.rstManual ?? '';
-        _grossWtCtrl.text = entry.firstWeight.toString();
-        _tareWtCtrl.text = entry.secondWeight.toString();
-        _juteBagsCtrl.text = (entry.bags ?? 0).toString();
-        _selectedProductId = entry.productId;
-        _selectedPartyId = entry.partyId;
-        _partyCtrl.text = entry.partyName;
-        _selectedVehicleEntryId = entry.id;
-      });
-
-      _updateCalculations();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Imported from vehicle entry #${entry.slipNo}')),
-        );
+      final procurement =
+          await ref.read(paddyProcurementRepositoryProvider).getProcurement(id);
+      if (procurement != null) {
+        _editingId = id;
+        _partyNameCtrl.text = procurement.partyName;
+        _slipNoCtrl.text = procurement.slipNo;
+        _date = procurement.date;
+        _procurementType = procurement.procurementType;
+        _vehicleNoCtrl.text = procurement.truckNo ?? '';
+        _marketType = procurement.marketType;
+        _grossWtCtrl.text = (procurement.grossWeight ?? 0).toString();
+        _tareWtCtrl.text = (procurement.tareWeight ?? 0).toString();
+        _jutePktCtrl.text = (procurement.juteBags ?? 0).toString();
+        _plasticPktCtrl.text = (procurement.plasticBags ?? 0).toString();
+        _ratePerQntlCtrl.text = (procurement.ratePerQntl ?? 0).toString();
+        _dustCutCtrl.text = (procurement.dustCut ?? 0).toString();
+        _polCutCtrl.text = (procurement.polCut ?? 0).toString();
+        _otherCutCtrl.text = (procurement.otherCut ?? 0).toString();
+        _qualityGrade = procurement.qualityGrade ?? 'A';
+        _bagReturn = procurement.bagReturn ? 'Yes' : 'No';
+        _gunnyWtLessCtrl.text = '0';
+        _totalAmountCtrl.text = (procurement.totalAmount ?? 0).toString();
+        _vType = procurement.vType ?? 'Bill';
+        _rateCalculation = procurement.rateCalculation ?? 'Qntl';
+        _quantityNew = procurement.quantityNew ?? 'N';
+        _deliveryType = procurement.deliveryType ?? 'MD';
+        _truckRentType = procurement.truckRentType ?? 'Qntl';
+        _transportType = procurement.transportType ?? 'Direct';
+        _calculateTotal();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text('Error loading: $e')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // ── Quality Cuts ──
-  void _addQualityCut() {
-    setState(() {
-      _qualityCuts.add(QualityCut(
-        sl: _qualityCuts.length + 1,
-        qualityName: '',
-        bagQuantity: 0,
-        cutType: 'Pkts',
-        cutPerUnit: 1.00,
-        difference: 1.00,
-        cutQuantityKg: 0,
-        remark: '',
-      ));
-    });
+  void _calculateTotal() {
+    final gross = double.tryParse(_grossWtCtrl.text) ?? 0;
+    final tare = double.tryParse(_tareWtCtrl.text) ?? 0;
+    final dust = double.tryParse(_dustCutCtrl.text) ?? 0;
+    final pol = double.tryParse(_polCutCtrl.text) ?? 0;
+    final other = double.tryParse(_otherCutCtrl.text) ?? 0;
+    final gunnyLess = double.tryParse(_gunnyWtLessCtrl.text) ?? 0;
+
+    final netWeight = gross - tare - dust - pol - other - gunnyLess;
+    final rate = double.tryParse(_ratePerQntlCtrl.text) ?? 0;
+    final total = (netWeight / 100) * rate;
+
+    if (netWeight > 0 && rate > 0) {
+      _totalAmountCtrl.text = total.toStringAsFixed(2);
+    }
   }
 
-  void _removeQualityCut(int index) {
-    setState(() {
-      if (_qualityCuts[index].id != null) {
-        _deletedCuts.add(_qualityCuts[index]);
-      }
-      _qualityCuts.removeAt(index);
-      // Re-index
-      for (var i = 0; i < _qualityCuts.length; i++) {
-        _qualityCuts[i] = _qualityCuts[i].copyWith(sl: i + 1);
-      }
-    });
-  }
-
-  void _updateCutQuantity(int index) {
-    setState(() {
-      final cut = _qualityCuts[index];
-      double newCutQuantityKg;
-
-      if (cut.cutType == 'Pkts') {
-        newCutQuantityKg = cut.bagQuantity * cut.cutPerUnit;
-      } else {
-        // Qntl case - convert to Kg
-        newCutQuantityKg = cut.bagQuantity * cut.cutPerUnit * 100; // Qntl to Kg
-      }
-
-      _qualityCuts[index] = cut.copyWith(
-        cutQuantityKg: newCutQuantityKg,
-        difference: cut.cutPerUnit,
-      );
-    });
-  }
-
-  // ── Save ──
-  Future<void> _save() async {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_selectedProductId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select a product.')),
-      );
-      return;
-    }
+    final dustCut = double.tryParse(_dustCutCtrl.text) ?? 0;
+    final polCut = double.tryParse(_polCutCtrl.text) ?? 0;
+    final otherCut = double.tryParse(_otherCutCtrl.text) ?? 0;
+    final gunnyLess = double.tryParse(_gunnyWtLessCtrl.text) ?? 0;
+    final gross = double.tryParse(_grossWtCtrl.text) ?? 0;
+    final tare = double.tryParse(_tareWtCtrl.text) ?? 0;
 
-    setState(() => _isLoading = true);
-
-    try {
-      final companion = PaddyProcurementCompanion(
-        id: widget.procurementId,
-        date: _date,
-        slipNo: _slipNoCtrl.text.trim(),
-        voucherNo:
-            _voucherCtrl.text.trim().isEmpty ? null : _voucherCtrl.text.trim(),
-        rstManual: _rstCtrl.text.trim().isEmpty ? null : _rstCtrl.text.trim(),
-        area: _areaCtrl.text.trim().isEmpty ? null : _areaCtrl.text.trim(),
-        vType: _vType,
-        partyName: _partyCtrl.text.trim(),
-        partyId: _selectedPartyId,
-        truckNo: _truckCtrl.text.trim(),
-        emptyWeight: double.tryParse(_emptyWtCtrl.text.trim()) ?? 0,
-        grossWeight: grossWeight,
-        tareWeight: tareWeight,
-        juteBags: int.tryParse(_juteBagsCtrl.text.trim()) ?? 0,
-        plasticBags: int.tryParse(_plasticBagsCtrl.text.trim()) ?? 0,
-        totalBags: totalBags,
-        avgBagWeight: avgBagWeight,
-        gnyWtLess: _gnyWtLess,
-        bagReturn: _bagReturn,
-        otherCut: double.tryParse(_otherCutCtrl.text.trim()) ?? 0,
-        unloadTime: double.tryParse(_unloadCtrl.text.trim()) ?? 3.00,
-        eBag: double.tryParse(_eBagCtrl.text.trim()) ?? 0.700,
-        ePkt: double.tryParse(_ePktCtrl.text.trim()) ?? 0.100,
-        netWeight: netWeightKg,
-        rateCalculation: _rateCalculation,
-        kgPerBag: 75,
-        productId: _selectedProductId!,
-        productName: _productCtrl.text.trim(),
-        quantityNew: 'N',
-        quantityQntl: isFTMode ? quantityQntl : finalWeightQntl,
-        ratePerQntl: isFTMode ? ratePerQntl : 0,
-        totalAmount: isFTMode ? totalAmount : 0,
-        avgRate: isFTMode ? ratePerQntl : 0,
-        avgAmount: 0,
-        qrtCutAmt: 0,
-        paddyAmt: isFTMode ? totalAmount : 0,
-        qualityCuts: _qualityCuts,
-        totalCutKg: totalCutKg,
-        finalWeight: finalWeightKg,
-        gunnyTransactions: _gunnyTransactions,
-        deliveryType: _deliveryTypeCtrl.text.trim(),
-        truckRentType: 'Qntl',
-        truckRent: double.tryParse(_truckRentCtrl.text.trim()) ?? 0,
-        truckRentPaid: double.tryParse(_truckRentCtrl.text.trim()) ?? 0,
-        otherAmount: double.tryParse(_otherAmountCtrl.text.trim()) ?? 0,
-        transportType: 'Direct',
-        truckAccount: 'none',
-        freightAmount: double.tryParse(_freightCtrl.text.trim()) ?? 0,
-        procurementType: _procurementType,
-        mandiInvoiceNo: _mandiInvoiceCtrl.text.trim().isEmpty
-            ? null
-            : _mandiInvoiceCtrl.text.trim(),
-        tenderNumber:
-            _tenderCtrl.text.trim().isEmpty ? null : _tenderCtrl.text.trim(),
-        commissionAgentId: _selectedPartyId,
-        warehouseId: _selectedWarehouseId ?? _getDefaultWarehouse(),
-        remainingStock: finalWeightKg,
-        status: 'draft',
-      );
-
-      final repo = ref.read(paddyProcurementRepositoryProvider);
-      if (widget.procurementId == null) {
-        await repo.createProcurement(companion);
-      } else {
-        await repo.updateProcurement(companion);
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Procurement saved successfully.')),
-        );
-        Navigator.pop(context, true);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  // ── Complete (Stock-in to Inventory) ──
-  Future<void> _completeProcurement() async {
-    if (widget.procurementId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Save the procurement first.')),
-      );
-      return;
-    }
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Complete Procurement'),
-        content: const Text('This will add the paddy to inventory. '
-            'Quantity will be after quality cuts. '
-            'This action cannot be undone.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text('Complete'),
-          ),
-        ],
-      ),
+    final data = PaddyProcurementCompanion(
+      id: _editingId,
+      partyName: _partyNameCtrl.text.trim(),
+      slipNo: _slipNoCtrl.text.trim(),
+      date: _date,
+      procurementType: _procurementType,
+      truckNo: _vehicleNoCtrl.text.trim().isEmpty
+          ? null
+          : _vehicleNoCtrl.text.trim(),
+      marketType: _marketType,
+      productName: 'Paddy',
+      productId: 0,
+      grossWeight: gross,
+      tareWeight: tare,
+      juteBags: int.tryParse(_jutePktCtrl.text) ?? 0,
+      plasticBags: int.tryParse(_plasticPktCtrl.text) ?? 0,
+      ratePerQntl: double.tryParse(_ratePerQntlCtrl.text) ?? 0,
+      otherCut: otherCut,
+      dustCut: dustCut,
+      polCut: polCut,
+      qualityGrade: _qualityGrade,
+      bagReturn: _bagReturn == 'Yes',
+      gnyWtLess: gunnyLess > 0,
+      totalAmount: double.tryParse(_totalAmountCtrl.text) ?? 0,
+      netWeight: gross - tare - dustCut - polCut - otherCut - gunnyLess,
+      status: 'draft',
+      vType: _vType,
+      rateCalculation: _rateCalculation,
+      quantityNew: _quantityNew,
+      deliveryType: _deliveryType,
+      truckRentType: _truckRentType,
+      transportType: _transportType,
     );
 
-    if (confirm != true) return;
-
     setState(() => _isLoading = true);
     try {
-      await ref
-          .read(paddyProcurementRepositoryProvider)
-          .completeProcurement(widget.procurementId!);
+      if (_editingId == null) {
+        await ref
+            .read(paddyProcurementRepositoryProvider)
+            .createProcurement(data);
+      } else {
+        await ref
+            .read(paddyProcurementRepositoryProvider)
+            .updateProcurement(data);
+      }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Procurement completed! Stock updated.')),
-        );
         Navigator.pop(context, true);
       }
     } catch (e) {
@@ -548,46 +234,25 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
     }
   }
 
-  // ── Build ──
+  void _showHelp() {
+    showDialog(
+      context: context,
+      builder: (ctx) => const PaddyProcurementHelpDialog(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final products =
-        ref.watch(productsProvider).valueOrNull ?? const <Product>[];
-    final suppliers =
-        ref.watch(suppliersProvider).valueOrNull ?? const <Supplier>[];
-    final paddyProducts = products
-        .where((p) =>
-            p.name.toLowerCase().contains('paddy') ||
-            p.name.toLowerCase().contains('mota'))
-        .toList();
-    final allProducts = paddyProducts.isNotEmpty ? paddyProducts : products;
-
-    final netWtKg = netWeightKg;
-    final netWtQntl = netWtKg / 100;
-    final totalCut = totalCutKg;
-    final finalWtKg = finalWeightKg;
-    final finalWtQntl = finalWtKg / 100;
-
     return Scaffold(
       appBar: AppBar(
         title:
-            Text(_isEdit ? 'Edit Paddy Procurement' : 'New Paddy Procurement'),
+            Text(_editingId == null ? 'New Procurement' : 'Edit Procurement'),
         actions: [
-          if (_isEdit && widget.procurementId != null)
-            IconButton(
-              icon: const Icon(Icons.check_circle_outline),
-              tooltip: 'Complete',
-              onPressed: _isLoading ? null : _completeProcurement,
-            ),
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(12),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            onPressed: _showHelp,
+            tooltip: Tooltips.general.help,
+          ),
         ],
       ),
       body: _isLoading
@@ -599,1158 +264,1171 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── SECTION 1: Header ──
-                    _buildHeaderSection(),
-                    const SizedBox(height: 12),
-
-                    // ── SECTION 2: Weighbridge Import ──
-                    _buildWeighbridgeImportSection(),
-                    const SizedBox(height: 12),
-
-                    // ── SECTION 3: Party & Vehicle ──
-                    _buildPartyVehicleSection(suppliers),
-                    const SizedBox(height: 12),
-
-                    // ── SECTION 4: Weighment ──
-                    _buildWeighmentSection(),
-                    const SizedBox(height: 12),
-
-                    // ── SECTION 5: Net & Rate ──
-                    _buildNetRateSection(),
-                    const SizedBox(height: 12),
-
-                    // ── SECTION 6: Product & Pricing (FT only) ──
-                    if (isFTMode) _buildProductPricingSection(allProducts),
-                    if (isFTMode) const SizedBox(height: 12),
-
-                    // ── SECTION 7: Quality Cuts ──
-                    _buildQualityCutsSection(),
-                    const SizedBox(height: 12),
-
-                    // ── SECTION 8: Gunny Tracking ──
-                    _buildGunnySection(),
-                    const SizedBox(height: 12),
-
-                    // ── SECTION 9: Transport ──
-                    _buildTransportSection(),
-                    const SizedBox(height: 20),
-
-                    // ── Actions ──
-                    _buildActions(),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
-    );
-  }
-
-  // ── Section Builders ──
-
-  Widget _buildHeaderSection() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _vType,
-                  decoration: const InputDecoration(
-                    labelText: 'V.Type',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'BILL', child: Text('BILL')),
-                    DropdownMenuItem(value: 'CHALLAN', child: Text('CHALLAN')),
-                  ],
-                  onChanged: (v) => setState(() => _vType = v!),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: DatePickerField(
-                  date: _date,
-                  onDatePicked: (d) => setState(() => _date = d),
-                  tooltip: Tooltips.paddyProcurement.date,
-                  isRequired: true,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _slipNoCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Slip No',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  validator: (v) =>
-                      v?.trim().isNotEmpty == true ? null : 'Required',
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextFormField(
-                  controller: _rstCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'RST(Manual)',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _areaCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Area',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextFormField(
-                  controller: _voucherCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'V.No',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _marketType,
-                  decoration: const InputDecoration(
-                    labelText: 'MKT/FT',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                        value: 'FT', child: Text('🌾 FT - Farmer')),
-                    DropdownMenuItem(
-                        value: 'MKT', child: Text('🏪 MKT - Market')),
-                  ],
-                  onChanged: (v) {
-                    setState(() {
-                      _marketType = v!;
-                      if (v == 'MKT') {
-                        _ratePerQntlCtrl.text = '0.00';
-                        _quantityQntlCtrl.text = '0.00';
-                      }
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _procurementType,
-                  decoration: const InputDecoration(
-                    labelText: 'Type',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'local', child: Text('Local')),
-                    DropdownMenuItem(
-                        value: 'mandi', child: Text('Mandi/ Govt')),
-                  ],
-                  onChanged: (v) => setState(() => _procurementType = v!),
-                ),
-              ),
-            ],
-          ),
-          if (_procurementType == 'mandi') ...[
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _mandiInvoiceCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Mandi Invoice No',
-                border: OutlineInputBorder(),
-                isDense: true,
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _tenderCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Tender / Scheme',
-                border: OutlineInputBorder(),
-                isDense: true,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWeighbridgeImportSection() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.import_export_rounded, color: Colors.blue),
-              const SizedBox(width: 8),
-              const Text(
-                'Import from Vehicle Entry',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: () => setState(
-                    () => _showWeighbridgeImport = !_showWeighbridgeImport),
-                child: Text(_showWeighbridgeImport ? 'Hide' : 'Show'),
-              ),
-            ],
-          ),
-          if (_showWeighbridgeImport) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _weighbridgeImportCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Enter Vehicle Entry Slip No to import',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                      prefixIcon: Icon(Icons.search, size: 18),
-                      hintText: 'e.g. A/2024-1234 or 2301-5678',
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.icon(
-                  onPressed: () {
-                    final slipNo = _weighbridgeImportCtrl.text.trim();
-                    if (slipNo.isNotEmpty) {
-                      _importFromWeighbridge(slipNo);
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Please enter a slip number.')),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.download, size: 16),
-                  label: const Text('Import'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Tip: Enter the RST(Manual) or Slip No from the vehicle entry.',
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPartyVehicleSection(List<Supplier> suppliers) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        children: [
-          Autocomplete<Supplier>(
-            optionsBuilder: (text) {
-              if (text.text.isEmpty) return const Iterable.empty();
-              return suppliers.where((s) =>
-                  s.name.toLowerCase().contains(text.text.toLowerCase()) ||
-                  (s.mobile ?? '').contains(text.text));
-            },
-            onSelected: (s) {
-              setState(() {
-                _selectedPartyId = s.id;
-                _partyCtrl.text = s.name;
-              });
-            },
-            fieldViewBuilder: (ctx, ctrl, node, onEditingComplete) {
-              return TextFormField(
-                controller: _partyCtrl,
-                focusNode: node,
-                decoration: const InputDecoration(
-                  labelText: 'Party Name',
-                  border: OutlineInputBorder(),
-                  isDense: true,
-                ),
-                validator: (v) =>
-                    v?.trim().isNotEmpty == true ? null : 'Required',
-              );
-            },
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _truckCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Truck No',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextFormField(
-                  controller: _emptyWtCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Empty Wt',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  onChanged: (_) => _updateCalculations(),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWeighmentSection() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: TooltipFormField(
-                  labelText: 'Gr.Wt',
-                  tooltip: Tooltips.paddyProcurement.grossWeight,
-                  controller: _grossWtCtrl,
-                  keyboardType: TextInputType.number,
-                  isRequired: true,
-                  onChanged: (_) => _updateCalculations(),
-                  validator: (v) =>
-                      v?.trim().isNotEmpty == true ? null : 'Required',
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TooltipFormField(
-                  labelText: 'Tr.Wt',
-                  tooltip: Tooltips.paddyProcurement.tareWeight,
-                  controller: _tareWtCtrl,
-                  keyboardType: TextInputType.number,
-                  isRequired: true,
-                  onChanged: (_) => _updateCalculations(),
-                  validator: (v) =>
-                      v?.trim().isNotEmpty == true ? null : 'Required',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: TooltipFormField(
-                  labelText: 'J.Pkt',
-                  tooltip: Tooltips.paddyProcurement.juteBags,
-                  controller: _juteBagsCtrl,
-                  keyboardType: TextInputType.number,
-                  onChanged: (_) => _updateCalculations(),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TooltipFormField(
-                  labelText: 'P.Pkt',
-                  tooltip: Tooltips.paddyProcurement.plasticBags,
-                  controller: _plasticBagsCtrl,
-                  keyboardType: TextInputType.number,
-                  onChanged: (_) => _updateCalculations(),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: Text('Total Pkt: ${totalBags.toString()}'),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Gny Wt(Less)'),
-                  value: _gnyWtLess,
-                  onChanged: (v) => setState(() => _gnyWtLess = v!),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Expanded(
-                child: CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Bag Rtn'),
-                  value: _bagReturn,
-                  onChanged: (v) => setState(() => _bagReturn = v!),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TooltipFormField(
-                  labelText: 'Other Cut',
-                  tooltip: Tooltips.paddyProcurement.otherCut,
-                  controller: _otherCutCtrl,
-                  keyboardType: TextInputType.number,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNetRateSection() {
-    final netWtKg = netWeightKg;
-    final netWtQntl = netWtKg / 100;
-    final avgBagWt = avgBagWeight;
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.green.shade50,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.green.shade200),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Nett.Wt: ${netWtKg.toStringAsFixed(2)} kg',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ),
-              Expanded(
-                child: Text(
-                  'Avg Wt/Pkt: ${avgBagWt.toStringAsFixed(4)} kg',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _rateCalculation,
-                  decoration: const InputDecoration(
-                    labelText: 'Rate Calculation',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'Qntl', child: Text('Qntl')),
-                    DropdownMenuItem(value: 'Kg', child: Text('Kg')),
-                  ],
-                  onChanged: (v) => setState(() => _rateCalculation = v!),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextFormField(
-                  controller: _eBagCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'E Bag',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _unloadCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Unload',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextFormField(
-                  controller: _ePktCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'E Pkt',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProductPricingSection(List<Product> products) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.orange.shade50,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.orange.shade200),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<int>(
-                  value: _selectedProductId,
-                  decoration: const InputDecoration(
-                    labelText: 'Product',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  items: [
-                    for (final p in products)
-                      DropdownMenuItem(value: p.id, child: Text(p.name)),
-                  ],
-                  onChanged: (v) => setState(() {
-                    _selectedProductId = v;
-                    final product = products.firstWhere((p) => p.id == v);
-                    _productCtrl.text = product.name;
-                  }),
-                  validator: (v) => v != null ? null : 'Required',
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextFormField(
-                  controller: _quantityQntlCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Qntls',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  onChanged: (_) => _updateCalculations(),
-                  validator: (v) =>
-                      v?.trim().isNotEmpty == true ? null : 'Required',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _ratePerQntlCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Rate / Qntl',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  onChanged: (_) => _updateCalculations(),
-                  validator: (v) =>
-                      v?.trim().isNotEmpty == true ? null : 'Required',
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Total: ₹${totalAmount.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.green,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (isFTMode) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: Text('Avg Rate: ${ratePerQntl.toStringAsFixed(4)}'),
-                ),
-                Expanded(
-                  child: Text('Paddy Amt: ₹${totalAmount.toStringAsFixed(2)}'),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQualityCutsSection() {
-    final totalCut = totalCutKg;
-    final finalWt = finalWeightKg;
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Text(
-                'Quality Cuts',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const Spacer(),
-              Text('Cut Type: Kg    Free/Pack: (0.00)'),
-            ],
-          ),
-          const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              columnSpacing: 8,
-              columns: const [
-                DataColumn(
-                    label: Text('SL',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('Quality Cut',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('Qty(Pkts)',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('Cut Type',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('Cut/Pkt',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('Diff.',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('Cut(Kg)',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('Rmk',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-              ],
-              rows: [
-                for (var i = 0; i < _qualityCuts.length; i++)
-                  DataRow(cells: [
-                    DataCell(Text('${i + 1}')),
-                    DataCell(
-                      TextFormField(
-                        initialValue: _qualityCuts[i].qualityName,
-                        onChanged: (v) {
-                          setState(() {
-                            _qualityCuts[i] =
-                                _qualityCuts[i].copyWith(qualityName: v);
-                          });
-                        },
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          isDense: true,
-                        ),
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ),
-                    DataCell(
-                      TextFormField(
-                        initialValue: _qualityCuts[i].bagQuantity.toString(),
-                        keyboardType: TextInputType.number,
-                        onChanged: (v) {
-                          final qty = double.tryParse(v) ?? 0;
-                          setState(() {
-                            _qualityCuts[i] =
-                                _qualityCuts[i].copyWith(bagQuantity: qty);
-                            _updateCutQuantity(i);
-                          });
-                        },
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          isDense: true,
-                        ),
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ),
-                    DataCell(
-                      DropdownButton<String>(
-                        value: _qualityCuts[i].cutType,
-                        items: const [
-                          DropdownMenuItem(
-                              value: 'Pkts',
-                              child:
-                                  Text('Pkts', style: TextStyle(fontSize: 12))),
-                          DropdownMenuItem(
-                              value: 'Qntl',
-                              child:
-                                  Text('Qntl', style: TextStyle(fontSize: 12))),
-                        ],
-                        onChanged: (v) {
-                          setState(() {
-                            _qualityCuts[i] =
-                                _qualityCuts[i].copyWith(cutType: v!);
-                            _updateCutQuantity(i);
-                          });
-                        },
-                        underline: const SizedBox(),
-                      ),
-                    ),
-                    DataCell(
-                      TextFormField(
-                        initialValue: _qualityCuts[i].cutPerUnit.toString(),
-                        keyboardType: TextInputType.number,
-                        onChanged: (v) {
-                          final cut = double.tryParse(v) ?? 0;
-                          setState(() {
-                            _qualityCuts[i] =
-                                _qualityCuts[i].copyWith(cutPerUnit: cut);
-                            _updateCutQuantity(i);
-                          });
-                        },
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          isDense: true,
-                        ),
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ),
-                    DataCell(
-                      Text(
-                        _qualityCuts[i].difference.toStringAsFixed(2),
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ),
-                    DataCell(
-                      Text(
-                        _qualityCuts[i].cutQuantityKg.toStringAsFixed(2),
-                        style: const TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                    DataCell(
-                      TextFormField(
-                        initialValue: _qualityCuts[i].remark,
-                        onChanged: (v) {
-                          setState(() {
-                            _qualityCuts[i] =
-                                _qualityCuts[i].copyWith(remark: v);
-                          });
-                        },
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          isDense: true,
-                        ),
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ),
-                    DataCell(
-                      IconButton(
-                        icon: const Icon(Icons.close,
-                            size: 16, color: Colors.red),
-                        onPressed: _qualityCuts.length > 1
-                            ? () => _removeQualityCut(i)
-                            : null,
-                      ),
-                    ),
-                  ]),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              TextButton.icon(
-                onPressed: _addQualityCut,
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('Add More'),
-              ),
-              const Spacer(),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Column(
-                  children: [
-                    Text('Quality Cut (Kg)'),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Text('Total Cut: ${totalCut.toStringAsFixed(2)}'),
-                        const SizedBox(width: 16),
-                        Text('Final Wt: ${finalWt.toStringAsFixed(2)}'),
+                    // ── HEADER SECTION ──
+                    _buildSectionHeader(
+                      'Header Details',
+                      [
+                        'vType',
+                        'date',
+                        'slipNo',
+                        'voucherNo',
+                        'rstManual',
+                        'area'
                       ],
                     ),
+                    const SizedBox(height: 12),
+
+                    // Voucher Type
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: 'Voucher Type *',
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                        suffixIcon: Tooltip(
+                          message: Tooltips.paddyProcurement.vType,
+                          child: const Icon(
+                            Icons.info_outline,
+                            size: 18,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                      value: _vType,
+                      items: _vTypeOptions.map((type) {
+                        return DropdownMenuItem(
+                          value: type,
+                          child: Row(
+                            children: [
+                              Icon(
+                                type == 'Bill'
+                                    ? Icons.receipt_long
+                                    : Icons.description,
+                                size: 16,
+                                color:
+                                    type == 'Bill' ? Colors.green : Colors.blue,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(type),
+                              const SizedBox(width: 8),
+                              Text(
+                                type == 'Bill'
+                                    ? '(Farmer purchase)'
+                                    : '(Govt procurement)',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (v) => setState(() => _vType = v!),
+                      validator: (v) => v == null ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Date
+                    DatePickerField(
+                      date: _date,
+                      onDatePicked: (d) => setState(() => _date = d),
+                      label: 'Date',
+                      isRequired: true,
+                      tooltip: Tooltips.paddyProcurement.date,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Slip No
+                    TooltipFormField(
+                      labelText: 'Slip No',
+                      tooltip: Tooltips.paddyProcurement.slipNo,
+                      controller: _slipNoCtrl,
+                      isRequired: true,
+                      validator: (v) =>
+                          v?.trim().isEmpty ?? true ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Voucher No
+                    TooltipFormField(
+                      labelText: 'Voucher No',
+                      tooltip: Tooltips.paddyProcurement.voucherNo,
+                      controller: TextEditingController(), // Add if needed
+                      textCapitalization: TextCapitalization.characters,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // RST Manual
+                    TooltipFormField(
+                      labelText: 'RST Manual',
+                      tooltip: Tooltips.paddyProcurement.rstManual,
+                      controller: TextEditingController(), // Add if needed
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Area
+                    TooltipFormField(
+                      labelText: 'Area',
+                      tooltip: Tooltips.paddyProcurement.area,
+                      controller: TextEditingController(), // Add if needed
+                      textCapitalization: TextCapitalization.words,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── PARTY & VEHICLE SECTION ──
+                    _buildSectionHeader(
+                      'Party & Vehicle',
+                      [
+                        'partyName',
+                        'truckNo',
+                        'emptyWeight',
+                        'marketType',
+                        'procurementType'
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Party Name
+                    TooltipFormField(
+                      labelText: 'Party Name',
+                      tooltip: Tooltips.paddyProcurement.partyName,
+                      controller: _partyNameCtrl,
+                      isRequired: true,
+                      textCapitalization: TextCapitalization.words,
+                      validator: (v) =>
+                          v?.trim().isEmpty ?? true ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Truck No
+                    TooltipFormField(
+                      labelText: 'Truck No',
+                      tooltip: Tooltips.paddyProcurement.truckNo,
+                      controller: _vehicleNoCtrl,
+                      textCapitalization: TextCapitalization.characters,
+                      isRequired: true,
+                      validator: (v) =>
+                          v?.trim().isEmpty ?? true ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Empty Weight
+                    TooltipFormField(
+                      labelText: 'Empty Weight',
+                      tooltip: Tooltips.paddyProcurement.emptyWeight,
+                      controller: TextEditingController(), // Add if needed
+                      keyboardType: TextInputType.number,
+                      suffixText: 'Kg',
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Market Type
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: 'Market Type *',
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                        suffixIcon: Tooltip(
+                          message: Tooltips.paddyProcurement.marketType,
+                          child: const Icon(
+                            Icons.info_outline,
+                            size: 18,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                      value: _marketType,
+                      items: _marketTypes.map((type) {
+                        return DropdownMenuItem(
+                          value: type,
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: type == 'FT'
+                                      ? Colors.green.shade100
+                                      : Colors.blue.shade100,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  type,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: type == 'FT'
+                                        ? Colors.green.shade800
+                                        : Colors.blue.shade800,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(type == 'FT'
+                                  ? 'Direct Farmer'
+                                  : 'Market/Mandi'),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (v) => setState(() => _marketType = v!),
+                      validator: (v) => v == null ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Procurement Type
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: 'Procurement Type *',
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                        suffixIcon: Tooltip(
+                          message: Tooltips.paddyProcurement.procurementType,
+                          child: const Icon(
+                            Icons.info_outline,
+                            size: 18,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                      value: _procurementType,
+                      items: _procurementTypes.map((type) {
+                        return DropdownMenuItem(
+                          value: type,
+                          child: Text(type),
+                        );
+                      }).toList(),
+                      onChanged: (v) => setState(() => _procurementType = v!),
+                      validator: (v) => v == null ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── WEIGHMENT SECTION ──
+                    _buildSectionHeader(
+                      'Weighment',
+                      [
+                        'grossWeight',
+                        'tareWeight',
+                        'netWeight',
+                        'juteBags',
+                        'plasticBags',
+                        'totalBags',
+                        'avgBagWeight',
+                        'gnyWtLess',
+                        'bagReturn',
+                        'otherCut'
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Gross Weight
+                    TooltipFormField(
+                      labelText: 'Gr.Wt',
+                      tooltip: Tooltips.paddyProcurement.grossWeight,
+                      controller: _grossWtCtrl,
+                      keyboardType: TextInputType.number,
+                      isRequired: true,
+                      suffixText: 'Kg',
+                      onChanged: (_) => _calculateTotal(),
+                      validator: (v) {
+                        if (v?.trim().isEmpty ?? true) return 'Required';
+                        if (double.tryParse(v!) == null) return 'Invalid';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Tare Weight
+                    TooltipFormField(
+                      labelText: 'Tr.Wt',
+                      tooltip: Tooltips.paddyProcurement.tareWeight,
+                      controller: _tareWtCtrl,
+                      keyboardType: TextInputType.number,
+                      isRequired: true,
+                      suffixText: 'Kg',
+                      onChanged: (_) => _calculateTotal(),
+                      validator: (v) {
+                        if (v?.trim().isEmpty ?? true) return 'Required';
+                        if (double.tryParse(v!) == null) return 'Invalid';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Net Weight (auto-calculated, read-only)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.scale, size: 18, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Net Weight:',
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${(double.tryParse(_grossWtCtrl.text) ?? 0) - (double.tryParse(_tareWtCtrl.text) ?? 0)} Kg',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.blue,
+                            ),
+                          ),
+                          const Spacer(),
+                          Tooltip(
+                            message: Tooltips.paddyProcurement.netWeight,
+                            child: Icon(
+                              Icons.info_outline,
+                              size: 16,
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Jute Bags
+                    TooltipFormField(
+                      labelText: 'J.Pkt',
+                      tooltip: Tooltips.paddyProcurement.juteBags,
+                      controller: _jutePktCtrl,
+                      keyboardType: TextInputType.number,
+                      isRequired: true,
+                      validator: (v) {
+                        if (v?.trim().isEmpty ?? true) return 'Required';
+                        if (int.tryParse(v!) == null) return 'Invalid';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Plastic Bags
+                    TooltipFormField(
+                      labelText: 'P.Pkt',
+                      tooltip: Tooltips.paddyProcurement.plasticBags,
+                      controller: _plasticPktCtrl,
+                      keyboardType: TextInputType.number,
+                      isRequired: true,
+                      validator: (v) {
+                        if (v?.trim().isEmpty ?? true) return 'Required';
+                        if (int.tryParse(v!) == null) return 'Invalid';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Total Bags (auto-calculated, read-only)
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.inventory,
+                              size: 16, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Total Bags:',
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${(int.tryParse(_jutePktCtrl.text) ?? 0) + (int.tryParse(_plasticPktCtrl.text) ?? 0)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Spacer(),
+                          Tooltip(
+                            message: Tooltips.paddyProcurement.totalBags,
+                            child: Icon(
+                              Icons.info_outline,
+                              size: 14,
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Avg Bag Weight (auto-calculated, read-only)
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calculate,
+                              size: 16, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Avg Bag Weight:',
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _calculateAvgBagWeight(),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.purple,
+                            ),
+                          ),
+                          const Spacer(),
+                          Tooltip(
+                            message: Tooltips.paddyProcurement.avgBagWeight,
+                            child: Icon(
+                              Icons.info_outline,
+                              size: 14,
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Gny Wt Less (Gunny Weight Less)
+                    TooltipFormField(
+                      labelText: 'Gny Wt(Less)',
+                      tooltip: Tooltips.paddyProcurement.gnyWtLess,
+                      controller: _gunnyWtLessCtrl,
+                      keyboardType: TextInputType.number,
+                      suffixText: 'Kg',
+                      onChanged: (_) => _calculateTotal(),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Bag Return
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: 'Bag Rtn',
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                        suffixIcon: Tooltip(
+                          message: Tooltips.paddyProcurement.bagReturn,
+                          child: const Icon(
+                            Icons.info_outline,
+                            size: 18,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                      value: _bagReturn,
+                      items: _bagReturnOptions.map((option) {
+                        return DropdownMenuItem(
+                          value: option,
+                          child: Row(
+                            children: [
+                              Icon(
+                                option == 'Yes'
+                                    ? Icons.check_circle_outline
+                                    : Icons.cancel_outlined,
+                                color: option == 'Yes'
+                                    ? Colors.green
+                                    : Colors.grey,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(option),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (v) => setState(() => _bagReturn = v!),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Other Cut
+                    TooltipFormField(
+                      labelText: 'Other Cut',
+                      tooltip: Tooltips.paddyProcurement.otherCut,
+                      controller: _otherCutCtrl,
+                      keyboardType: TextInputType.number,
+                      suffixText: 'Kg',
+                      onChanged: (_) => _calculateTotal(),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── RATE & CALCULATION SECTION ──
+                    _buildSectionHeader(
+                      'Rate & Calculation',
+                      [
+                        'rateCalculation',
+                        'kgPerBag',
+                        'eBag',
+                        'ePkt',
+                        'unloadTime'
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Rate Calculation Basis
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: 'Rate Calculation',
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                        suffixIcon: Tooltip(
+                          message: Tooltips.paddyProcurement.rateCalculation,
+                          child: const Icon(
+                            Icons.info_outline,
+                            size: 18,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                      value: _rateCalculation,
+                      items: _rateCalcOptions.map((option) {
+                        return DropdownMenuItem(
+                          value: option,
+                          child:
+                              Text(option == 'Qntl' ? 'Per Quintal' : 'Per Kg'),
+                        );
+                      }).toList(),
+                      onChanged: (v) => setState(() => _rateCalculation = v!),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Kg Per Bag
+                    TooltipFormField(
+                      labelText: 'Kg/Bag',
+                      tooltip: Tooltips.paddyProcurement.kgPerBag,
+                      controller: TextEditingController(), // Add if needed
+                      keyboardType: TextInputType.number,
+                      suffixText: 'Kg',
+                    ),
+                    const SizedBox(height: 12),
+
+                    // E Bag (Empty Bag)
+                    TooltipFormField(
+                      labelText: 'E Bag',
+                      tooltip: Tooltips.paddyProcurement.eBag,
+                      controller: TextEditingController(), // Add if needed
+                      keyboardType: TextInputType.number,
+                      suffixText: 'Kg',
+                    ),
+                    const SizedBox(height: 12),
+
+                    // E Pkt (Empty Packet)
+                    TooltipFormField(
+                      labelText: 'E Pkt',
+                      tooltip: Tooltips.paddyProcurement.ePkt,
+                      controller: TextEditingController(), // Add if needed
+                      keyboardType: TextInputType.number,
+                      suffixText: 'Kg',
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Unload Time
+                    TooltipFormField(
+                      labelText: 'Unload Time',
+                      tooltip: Tooltips.paddyProcurement.unloadTime,
+                      controller: TextEditingController(), // Add if needed
+                      keyboardType: TextInputType.number,
+                      suffixText: 'hrs',
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── PRODUCT & PRICING SECTION (FT only) ──
+                    _buildSectionHeader(
+                      'Product & Pricing',
+                      [
+                        'product',
+                        'productName',
+                        'quantityNew',
+                        'quantityQntl',
+                        'ratePerQntl',
+                        'totalAmount'
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Product
+                    TooltipFormField(
+                      labelText: 'Product',
+                      tooltip: Tooltips.paddyProcurement.product,
+                      controller: TextEditingController()..text = 'Paddy',
+                      readOnly: true,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Product Name
+                    TooltipFormField(
+                      labelText: 'Product Name',
+                      tooltip: Tooltips.paddyProcurement.productName,
+                      controller: TextEditingController(), // Add if needed
+                      textCapitalization: TextCapitalization.words,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Quantity New (New/Old crop)
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: 'Quantity New',
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                        suffixIcon: Tooltip(
+                          message: Tooltips.paddyProcurement.quantityNew,
+                          child: const Icon(
+                            Icons.info_outline,
+                            size: 18,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                      value: _quantityNew,
+                      items: _quantityNewOptions.map((option) {
+                        return DropdownMenuItem(
+                          value: option,
+                          child: Row(
+                            children: [
+                              Text(option),
+                              const SizedBox(width: 8),
+                              Text(
+                                option == 'N' ? '(New crop)' : '(Old crop)',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (v) => setState(() => _quantityNew = v!),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Quantity in Quintals (auto-calculated)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calculate,
+                              size: 18, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Qty (Qntl):',
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _calculateQuintals(),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.orange,
+                            ),
+                          ),
+                          const Spacer(),
+                          Tooltip(
+                            message: Tooltips.paddyProcurement.quantityQntl,
+                            child: Icon(
+                              Icons.info_outline,
+                              size: 16,
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Rate Per Quintal
+                    TooltipFormField(
+                      labelText: 'Rate/Qntl',
+                      tooltip: Tooltips.paddyProcurement.ratePerQntl,
+                      controller: _ratePerQntlCtrl,
+                      keyboardType: TextInputType.number,
+                      isRequired: true,
+                      suffixText: '₹/Qntl',
+                      onChanged: (_) => _calculateTotal(),
+                      validator: (v) {
+                        if (v?.trim().isEmpty ?? true) return 'Required';
+                        if (double.tryParse(v!) == null) return 'Invalid';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Total Amount (auto-calculated)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.green.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.currency_rupee,
+                              color: Colors.green, size: 20),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Total Amount:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '₹${_totalAmountCtrl.text.isEmpty ? '0.00' : _totalAmountCtrl.text}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: Colors.green,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Tooltip(
+                            message: Tooltips.paddyProcurement.totalAmount,
+                            child: Icon(
+                              Icons.info_outline,
+                              size: 16,
+                              color: Colors.green.shade400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── QUALITY CUTS SECTION ──
+                    _buildSectionHeader(
+                      'Quality Cuts',
+                      [
+                        'qualityCutName',
+                        'qualityCutBagQty',
+                        'qualityCutType',
+                        'qualityCutPerUnit',
+                        'qualityCutKg',
+                        'qualityCutRemark'
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Column(
+                        children: [
+                          // Dust Cut
+                          Row(
+                            children: [
+                              const Expanded(
+                                flex: 2,
+                                child: Text(
+                                  'Dust',
+                                  style: TextStyle(fontWeight: FontWeight.w500),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: TooltipFormField(
+                                  labelText: 'Dust Cut',
+                                  tooltip:
+                                      Tooltips.paddyProcurement.qualityCutName,
+                                  controller: _dustCutCtrl,
+                                  keyboardType: TextInputType.number,
+                                  suffixText: 'Kg',
+                                  onChanged: (_) => _calculateTotal(),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          // Pol Cut
+                          Row(
+                            children: [
+                              const Expanded(
+                                flex: 2,
+                                child: Text(
+                                  'Pol',
+                                  style: TextStyle(fontWeight: FontWeight.w500),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: TooltipFormField(
+                                  labelText: 'Pol Cut',
+                                  tooltip:
+                                      Tooltips.paddyProcurement.qualityCutName,
+                                  controller: _polCutCtrl,
+                                  keyboardType: TextInputType.number,
+                                  suffixText: 'Kg',
+                                  onChanged: (_) => _calculateTotal(),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          // Other Cut
+                          Row(
+                            children: [
+                              const Expanded(
+                                flex: 2,
+                                child: Text(
+                                  'Other',
+                                  style: TextStyle(fontWeight: FontWeight.w500),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: TooltipFormField(
+                                  labelText: 'Other Cut',
+                                  tooltip:
+                                      Tooltips.paddyProcurement.qualityCutName,
+                                  controller: _otherCutCtrl,
+                                  keyboardType: TextInputType.number,
+                                  suffixText: 'Kg',
+                                  onChanged: (_) => _calculateTotal(),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          // Quality Grade
+                          Row(
+                            children: [
+                              const Expanded(
+                                flex: 2,
+                                child: Text(
+                                  'Grade',
+                                  style: TextStyle(fontWeight: FontWeight.w500),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: DropdownButtonFormField<String>(
+                                  decoration: InputDecoration(
+                                    border: const OutlineInputBorder(),
+                                    isDense: true,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    suffixIcon: Tooltip(
+                                      message: Tooltips
+                                          .paddyProcurement.qualityCutType,
+                                      child: const Icon(
+                                        Icons.info_outline,
+                                        size: 16,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                  value: _qualityGrade,
+                                  items: _qualityGrades.map((grade) {
+                                    return DropdownMenuItem(
+                                      value: grade,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: _getGradeColor(grade)
+                                              .withOpacity(0.15),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          grade,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: _getGradeColor(grade),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: (v) =>
+                                      setState(() => _qualityGrade = v!),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── TRANSPORT SECTION ──
+                    _buildSectionHeader(
+                      'Transport',
+                      [
+                        'deliveryType',
+                        'truckRentType',
+                        'truckRent',
+                        'otherAmount',
+                        'transportType',
+                        'truckAccount',
+                        'freightAmount'
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Delivery Type
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: 'Delivery Type',
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                        suffixIcon: Tooltip(
+                          message: Tooltips.paddyProcurement.deliveryType,
+                          child: const Icon(
+                            Icons.info_outline,
+                            size: 18,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                      value: _deliveryType,
+                      items: _deliveryTypeOptions.map((type) {
+                        return DropdownMenuItem(
+                          value: type,
+                          child: Text(type),
+                        );
+                      }).toList(),
+                      onChanged: (v) => setState(() => _deliveryType = v!),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Truck Rent Type
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: 'Truck Rent Type',
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                        suffixIcon: Tooltip(
+                          message: Tooltips.paddyProcurement.truckRentType,
+                          child: const Icon(
+                            Icons.info_outline,
+                            size: 18,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                      value: _truckRentType,
+                      items: _truckRentTypeOptions.map((type) {
+                        return DropdownMenuItem(
+                          value: type,
+                          child:
+                              Text(type == 'Qntl' ? 'Per Quintal' : 'Per Kg'),
+                        );
+                      }).toList(),
+                      onChanged: (v) => setState(() => _truckRentType = v!),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Truck Rent
+                    TooltipFormField(
+                      labelText: 'Truck Rent',
+                      tooltip: Tooltips.paddyProcurement.truckRent,
+                      controller: TextEditingController(), // Add if needed
+                      keyboardType: TextInputType.number,
+                      suffixText: '₹',
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Other Amount
+                    TooltipFormField(
+                      labelText: 'Other Amount',
+                      tooltip: Tooltips.paddyProcurement.otherAmount,
+                      controller: TextEditingController(), // Add if needed
+                      keyboardType: TextInputType.number,
+                      suffixText: '₹',
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Transport Type
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: 'Transport Type',
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                        suffixIcon: Tooltip(
+                          message: Tooltips.paddyProcurement.transportType,
+                          child: const Icon(
+                            Icons.info_outline,
+                            size: 18,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                      value: _transportType,
+                      items: _transportTypeOptions.map((type) {
+                        return DropdownMenuItem(
+                          value: type,
+                          child: Text(type),
+                        );
+                      }).toList(),
+                      onChanged: (v) => setState(() => _transportType = v!),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Truck Account
+                    TooltipFormField(
+                      labelText: 'Truck Account',
+                      tooltip: Tooltips.paddyProcurement.truckAccount,
+                      controller: TextEditingController(), // Add if needed
+                      textCapitalization: TextCapitalization.words,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Freight Amount
+                    TooltipFormField(
+                      labelText: 'Freight Amount',
+                      tooltip: Tooltips.paddyProcurement.freightAmount,
+                      controller: TextEditingController(), // Add if needed
+                      keyboardType: TextInputType.number,
+                      suffixText: '₹',
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── MANDI/GOVERNMENT SECTION ──
+                    _buildSectionHeader(
+                      'Mandi/Government',
+                      ['mandiInvoiceNo', 'tenderNumber', 'commissionAgent'],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Mandi Invoice No
+                    TooltipFormField(
+                      labelText: 'Mandi Invoice No',
+                      tooltip: Tooltips.paddyProcurement.mandiInvoiceNo,
+                      controller: TextEditingController(), // Add if needed
+                      textCapitalization: TextCapitalization.characters,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Tender Number
+                    TooltipFormField(
+                      labelText: 'Tender Number',
+                      tooltip: Tooltips.paddyProcurement.tenderNumber,
+                      controller: TextEditingController(), // Add if needed
+                      textCapitalization: TextCapitalization.characters,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Commission Agent
+                    TooltipFormField(
+                      labelText: 'Commission Agent',
+                      tooltip: Tooltips.paddyProcurement.commissionAgent,
+                      controller: TextEditingController(), // Add if needed
+                      textCapitalization: TextCapitalization.words,
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: _submit,
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: Text(_editingId == null
+                            ? 'Create Procurement'
+                            : 'Update Procurement'),
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGunnySection() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Empty Gunny Transaction: Free Purchase',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          ),
-          const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              columnSpacing: 8,
-              columns: const [
-                DataColumn(
-                    label: Text('Qlt:',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('J.PKT',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('P.PKT',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('REJ',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('OLD',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('Other',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('Total Receive',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('J.PKT',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('P.PKT',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('REJ',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('OLD',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('Other',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(
-                    label: Text('Total Issue',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
-              ],
-              rows: [
-                DataRow(cells: [
-                  const DataCell(Text('Receive',
-                      style: TextStyle(fontWeight: FontWeight.w500))),
-                  ..._gunnyTransactions.map((g) => DataCell(
-                        TextFormField(
-                          initialValue: g.receivedQty.toString(),
-                          keyboardType: TextInputType.number,
-                          onChanged: (v) {
-                            final qty = int.tryParse(v) ?? 0;
-                            final index = _gunnyTransactions.indexOf(g);
-                            setState(() {
-                              _gunnyTransactions[index] =
-                                  g.copyWith(receivedQty: qty);
-                            });
-                          },
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            isDense: true,
-                          ),
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      )),
-                  DataCell(
-                    Text(
-                      _gunnyTransactions
-                          .fold<int>(0, (sum, g) => sum + (g.receivedQty ?? 0))
-                          .toString(),
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                  ..._gunnyTransactions.map((g) => DataCell(
-                        TextFormField(
-                          initialValue: g.issuedQty.toString(),
-                          keyboardType: TextInputType.number,
-                          onChanged: (v) {
-                            final qty = int.tryParse(v) ?? 0;
-                            final index = _gunnyTransactions.indexOf(g);
-                            setState(() {
-                              _gunnyTransactions[index] =
-                                  g.copyWith(issuedQty: qty);
-                            });
-                          },
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            isDense: true,
-                          ),
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      )),
-                  DataCell(
-                    Text(
-                      _gunnyTransactions
-                          .fold<int>(0, (sum, g) => sum + (g.issuedQty ?? 0))
-                          .toString(),
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                ]),
-              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
-  Widget _buildTransportSection() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _deliveryTypeCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Del Type',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: 'Qntl',
-                  decoration: const InputDecoration(
-                    labelText: 'Truck Rent Type',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'Qntl', child: Text('Qntl')),
-                    DropdownMenuItem(value: 'Kg', child: Text('Kg')),
-                  ],
-                  onChanged: (_) {},
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _truckRentCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'T.Rent Receive(+)/Paid(-)',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextFormField(
-                  controller: _otherAmountCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: '(±)Oth Amt',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: 'Direct',
-                  decoration: const InputDecoration(
-                    labelText: 'Transport Type',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'Direct', child: Text('Direct')),
-                    DropdownMenuItem(
-                        value: 'Indirect', child: Text('Indirect')),
-                  ],
-                  onChanged: (_) {},
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextFormField(
-                  controller: _freightCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Frt Amt',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActions() {
+  Widget _buildSectionHeader(String title, List<String> tooltipKeys) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.blueGrey,
+          ),
         ),
-        const SizedBox(width: 8),
-        if (_isEdit) ...[
-          OutlinedButton.icon(
-            onPressed: _isLoading ? null : _save,
-            icon: const Icon(Icons.save_outlined, size: 18),
-            label: const Text('Update'),
-          ),
-          const SizedBox(width: 8),
-          FilledButton.icon(
-            onPressed: _isLoading ? null : _completeProcurement,
-            icon: const Icon(Icons.check_circle_outline, size: 18),
-            label: const Text('Complete'),
-            style: FilledButton.styleFrom(backgroundColor: Colors.green),
-          ),
-        ] else ...[
-          FilledButton.icon(
-            onPressed: _isLoading ? null : _save,
-            icon: _isLoading
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.save, size: 18),
-            label: const Text('Save Draft'),
-          ),
-          const SizedBox(width: 8),
-          FilledButton.icon(
-            onPressed: _isLoading
-                ? null
-                : () async {
-                    await _save();
-                    if (mounted && widget.procurementId != null) {
-                      await _completeProcurement();
-                    }
-                  },
-            icon: const Icon(Icons.check_circle_outline, size: 18),
-            label: const Text('Save & Complete'),
-            style: FilledButton.styleFrom(backgroundColor: Colors.green),
-          ),
-        ],
+        const Spacer(),
+        TooltipIcon(
+          tooltip: 'View field guide for this section',
+          icon: Icons.help_outline,
+          onTap: _showHelp,
+          size: 16,
+        ),
       ],
     );
+  }
+
+  String _calculateAvgBagWeight() {
+    final gross = double.tryParse(_grossWtCtrl.text) ?? 0;
+    final tare = double.tryParse(_tareWtCtrl.text) ?? 0;
+    final jute = int.tryParse(_jutePktCtrl.text) ?? 0;
+    final plastic = int.tryParse(_plasticPktCtrl.text) ?? 0;
+    final totalBags = jute + plastic;
+
+    if (totalBags == 0) return '0.00 Kg';
+    final netWeight = gross - tare;
+    if (netWeight <= 0) return '0.00 Kg';
+
+    return '${(netWeight / totalBags).toStringAsFixed(2)} Kg';
+  }
+
+  String _calculateQuintals() {
+    final gross = double.tryParse(_grossWtCtrl.text) ?? 0;
+    final tare = double.tryParse(_tareWtCtrl.text) ?? 0;
+    final dust = double.tryParse(_dustCutCtrl.text) ?? 0;
+    final pol = double.tryParse(_polCutCtrl.text) ?? 0;
+    final other = double.tryParse(_otherCutCtrl.text) ?? 0;
+    final gunnyLess = double.tryParse(_gunnyWtLessCtrl.text) ?? 0;
+
+    final netWeight = gross - tare - dust - pol - other - gunnyLess;
+    if (netWeight <= 0) return '0.00 Qntl';
+
+    return '${(netWeight / 100).toStringAsFixed(2)} Qntl';
+  }
+
+  Color _getGradeColor(String grade) {
+    switch (grade) {
+      case 'A':
+        return Colors.green;
+      case 'B':
+        return Colors.blue;
+      case 'C':
+        return Colors.orange;
+      case 'D':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
   }
 }

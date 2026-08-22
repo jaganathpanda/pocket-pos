@@ -1,18 +1,25 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pocket_pos/core/database/database_provider.dart';
 import 'package:pocket_pos/features/store/presentation/store_auth_controller.dart';
 import '../../../core/firestore/store_scope.dart';
 import '../data/firestore_paddy_procurement_repository.dart';
+import '../data/paddy_procurement_repository_impl.dart';
+import '../data/synced_paddy_procurement_repository.dart';
 import '../domain/paddy_procurement.dart';
 import '../domain/paddy_procurement_repository.dart';
 
+/// Paddy procurement is persisted to BOTH local Drift (offline, source of truth
+/// for reads) and Firestore (cloud mirror, when a store is active). See
+/// [SyncedPaddyProcurementRepository].
 final paddyProcurementRepositoryProvider =
     Provider<PaddyProcurementRepository>((ref) {
+  final local = PaddyProcurementRepositoryImpl(ref.watch(appDatabaseProvider));
   final storeId = ref.watch(activeStoreIdProvider);
-  if (storeId == null) throw Exception('No active store');
-  return FirestorePaddyProcurementRepository(
-    ref.watch(firestoreProvider),
-    storeId,
-  );
+  final cloud = (storeId == null || storeId.isEmpty)
+      ? null
+      : FirestorePaddyProcurementRepository(
+          ref.watch(firestoreProvider), storeId);
+  return SyncedPaddyProcurementRepository(local, cloud);
 });
 
 final paddyProcurementFilterProvider = StateProvider<PaddyProcurementFilter>(
@@ -22,9 +29,6 @@ final paddyProcurementFilterProvider = StateProvider<PaddyProcurementFilter>(
 final paddyProcurementStreamProvider =
     StreamProvider<List<PaddyProcurement>>((ref) {
   final filter = ref.watch(paddyProcurementFilterProvider);
-  if (ref.watch(activeStoreIdProvider) == null) {
-    return Stream.value(const []);
-  }
   return ref.watch(paddyProcurementRepositoryProvider).watchAll(
         fromDate: filter.fromDate,
         toDate: filter.toDate,
@@ -35,9 +39,6 @@ final paddyProcurementStreamProvider =
 
 final paddyProcurementProvider =
     FutureProvider.family<PaddyProcurement?, int>((ref, id) {
-  if (ref.watch(activeStoreIdProvider) == null) {
-    return Future.value(null);
-  }
   return ref.watch(paddyProcurementRepositoryProvider).getProcurement(id);
 });
 

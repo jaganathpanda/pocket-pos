@@ -64,6 +64,16 @@ class FirestorePaddyProcurementRepository
   }
 
   @override
+  Future<PaddyProcurement?> findByVehicleEntryId(int vehicleEntryId) async {
+    final snap = await _col
+        .where('vehicleEntryId', isEqualTo: vehicleEntryId)
+        .limit(1)
+        .get();
+    if (snap.docs.isEmpty) return null;
+    return _fromDoc(snap.docs.first);
+  }
+
+  @override
   Future<int> createProcurement(PaddyProcurementCompanion data) async {
     final id = newIntId();
     final now = DateTime.now();
@@ -91,6 +101,9 @@ class FirestorePaddyProcurementRepository
       'gnyWtLess': data.gnyWtLess ?? false,
       'bagReturn': data.bagReturn ?? false,
       'otherCut': data.otherCut ?? 0,
+      'dustCut': data.dustCut,
+      'polCut': data.polCut,
+      'qualityGrade': data.qualityGrade,
       'unloadTime': data.unloadTime ?? 3.00,
       'eBag': data.eBag ?? 0.700,
       'ePkt': data.ePkt ?? 0.100,
@@ -125,6 +138,7 @@ class FirestorePaddyProcurementRepository
       'tenderNumber': data.tenderNumber,
       'commissionAgentId': data.commissionAgentId,
       'warehouseId': data.warehouseId,
+      'vehicleEntryId': data.vehicleEntryId,
       'remainingStock': data.netWeight ?? 0,
       'status': 'draft',
       'createdAt': FieldValue.serverTimestamp(),
@@ -160,6 +174,9 @@ class FirestorePaddyProcurementRepository
       'gnyWtLess': data.gnyWtLess ?? false,
       'bagReturn': data.bagReturn ?? false,
       'otherCut': data.otherCut ?? 0,
+      'dustCut': data.dustCut,
+      'polCut': data.polCut,
+      'qualityGrade': data.qualityGrade,
       'unloadTime': data.unloadTime ?? 3.00,
       'eBag': data.eBag ?? 0.700,
       'ePkt': data.ePkt ?? 0.100,
@@ -194,6 +211,7 @@ class FirestorePaddyProcurementRepository
       'tenderNumber': data.tenderNumber,
       'commissionAgentId': data.commissionAgentId,
       'warehouseId': data.warehouseId,
+      'vehicleEntryId': data.vehicleEntryId,
       'status': data.status ?? 'draft',
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
@@ -308,6 +326,9 @@ class FirestorePaddyProcurementRepository
       gnyWtLess: (d['gnyWtLess'] as bool?) ?? false,
       bagReturn: (d['bagReturn'] as bool?) ?? false,
       otherCut: num_(d['otherCut']),
+      dustCut: (d['dustCut'] as num?)?.toDouble(),
+      polCut: (d['polCut'] as num?)?.toDouble(),
+      qualityGrade: d['qualityGrade'] as String?,
       unloadTime: num_(d['unloadTime']),
       eBag: num_(d['eBag']),
       ePkt: num_(d['ePkt']),
@@ -342,6 +363,7 @@ class FirestorePaddyProcurementRepository
       tenderNumber: d['tenderNumber'] as String?,
       commissionAgentId: (d['commissionAgentId'] as num?)?.toInt(),
       warehouseId: (d['warehouseId'] as num?)?.toInt(),
+      vehicleEntryId: (d['vehicleEntryId'] as num?)?.toInt(),
       remainingStock: num_(d['remainingStock']),
       status: d['status'] as String? ?? 'draft',
       createdAt: (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),

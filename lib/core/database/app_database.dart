@@ -358,6 +358,12 @@ class VehicleEntries extends Table {
   TextColumn get completeCode => text().nullable()();
   DateTimeColumn get completeDate => dateTime().nullable()();
   TextColumn get remark => text().nullable()();
+  // 'weighbridge' (gross/tare two-weighment) or 'manual' (per-item weighing).
+  TextColumn get weighMode =>
+      text().withDefault(const Constant('weighbridge'))();
+  // JSON list of {product, bags, weight} used in manual mode.
+  TextColumn get manualWeightsJson =>
+      text().withDefault(const Constant('[]'))();
   DateTimeColumn get createdAt =>
       dateTime().clientDefault(() => DateTime.now())();
   DateTimeColumn get updatedAt =>
@@ -365,6 +371,7 @@ class VehicleEntries extends Table {
 }
 // lib/core/database/app_database.dart
 
+@DataClassName('FarmerRow')
 class Farmers extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
@@ -389,6 +396,7 @@ class Farmers extends Table {
 
 // lib/core/database/app_database.dart
 
+@DataClassName('PaddyProcurementRow')
 class PaddyProcurements extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get date => dateTime()();
@@ -410,6 +418,9 @@ class PaddyProcurements extends Table {
   BoolColumn get gnyWtLess => boolean().withDefault(const Constant(false))();
   BoolColumn get bagReturn => boolean().withDefault(const Constant(false))();
   RealColumn get otherCut => real().nullable()();
+  RealColumn get dustCut => real().nullable()();
+  RealColumn get polCut => real().nullable()();
+  TextColumn get qualityGrade => text().nullable()();
   RealColumn get unloadTime => real().nullable()();
   RealColumn get eBag => real().nullable()();
   RealColumn get ePkt => real().nullable()();
@@ -447,7 +458,11 @@ class PaddyProcurements extends Table {
   TextColumn get tenderNumber => text().nullable()();
   IntColumn get commissionAgentId =>
       integer().nullable().references(Suppliers, #id)();
-  IntColumn get warehouseId => integer().references(Warehouses, #id)();
+  IntColumn get warehouseId =>
+      integer().nullable().references(Warehouses, #id)();
+  // Links a procurement back to the weighbridge entry it was created from.
+  IntColumn get vehicleEntryId =>
+      integer().nullable().references(VehicleEntries, #id)();
   RealColumn get remainingStock => real().withDefault(const Constant(0))();
   TextColumn get status => text().withDefault(const Constant('draft'))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -492,7 +507,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -551,6 +566,42 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 6) {
             await m.createTable(staffSalaryPayments);
+          }
+          if (from < 7) {
+            await m.createTable(farmers);
+            await m.createTable(paddyProcurements);
+          }
+          if (from < 8) {
+            // Added quality-cut fields. On a <7 upgrade the table was just
+            // created above WITH these columns, so guard against re-adding.
+            for (final col in [
+              paddyProcurements.dustCut,
+              paddyProcurements.polCut,
+              paddyProcurements.qualityGrade,
+            ]) {
+              try {
+                await m.addColumn(paddyProcurements, col);
+              } catch (_) {
+                // Column already exists (fresh table created at v7 step).
+              }
+            }
+          }
+          if (from < 9) {
+            // Weighbridge manual-weighing mode + link from procurement back to
+            // its weighbridge entry. Guarded so freshly-created tables (which
+            // already carry these columns) don't error on re-add.
+            for (final col in [
+              vehicleEntries.weighMode,
+              vehicleEntries.manualWeightsJson,
+            ]) {
+              try {
+                await m.addColumn(vehicleEntries, col);
+              } catch (_) {}
+            }
+            try {
+              await m.addColumn(
+                  paddyProcurements, paddyProcurements.vehicleEntryId);
+            } catch (_) {}
           }
         },
         beforeOpen: (details) async {

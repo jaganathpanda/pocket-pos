@@ -124,44 +124,64 @@ class _PaddyProcurementPageState extends ConsumerState<PaddyProcurementPage> {
           ),
           // List
           Expanded(
-            child: procurements.when(
-              data: (list) {
-                if (list.isEmpty) {
-                  return const Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.grass_rounded, size: 56, color: Colors.grey),
-                        SizedBox(height: 12),
-                        Text('No paddy procurements yet.',
-                            style: TextStyle(color: Colors.grey)),
-                        SizedBox(height: 6),
-                        Text('Tap + to start a new procurement.',
-                            style: TextStyle(color: Colors.grey, fontSize: 12)),
+            child: RefreshIndicator(
+              onRefresh: () =>
+                  ref.refresh(paddyProcurementStreamProvider.future),
+              child: procurements.when(
+                data: (list) {
+                  if (list.isEmpty) {
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: const [
+                        SizedBox(height: 120),
+                        Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.grass_rounded,
+                                  size: 56, color: Colors.grey),
+                              SizedBox(height: 12),
+                              Text('No paddy procurements yet.',
+                                  style: TextStyle(color: Colors.grey)),
+                              SizedBox(height: 6),
+                              Text('Tap + to start a new procurement.',
+                                  style: TextStyle(
+                                      color: Colors.grey, fontSize: 12)),
+                            ],
+                          ),
+                        ),
                       ],
-                    ),
-                  );
-                }
-                return ListView.separated(
-                  itemCount: list.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final p = list[index];
-                    return _ProcurementTile(
-                      procurement: p,
-                      onTap: () => _navigateToForm(p.id),
-                      onComplete: p.status == 'draft'
-                          ? () => _completeProcurement(p.id!)
-                          : null,
-                      onDelete: p.status == 'draft'
-                          ? () => _deleteProcurement(p.id!)
-                          : null,
                     );
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+                  }
+                  return ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: list.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final p = list[index];
+                      return _ProcurementTile(
+                        procurement: p,
+                        onTap: () => _navigateToForm(p.id),
+                        onComplete: p.status == 'draft'
+                            ? () => _completeProcurement(p.id!)
+                            : null,
+                        onDelete: p.status == 'draft'
+                            ? () => _deleteProcurement(p.id!)
+                            : null,
+                      );
+                    },
+                  );
+                },
+                loading: () =>
+                    const Center(child: CircularProgressIndicator()),
+                error: (e, _) => ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    const SizedBox(height: 120),
+                    Center(child: Text('Error: $e')),
+                  ],
+                ),
+              ),
             ),
           ),
         ],

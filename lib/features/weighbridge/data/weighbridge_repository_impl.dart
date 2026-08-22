@@ -1,7 +1,19 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:pocket_pos/features/weighbridge/data/weighbridge_repository.dart';
 import 'package:pocket_pos/features/weighbridge/domain/vehicle_entry.dart';
 import '../../../core/database/app_database.dart' hide VehicleEntry;
+
+List<ManualWeightLine> _parseManualWeights(String json) {
+  try {
+    return (jsonDecode(json) as List)
+        .map((e) => ManualWeightLine.fromMap(e as Map<String, dynamic>))
+        .toList();
+  } catch (_) {
+    return const [];
+  }
+}
 
 class WeighbridgeRepositoryImpl implements WeighbridgeRepository {
   final AppDatabase _db;
@@ -65,6 +77,9 @@ class WeighbridgeRepositoryImpl implements WeighbridgeRepository {
             remark: entry.remark,
             createdAt: entry.createdAt,
             updatedAt: entry.updatedAt,
+            entryType: entry.entryType,
+            weighMode: entry.weighMode,
+            manualWeights: _parseManualWeights(entry.manualWeightsJson),
             productName: product.name,
             partyNameFromSupplier: supplier?.name,
           );
@@ -108,10 +123,24 @@ class WeighbridgeRepositoryImpl implements WeighbridgeRepository {
       remark: row.remark,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
+      entryType: row.entryType,
+      weighMode: row.weighMode,
+      manualWeights: _parseManualWeights(row.manualWeightsJson),
       productName: product.name,
       partyNameFromSupplier: supplier?.name,
     );
   }
+
+  double _netFor(VehicleEntryCompanion data) {
+    if ((data.weighMode ?? 'weighbridge') == 'manual') {
+      return (data.manualWeights ?? const [])
+          .fold<double>(0, (s, l) => s + l.weight);
+    }
+    return _calculateNetWeight(data);
+  }
+
+  String _manualJson(VehicleEntryCompanion data) => jsonEncode(
+      (data.manualWeights ?? const []).map((l) => l.toMap()).toList());
 
   @override
   Future<int> createEntry(VehicleEntryCompanion data) {
@@ -128,13 +157,16 @@ class WeighbridgeRepositoryImpl implements WeighbridgeRepository {
       firstWeightTime: Value(data.firstWeightTime),
       secondWeight: Value(data.secondWeight!),
       secondWeightTime: Value(data.secondWeightTime),
-      netWeight: Value(data.netWeight ?? _calculateNetWeight(data)),
+      netWeight: Value(data.netWeight ?? _netFor(data)),
       bags: Value(data.bags),
       lotNumber: Value(data.lotNumber),
       complete: Value(data.complete ?? false),
       completeCode: Value(data.completeCode),
       completeDate: Value(data.completeDate),
       remark: Value(data.remark),
+      entryType: Value(data.entryType ?? 'inward'),
+      weighMode: Value(data.weighMode ?? 'weighbridge'),
+      manualWeightsJson: Value(_manualJson(data)),
       createdAt: Value(data.createdAt ?? DateTime.now()),
       updatedAt: Value(data.updatedAt ?? DateTime.now()),
     );
@@ -157,14 +189,16 @@ class WeighbridgeRepositoryImpl implements WeighbridgeRepository {
       firstWeightTime: Value(data.firstWeightTime),
       secondWeight: Value(data.secondWeight!),
       secondWeightTime: Value(data.secondWeightTime),
-      netWeight:
-          Value(data.netWeight ?? (data.firstWeight! - data.secondWeight!)),
+      netWeight: Value(data.netWeight ?? _netFor(data)),
       bags: Value(data.bags),
       lotNumber: Value(data.lotNumber),
       complete: Value(data.complete ?? false),
       completeCode: Value(data.completeCode),
       completeDate: Value(data.completeDate),
       remark: Value(data.remark),
+      entryType: Value(data.entryType ?? 'inward'),
+      weighMode: Value(data.weighMode ?? 'weighbridge'),
+      manualWeightsJson: Value(_manualJson(data)),
       updatedAt: Value(DateTime.now()),
     );
     return (_db.update(_db.vehicleEntries)..where((t) => t.id.equals(data.id!)))

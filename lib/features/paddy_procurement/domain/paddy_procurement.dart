@@ -21,6 +21,9 @@ class PaddyProcurement extends Equatable {
   final bool gnyWtLess;
   final bool bagReturn;
   final double? otherCut;
+  final double? dustCut;
+  final double? polCut;
+  final String? qualityGrade;
   final double? unloadTime;
   final double? eBag;
   final double? ePkt;
@@ -55,6 +58,7 @@ class PaddyProcurement extends Equatable {
   final String? tenderNumber;
   final int? commissionAgentId;
   final int? warehouseId;
+  final int? vehicleEntryId;
   final double? remainingStock;
   final String status; // 'draft', 'completed', 'cancelled'
   final DateTime createdAt;
@@ -81,6 +85,9 @@ class PaddyProcurement extends Equatable {
     this.gnyWtLess = false,
     this.bagReturn = false,
     this.otherCut,
+    this.dustCut,
+    this.polCut,
+    this.qualityGrade,
     this.unloadTime,
     this.eBag,
     this.ePkt,
@@ -115,6 +122,7 @@ class PaddyProcurement extends Equatable {
     this.tenderNumber,
     this.commissionAgentId,
     this.warehouseId,
+    this.vehicleEntryId,
     this.remainingStock,
     this.status = 'draft',
     required this.createdAt,
@@ -274,6 +282,9 @@ class PaddyProcurementCompanion {
   final bool? gnyWtLess;
   final bool? bagReturn;
   final double? otherCut;
+  final double? dustCut;
+  final double? polCut;
+  final String? qualityGrade;
   final double? unloadTime;
   final double? eBag;
   final double? ePkt;
@@ -308,6 +319,7 @@ class PaddyProcurementCompanion {
   final String? tenderNumber;
   final int? commissionAgentId;
   final int? warehouseId;
+  final int? vehicleEntryId;
   final double? remainingStock;
   final String? status;
   final DateTime? createdAt;
@@ -334,6 +346,9 @@ class PaddyProcurementCompanion {
     this.gnyWtLess,
     this.bagReturn,
     this.otherCut,
+    this.dustCut,
+    this.polCut,
+    this.qualityGrade,
     this.unloadTime,
     this.eBag,
     this.ePkt,
@@ -368,9 +383,79 @@ class PaddyProcurementCompanion {
     this.tenderNumber,
     this.commissionAgentId,
     this.warehouseId,
+    this.vehicleEntryId,
     this.remainingStock,
     this.status,
     this.createdAt,
     this.updatedAt,
   });
+
+  /// Builds a companion carrying every field of a full [PaddyProcurement]
+  /// (including its id) — used to mirror a locally-saved record to Firestore.
+  factory PaddyProcurementCompanion.fromModel(PaddyProcurement p) {
+    return PaddyProcurementCompanion(
+      id: p.id,
+      date: p.date,
+      slipNo: p.slipNo,
+      voucherNo: p.voucherNo,
+      rstManual: p.rstManual,
+      area: p.area,
+      vType: p.vType,
+      partyName: p.partyName,
+      partyId: p.partyId,
+      truckNo: p.truckNo,
+      emptyWeight: p.emptyWeight,
+      marketType: p.marketType,
+      grossWeight: p.grossWeight,
+      tareWeight: p.tareWeight,
+      juteBags: p.juteBags,
+      plasticBags: p.plasticBags,
+      totalBags: p.totalBags,
+      gnyWtLess: p.gnyWtLess,
+      bagReturn: p.bagReturn,
+      otherCut: p.otherCut,
+      dustCut: p.dustCut,
+      polCut: p.polCut,
+      qualityGrade: p.qualityGrade,
+      unloadTime: p.unloadTime,
+      eBag: p.eBag,
+      ePkt: p.ePkt,
+      netWeight: p.netWeight,
+      avgBagWeight: p.avgBagWeight,
+      rateCalculation: p.rateCalculation,
+      kgPerBag: p.kgPerBag,
+      productId: p.productId,
+      productName: p.productName,
+      quantityNew: p.quantityNew,
+      quantityQntl: p.quantityQntl,
+      ratePerQntl: p.ratePerQntl,
+      totalAmount: p.totalAmount,
+      avgRate: p.avgRate,
+      avgAmount: p.avgAmount,
+      qrtCutAmt: p.qrtCutAmt,
+      paddyAmt: p.paddyAmt,
+      qualityCuts: p.qualityCuts,
+      totalCutKg: p.totalCutKg,
+      finalWeight: p.finalWeight,
+      gunnyTransactions: p.gunnyTransactions,
+      deliveryType: p.deliveryType,
+      truckRentType: p.truckRentType,
+      truckRent: p.truckRent,
+      truckRentPaid: p.truckRentPaid,
+      otherAmount: p.otherAmount,
+      transportType: p.transportType,
+      truckAccount: p.truckAccount,
+      freightAmount: p.freightAmount,
+      procurementType: p.procurementType,
+      mandiInvoiceNo: p.mandiInvoiceNo,
+      tenderNumber: p.tenderNumber,
+      commissionAgentId: p.commissionAgentId,
+      warehouseId: p.warehouseId,
+      vehicleEntryId: p.vehicleEntryId,
+      remainingStock: p.remainingStock,
+      status: p.status,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+    );
+  }
 }

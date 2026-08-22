@@ -15,6 +15,15 @@ class FirestoreWeighbridgeRepository implements WeighbridgeRepository {
   CollectionReference<Map<String, dynamic>> get _col =>
       storeCollection(_db, _storeId, 'vehicle_entries');
 
+  double _netFor(VehicleEntryCompanion data) {
+    if ((data.weighMode ?? 'weighbridge') == 'manual') {
+      return (data.manualWeights ?? const [])
+          .fold<double>(0, (s, l) => s + l.weight);
+    }
+    return data.netWeight ??
+        ((data.firstWeight ?? 0) - (data.secondWeight ?? 0));
+  }
+
   @override
   Stream<List<VehicleEntry>> watchAll({
     DateTime? fromDate,
@@ -57,8 +66,7 @@ class FirestoreWeighbridgeRepository implements WeighbridgeRepository {
   @override
   Future<int> createEntry(VehicleEntryCompanion data) async {
     final id = newIntId();
-    final netWeight =
-        data.netWeight ?? (data.firstWeight! - data.secondWeight!);
+    final netWeight = _netFor(data);
     await _col.doc('$id').set({
       'date': data.date,
       'slipNo': data.slipNo,
@@ -73,6 +81,10 @@ class FirestoreWeighbridgeRepository implements WeighbridgeRepository {
       'secondWeight': data.secondWeight,
       'secondWeightTime': data.secondWeightTime,
       'netWeight': netWeight,
+      'entryType': data.entryType ?? 'inward',
+      'weighMode': data.weighMode ?? 'weighbridge',
+      'manualWeights':
+          (data.manualWeights ?? const []).map((l) => l.toMap()).toList(),
       'bags': data.bags,
       'lotNumber': data.lotNumber,
       'complete': data.complete ?? false,
@@ -88,8 +100,7 @@ class FirestoreWeighbridgeRepository implements WeighbridgeRepository {
   @override
   Future<void> updateEntry(VehicleEntryCompanion data) async {
     if (data.id == null) throw Exception('ID required for update');
-    final netWeight =
-        data.netWeight ?? (data.firstWeight! - data.secondWeight!);
+    final netWeight = _netFor(data);
     await _col.doc('${data.id}').set({
       'date': data.date,
       'slipNo': data.slipNo,
@@ -104,6 +115,10 @@ class FirestoreWeighbridgeRepository implements WeighbridgeRepository {
       'secondWeight': data.secondWeight,
       'secondWeightTime': data.secondWeightTime,
       'netWeight': netWeight,
+      'entryType': data.entryType ?? 'inward',
+      'weighMode': data.weighMode ?? 'weighbridge',
+      'manualWeights':
+          (data.manualWeights ?? const []).map((l) => l.toMap()).toList(),
       'bags': data.bags,
       'lotNumber': data.lotNumber,
       'complete': data.complete ?? false,
@@ -158,6 +173,12 @@ class FirestoreWeighbridgeRepository implements WeighbridgeRepository {
       remark: d['remark'] as String?,
       createdAt: (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (d['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      entryType: d['entryType'] as String? ?? 'inward',
+      weighMode: d['weighMode'] as String? ?? 'weighbridge',
+      manualWeights: (d['manualWeights'] as List?)
+              ?.map((e) => ManualWeightLine.fromMap(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
   }
 }

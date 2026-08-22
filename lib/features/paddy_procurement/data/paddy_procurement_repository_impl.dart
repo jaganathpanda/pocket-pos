@@ -25,10 +25,10 @@ class PaddyProcurementRepositoryImpl implements PaddyProcurementRepository {
       ..orderBy([(t) => OrderingTerm.desc(t.date)]);
 
     if (fromDate != null) {
-      query.where((t) => t.date.isBiggerOrEqual(fromDate));
+      query.where((t) => t.date.isBiggerOrEqualValue(fromDate));
     }
     if (toDate != null) {
-      query.where((t) => t.date.isSmallerOrEqual(toDate));
+      query.where((t) => t.date.isSmallerOrEqualValue(toDate));
     }
     if (procurementType != null && procurementType.isNotEmpty) {
       query.where((t) => t.procurementType.equals(procurementType));
@@ -50,6 +50,15 @@ class PaddyProcurementRepositoryImpl implements PaddyProcurementRepository {
   Future<PaddyProcurement?> getProcurement(int id) async {
     final row = await (_db.select(_db.paddyProcurements)
           ..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+    return row != null ? _fromRow(row) : null;
+  }
+
+  @override
+  Future<PaddyProcurement?> findByVehicleEntryId(int vehicleEntryId) async {
+    final row = await (_db.select(_db.paddyProcurements)
+          ..where((t) => t.vehicleEntryId.equals(vehicleEntryId))
+          ..limit(1))
         .getSingleOrNull();
     return row != null ? _fromRow(row) : null;
   }
@@ -85,6 +94,9 @@ class PaddyProcurementRepositoryImpl implements PaddyProcurementRepository {
             gnyWtLess: Value(data.gnyWtLess ?? false),
             bagReturn: Value(data.bagReturn ?? false),
             otherCut: Value(data.otherCut ?? 0),
+            dustCut: Value(data.dustCut),
+            polCut: Value(data.polCut),
+            qualityGrade: Value(data.qualityGrade),
             unloadTime: Value(data.unloadTime ?? 3.00),
             eBag: Value(data.eBag ?? 0.700),
             ePkt: Value(data.ePkt ?? 0.100),
@@ -102,10 +114,10 @@ class PaddyProcurementRepositoryImpl implements PaddyProcurementRepository {
             avgAmount: Value(data.avgAmount),
             qrtCutAmt: Value(data.qrtCutAmt),
             paddyAmt: Value(data.paddyAmt),
-            qualityCutsJson: qualityCutsJson,
+            qualityCutsJson: Value(qualityCutsJson),
             totalCutKg: Value(data.totalCutKg),
             finalWeight: Value(data.finalWeight),
-            gunnyTransactionsJson: gunnyJson,
+            gunnyTransactionsJson: Value(gunnyJson),
             deliveryType: Value(data.deliveryType ?? 'MD'),
             truckRentType: Value(data.truckRentType ?? 'Qntl'),
             truckRent: Value(data.truckRent ?? 0),
@@ -119,6 +131,7 @@ class PaddyProcurementRepositoryImpl implements PaddyProcurementRepository {
             tenderNumber: Value(data.tenderNumber),
             commissionAgentId: Value(data.commissionAgentId),
             warehouseId: Value(data.warehouseId),
+            vehicleEntryId: Value(data.vehicleEntryId),
             remainingStock: Value(data.netWeight ?? 0),
             status: Value(data.status ?? 'draft'),
           ),
@@ -160,6 +173,9 @@ class PaddyProcurementRepositoryImpl implements PaddyProcurementRepository {
         gnyWtLess: Value(data.gnyWtLess ?? false),
         bagReturn: Value(data.bagReturn ?? false),
         otherCut: Value(data.otherCut ?? 0),
+        dustCut: Value(data.dustCut),
+        polCut: Value(data.polCut),
+        qualityGrade: Value(data.qualityGrade),
         unloadTime: Value(data.unloadTime ?? 3.00),
         eBag: Value(data.eBag ?? 0.700),
         ePkt: Value(data.ePkt ?? 0.100),
@@ -193,6 +209,7 @@ class PaddyProcurementRepositoryImpl implements PaddyProcurementRepository {
         tenderNumber: Value(data.tenderNumber),
         commissionAgentId: Value(data.commissionAgentId),
         warehouseId: Value(data.warehouseId),
+        vehicleEntryId: Value(data.vehicleEntryId),
         remainingStock: Value(data.remainingStock ?? data.netWeight ?? 0),
         status: Value(data.status ?? 'draft'),
       ),
@@ -263,7 +280,7 @@ class PaddyProcurementRepositoryImpl implements PaddyProcurementRepository {
   @override
   Future<void> deductStock(int id, double quantity) async {
     final current = await getRemainingStock(id);
-    final newStock = (current - quantity).clamp(0, double.infinity);
+    final newStock = (current - quantity).clamp(0, double.infinity).toDouble();
     await (_db.update(_db.paddyProcurements)..where((t) => t.id.equals(id)))
         .write(
       PaddyProcurementsCompanion(
@@ -318,6 +335,9 @@ class PaddyProcurementRepositoryImpl implements PaddyProcurementRepository {
       gnyWtLess: row.gnyWtLess,
       bagReturn: row.bagReturn,
       otherCut: row.otherCut,
+      dustCut: row.dustCut,
+      polCut: row.polCut,
+      qualityGrade: row.qualityGrade,
       unloadTime: row.unloadTime,
       eBag: row.eBag,
       ePkt: row.ePkt,
@@ -352,6 +372,7 @@ class PaddyProcurementRepositoryImpl implements PaddyProcurementRepository {
       tenderNumber: row.tenderNumber,
       commissionAgentId: row.commissionAgentId,
       warehouseId: row.warehouseId,
+      vehicleEntryId: row.vehicleEntryId,
       remainingStock: row.remainingStock,
       status: row.status,
       createdAt: row.createdAt,

@@ -4,6 +4,9 @@ import 'package:intl/intl.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/di/providers.dart';
 import '../domain/vehicle_entry.dart';
+import '../../paddy_procurement/domain/paddy_procurement.dart';
+import '../../paddy_procurement/providers/paddy_procurement_providers.dart';
+import '../../paddy_procurement/presentation/paddy_procurement_form.dart';
 
 class VehicleEntryDetailPage extends ConsumerStatefulWidget {
   const VehicleEntryDetailPage({super.key, this.entryId});
@@ -45,6 +48,8 @@ class _VehicleEntryDetailPageState
   DateTime? _secondTime;
   DateTime? _completeDate;
   String _entryType = 'inward'; // 👈 ADDED: 'inward' or 'outward'
+  String _weighMode = 'weighbridge'; // 'weighbridge' or 'manual'
+  final List<_ManualLineControllers> _manualRows = [];
 
   @override
   void initState() {
@@ -95,6 +100,9 @@ class _VehicleEntryDetailPageState
     _remarkCtrl.dispose();
     _completeCodeCtrl.dispose();
     _completeDateCtrl.dispose();
+    for (final r in _manualRows) {
+      r.dispose();
+    }
     super.dispose();
   }
 
@@ -117,6 +125,13 @@ class _VehicleEntryDetailPageState
       _selectedPartyId = entry.partyId;
       _selectedProductId = entry.productId;
       _entryType = entry.entryType ?? 'inward'; // 👈 set from loaded entry
+      _weighMode = entry.weighMode;
+      _manualRows
+        ..forEach((r) => r.dispose())
+        ..clear();
+      for (final l in entry.manualWeights) {
+        _manualRows.add(_ManualLineControllers.fromLine(l));
+      }
       _firstWtCtrl.text = entry.firstWeight.toString();
       _firstTime = entry.firstWeightTime;
       _firstTimeCtrl.text = entry.firstWeightTime != null
@@ -140,6 +155,10 @@ class _VehicleEntryDetailPageState
   }
 
   double _calculateNetWeight() {
+    if (_weighMode == 'manual') {
+      return _manualRows.fold<double>(
+          0, (s, r) => s + (double.tryParse(r.weightCtrl.text.trim()) ?? 0));
+    }
     final first = double.tryParse(_firstWtCtrl.text.trim()) ?? 0;
     final second = double.tryParse(_secondWtCtrl.text.trim()) ?? 0;
     if (_entryType == 'inward') {
@@ -185,6 +204,17 @@ class _VehicleEntryDetailPageState
       bags: int.tryParse(_bagsCtrl.text.trim()),
       lotNumber: _lotCtrl.text.trim().isEmpty ? null : _lotCtrl.text.trim(),
       entryType: _entryType, // 👈 PASS entryType
+      weighMode: _weighMode,
+      manualWeights: _weighMode == 'manual'
+          ? _manualRows
+              .map((r) => ManualWeightLine(
+                    product: r.productCtrl.text.trim(),
+                    bags: int.tryParse(r.bagsCtrl.text.trim()),
+                    weight: double.tryParse(r.weightCtrl.text.trim()) ?? 0,
+                  ))
+              .where((l) => l.product.isNotEmpty || l.weight > 0)
+              .toList()
+          : const [],
       complete: _complete,
       completeCode: _complete ? _completeCodeCtrl.text.trim() : null,
       completeDate: _complete ? _completeDate : null,
@@ -203,6 +233,57 @@ class _VehicleEntryDetailPageState
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Error: $e')));
     }
+  }
+
+  void _addManualRow() {
+    setState(() => _manualRows.add(_ManualLineControllers()));
+  }
+
+  void _removeManualRow(int index) {
+    setState(() {
+      _manualRows.removeAt(index).dispose();
+    });
+  }
+
+  /// Creates a paddy procurement pre-filled from this completed inward vehicle
+  /// entry, then opens the draft form. Idempotent: if a procurement already
+  /// links to this entry, we just reopen it instead of creating a duplicate.
+  Future<void> _convertToProcurement() async {
+    if (widget.entryId == null) return;
+    final repo = ref.read(paddyProcurementRepositoryProvider);
+    final entry = await ref.read(vehicleEntryProvider(widget.entryId!).future);
+    if (entry == null) return;
+
+    int procurementId;
+    final existing = await repo.findByVehicleEntryId(entry.id);
+    if (existing != null) {
+      procurementId = existing.id!;
+    } else {
+      final companion = PaddyProcurementCompanion(
+        date: entry.date,
+        slipNo: entry.slipNo,
+        voucherNo: entry.voucherNo,
+        rstManual: entry.rstManual,
+        truckNo: entry.vehicleNo,
+        partyName: entry.partyName,
+        partyId: entry.partyId,
+        productId: entry.productId,
+        grossWeight: entry.firstWeight,
+        tareWeight: entry.secondWeight,
+        netWeight: entry.netWeight,
+        totalBags: entry.bags,
+        vehicleEntryId: entry.id,
+        status: 'draft',
+      );
+      procurementId = await repo.createProcurement(companion);
+    }
+
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PaddyProcurementForm(procurementId: procurementId),
+      ),
+    );
   }
 
   Future<void> _pickDate(TextEditingController ctrl, DateTime initial,
@@ -248,9 +329,19 @@ class _VehicleEntryDetailPageState
 
     return Scaffold(
       appBar: AppBar(
-          title: Text(widget.entryId == null
-              ? 'New Vehicle Entry'
-              : 'Edit Vehicle Entry')),
+        title: Text(widget.entryId == null
+            ? 'New Vehicle Entry'
+            : 'Edit Vehicle Entry'),
+        actions: [
+          if (widget.entryId != null && _complete && _entryType == 'inward')
+            TextButton.icon(
+              onPressed: _convertToProcurement,
+              icon: const Icon(Icons.move_down, color: Colors.white),
+              label: const Text('Convert to Procurement',
+                  style: TextStyle(color: Colors.white)),
+            ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -394,9 +485,39 @@ class _VehicleEntryDetailPageState
                 ],
               ),
               const SizedBox(height: 8),
+              // 👇 WEIGH MODE SEGMENTED BUTTON
+              Row(
+                children: [
+                  const Text('Weigh Mode:  ',
+                      style: TextStyle(fontWeight: FontWeight.w500)),
+                  Expanded(
+                    child: SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(
+                            value: 'weighbridge',
+                            label: Text('Weighbridge'),
+                            icon: Icon(Icons.scale, size: 16)),
+                        ButtonSegment(
+                            value: 'manual',
+                            label: Text('Manual'),
+                            icon: Icon(Icons.edit_note, size: 16)),
+                      ],
+                      selected: {_weighMode},
+                      onSelectionChanged: (s) {
+                        setState(() {
+                          _weighMode = s.first;
+                          _updateNetWeight();
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
               const Text('Weights',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
+              if (_weighMode == 'weighbridge') ...[
               Row(
                 children: [
                   Expanded(
@@ -451,6 +572,65 @@ class _VehicleEntryDetailPageState
                   ),
                 ],
               ),
+              ],
+              if (_weighMode == 'manual') ...[
+                for (int i = 0; i < _manualRows.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: TextFormField(
+                            controller: _manualRows[i].productCtrl,
+                            decoration: const InputDecoration(
+                                labelText: 'Item',
+                                isDense: true,
+                                border: OutlineInputBorder()),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          flex: 2,
+                          child: TextFormField(
+                            controller: _manualRows[i].bagsCtrl,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                                labelText: 'Bags',
+                                isDense: true,
+                                border: OutlineInputBorder()),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          flex: 2,
+                          child: TextFormField(
+                            controller: _manualRows[i].weightCtrl,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                                labelText: 'Wt',
+                                isDense: true,
+                                border: OutlineInputBorder()),
+                            onChanged: (_) => _updateNetWeight(),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle_outline,
+                              color: Colors.red),
+                          onPressed: () => _removeManualRow(i),
+                        ),
+                      ],
+                    ),
+                  ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: _addManualRow,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add line'),
+                  ),
+                ),
+              ],
               const SizedBox(height: 8),
               // 👇 Net Weight display with correct calculation
               Text(
@@ -544,5 +724,29 @@ class _VehicleEntryDetailPageState
         ),
       ),
     );
+  }
+}
+
+/// Holds the text controllers for one manual weight line in Mode B.
+class _ManualLineControllers {
+  _ManualLineControllers()
+      : productCtrl = TextEditingController(),
+        bagsCtrl = TextEditingController(),
+        weightCtrl = TextEditingController();
+
+  _ManualLineControllers.fromLine(ManualWeightLine l)
+      : productCtrl = TextEditingController(text: l.product),
+        bagsCtrl = TextEditingController(text: l.bags?.toString() ?? ''),
+        weightCtrl =
+            TextEditingController(text: l.weight == 0 ? '' : l.weight.toString());
+
+  final TextEditingController productCtrl;
+  final TextEditingController bagsCtrl;
+  final TextEditingController weightCtrl;
+
+  void dispose() {
+    productCtrl.dispose();
+    bagsCtrl.dispose();
+    weightCtrl.dispose();
   }
 }

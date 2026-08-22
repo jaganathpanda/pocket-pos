@@ -1,5 +1,38 @@
 import 'package:equatable/equatable.dart';
 
+/// A single manual weighment line (used when weighMode == 'manual'): the miller
+/// weighs items one by one on a platform scale (paddy, rice, bran, husk…).
+class ManualWeightLine extends Equatable {
+  final String product;
+  final int? bags;
+  final double weight;
+
+  const ManualWeightLine({
+    required this.product,
+    this.bags,
+    required this.weight,
+  });
+
+  ManualWeightLine copyWith({String? product, int? bags, double? weight}) =>
+      ManualWeightLine(
+        product: product ?? this.product,
+        bags: bags ?? this.bags,
+        weight: weight ?? this.weight,
+      );
+
+  Map<String, dynamic> toMap() =>
+      {'product': product, 'bags': bags, 'weight': weight};
+
+  factory ManualWeightLine.fromMap(Map<String, dynamic> m) => ManualWeightLine(
+        product: m['product'] as String? ?? '',
+        bags: (m['bags'] as num?)?.toInt(),
+        weight: (m['weight'] as num?)?.toDouble() ?? 0,
+      );
+
+  @override
+  List<Object?> get props => [product, bags, weight];
+}
+
 class VehicleEntry extends Equatable {
   final int id;
   final DateTime date;
@@ -24,6 +57,8 @@ class VehicleEntry extends Equatable {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String entryType;
+  final String weighMode; // 'weighbridge' | 'manual'
+  final List<ManualWeightLine> manualWeights;
 
   // Joined fields for display (not stored)
   final String? productName;
@@ -55,6 +90,8 @@ class VehicleEntry extends Equatable {
     this.productName,
     this.partyNameFromSupplier,
     this.entryType = 'inward',
+    this.weighMode = 'weighbridge',
+    this.manualWeights = const [],
   });
 
   @override
@@ -86,6 +123,8 @@ class VehicleEntryCompanion {
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final String? entryType;
+  final String? weighMode;
+  final List<ManualWeightLine>? manualWeights;
   VehicleEntryCompanion({
     this.id,
     this.date,
@@ -110,5 +149,7 @@ class VehicleEntryCompanion {
     this.createdAt,
     this.updatedAt,
     this.entryType,
+    this.weighMode,
+    this.manualWeights,
   });
 }

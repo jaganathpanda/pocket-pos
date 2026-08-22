@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart';
 import 'paddy_procurement.dart';
 
 abstract class PaddyProcurementRepository {
@@ -12,6 +11,10 @@ abstract class PaddyProcurementRepository {
 
   /// Get a single procurement by ID
   Future<PaddyProcurement?> getProcurement(int id);
+
+  /// Finds the procurement created from a given weighbridge vehicle entry, if
+  /// any (used for the "Convert to Procurement" idempotency check).
+  Future<PaddyProcurement?> findByVehicleEntryId(int vehicleEntryId);
 
   /// Create a new procurement draft
   Future<int> createProcurement(PaddyProcurementCompanion data);
