@@ -38,6 +38,23 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
   late final TextEditingController _gunnyWtLessCtrl;
   late final TextEditingController _totalAmountCtrl;
 
+  late final TextEditingController _voucherNoCtrl;
+  late final TextEditingController _rstManualCtrl;
+  late final TextEditingController _areaCtrl;
+  late final TextEditingController _emptyWtCtrl;
+  late final TextEditingController _kgPerBagCtrl;
+  late final TextEditingController _eBagCtrl;
+  late final TextEditingController _ePktCtrl;
+  late final TextEditingController _unloadTimeCtrl;
+  late final TextEditingController _productNameCtrl;
+  late final TextEditingController _truckRentCtrl;
+  late final TextEditingController _otherAmountCtrl;
+  late final TextEditingController _truckAccountCtrl;
+  late final TextEditingController _freightAmountCtrl;
+  late final TextEditingController _mandiInvoiceCtrl;
+  late final TextEditingController _tenderNumberCtrl;
+  late final TextEditingController _commissionAgentCtrl;
+
   DateTime _date = DateTime.now();
   String _procurementType = 'Kharif';
   String _marketType = 'MKT';
@@ -81,6 +98,23 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
     _gunnyWtLessCtrl = TextEditingController();
     _totalAmountCtrl = TextEditingController();
 
+    _voucherNoCtrl = TextEditingController();
+    _rstManualCtrl = TextEditingController();
+    _areaCtrl = TextEditingController();
+    _emptyWtCtrl = TextEditingController();
+    _kgPerBagCtrl = TextEditingController();
+    _eBagCtrl = TextEditingController();
+    _ePktCtrl = TextEditingController();
+    _unloadTimeCtrl = TextEditingController();
+    _productNameCtrl = TextEditingController();
+    _truckRentCtrl = TextEditingController();
+    _otherAmountCtrl = TextEditingController();
+    _truckAccountCtrl = TextEditingController();
+    _freightAmountCtrl = TextEditingController();
+    _mandiInvoiceCtrl = TextEditingController();
+    _tenderNumberCtrl = TextEditingController();
+    _commissionAgentCtrl = TextEditingController();
+
     if (widget.procurementId != null) {
       _loadProcurement(widget.procurementId!);
     }
@@ -101,6 +135,23 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
     _otherCutCtrl.dispose();
     _gunnyWtLessCtrl.dispose();
     _totalAmountCtrl.dispose();
+
+    _voucherNoCtrl.dispose();
+    _rstManualCtrl.dispose();
+    _areaCtrl.dispose();
+    _emptyWtCtrl.dispose();
+    _kgPerBagCtrl.dispose();
+    _eBagCtrl.dispose();
+    _ePktCtrl.dispose();
+    _unloadTimeCtrl.dispose();
+    _productNameCtrl.dispose();
+    _truckRentCtrl.dispose();
+    _otherAmountCtrl.dispose();
+    _truckAccountCtrl.dispose();
+    _freightAmountCtrl.dispose();
+    _mandiInvoiceCtrl.dispose();
+    _tenderNumberCtrl.dispose();
+    _commissionAgentCtrl.dispose();
     super.dispose();
   }
 
@@ -114,7 +165,12 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
         _partyNameCtrl.text = procurement.partyName;
         _slipNoCtrl.text = procurement.slipNo;
         _date = procurement.date;
-        _procurementType = procurement.procurementType;
+        // The form uses seasons (Kharif/Rabi/Summer); older/converted records
+        // may carry the domain default 'local'/'mandi', which isn't in the list.
+        _procurementType =
+            _procurementTypes.contains(procurement.procurementType)
+                ? procurement.procurementType
+                : 'Kharif';
         _vehicleNoCtrl.text = procurement.truckNo ?? '';
         _marketType = procurement.marketType;
         _grossWtCtrl.text = (procurement.grossWeight ?? 0).toString();
@@ -129,7 +185,12 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
         _bagReturn = procurement.bagReturn ? 'Yes' : 'No';
         _gunnyWtLessCtrl.text = '0';
         _totalAmountCtrl.text = (procurement.totalAmount ?? 0).toString();
-        _vType = procurement.vType ?? 'Bill';
+        // Normalize case-insensitively: stored records may use 'BILL'
+        // (the domain default) which isn't literally in _vTypeOptions.
+        _vType = _vTypeOptions.firstWhere(
+          (o) => o.toLowerCase() == (procurement.vType ?? 'bill').toLowerCase(),
+          orElse: () => 'Bill',
+        );
         _rateCalculation = procurement.rateCalculation ?? 'Qntl';
         _quantityNew = procurement.quantityNew ?? 'N';
         _deliveryType = procurement.deliveryType ?? 'MD';
@@ -298,6 +359,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                         return DropdownMenuItem(
                           value: type,
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 type == 'Bill'
@@ -310,13 +372,16 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                               const SizedBox(width: 8),
                               Text(type),
                               const SizedBox(width: 8),
-                              Text(
-                                type == 'Bill'
-                                    ? '(Farmer purchase)'
-                                    : '(Govt procurement)',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey,
+                              Flexible(
+                                child: Text(
+                                  type == 'Bill'
+                                      ? '(Farmer purchase)'
+                                      : '(Govt procurement)',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey,
+                                  ),
                                 ),
                               ),
                             ],
@@ -353,7 +418,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                     TooltipFormField(
                       labelText: 'Voucher No',
                       tooltip: Tooltips.paddyProcurement.voucherNo,
-                      controller: TextEditingController(), // Add if needed
+                      controller: _voucherNoCtrl, // Add if needed
                       textCapitalization: TextCapitalization.characters,
                     ),
                     const SizedBox(height: 12),
@@ -362,7 +427,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                     TooltipFormField(
                       labelText: 'RST Manual',
                       tooltip: Tooltips.paddyProcurement.rstManual,
-                      controller: TextEditingController(), // Add if needed
+                      controller: _rstManualCtrl, // Add if needed
                       keyboardType: TextInputType.number,
                     ),
                     const SizedBox(height: 12),
@@ -371,7 +436,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                     TooltipFormField(
                       labelText: 'Area',
                       tooltip: Tooltips.paddyProcurement.area,
-                      controller: TextEditingController(), // Add if needed
+                      controller: _areaCtrl, // Add if needed
                       textCapitalization: TextCapitalization.words,
                     ),
                     const SizedBox(height: 16),
@@ -417,7 +482,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                     TooltipFormField(
                       labelText: 'Empty Weight',
                       tooltip: Tooltips.paddyProcurement.emptyWeight,
-                      controller: TextEditingController(), // Add if needed
+                      controller: _emptyWtCtrl, // Add if needed
                       keyboardType: TextInputType.number,
                       suffixText: 'Kg',
                     ),
@@ -810,7 +875,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                     TooltipFormField(
                       labelText: 'Kg/Bag',
                       tooltip: Tooltips.paddyProcurement.kgPerBag,
-                      controller: TextEditingController(), // Add if needed
+                      controller: _kgPerBagCtrl, // Add if needed
                       keyboardType: TextInputType.number,
                       suffixText: 'Kg',
                     ),
@@ -820,7 +885,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                     TooltipFormField(
                       labelText: 'E Bag',
                       tooltip: Tooltips.paddyProcurement.eBag,
-                      controller: TextEditingController(), // Add if needed
+                      controller: _eBagCtrl, // Add if needed
                       keyboardType: TextInputType.number,
                       suffixText: 'Kg',
                     ),
@@ -830,7 +895,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                     TooltipFormField(
                       labelText: 'E Pkt',
                       tooltip: Tooltips.paddyProcurement.ePkt,
-                      controller: TextEditingController(), // Add if needed
+                      controller: _ePktCtrl, // Add if needed
                       keyboardType: TextInputType.number,
                       suffixText: 'Kg',
                     ),
@@ -840,7 +905,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                     TooltipFormField(
                       labelText: 'Unload Time',
                       tooltip: Tooltips.paddyProcurement.unloadTime,
-                      controller: TextEditingController(), // Add if needed
+                      controller: _unloadTimeCtrl, // Add if needed
                       keyboardType: TextInputType.number,
                       suffixText: 'hrs',
                     ),
@@ -873,7 +938,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                     TooltipFormField(
                       labelText: 'Product Name',
                       tooltip: Tooltips.paddyProcurement.productName,
-                      controller: TextEditingController(), // Add if needed
+                      controller: _productNameCtrl, // Add if needed
                       textCapitalization: TextCapitalization.words,
                     ),
                     const SizedBox(height: 12),
@@ -1144,6 +1209,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                                       ),
                                     ),
                                   ),
+                                  isExpanded: true,
                                   value: _qualityGrade,
                                   items: _qualityGrades.map((grade) {
                                     return DropdownMenuItem(
@@ -1252,7 +1318,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                     TooltipFormField(
                       labelText: 'Truck Rent',
                       tooltip: Tooltips.paddyProcurement.truckRent,
-                      controller: TextEditingController(), // Add if needed
+                      controller: _truckRentCtrl, // Add if needed
                       keyboardType: TextInputType.number,
                       suffixText: '₹',
                     ),
@@ -1262,7 +1328,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                     TooltipFormField(
                       labelText: 'Other Amount',
                       tooltip: Tooltips.paddyProcurement.otherAmount,
-                      controller: TextEditingController(), // Add if needed
+                      controller: _otherAmountCtrl, // Add if needed
                       keyboardType: TextInputType.number,
                       suffixText: '₹',
                     ),
@@ -1298,7 +1364,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                     TooltipFormField(
                       labelText: 'Truck Account',
                       tooltip: Tooltips.paddyProcurement.truckAccount,
-                      controller: TextEditingController(), // Add if needed
+                      controller: _truckAccountCtrl, // Add if needed
                       textCapitalization: TextCapitalization.words,
                     ),
                     const SizedBox(height: 12),
@@ -1307,7 +1373,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                     TooltipFormField(
                       labelText: 'Freight Amount',
                       tooltip: Tooltips.paddyProcurement.freightAmount,
-                      controller: TextEditingController(), // Add if needed
+                      controller: _freightAmountCtrl, // Add if needed
                       keyboardType: TextInputType.number,
                       suffixText: '₹',
                     ),
@@ -1324,7 +1390,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                     TooltipFormField(
                       labelText: 'Mandi Invoice No',
                       tooltip: Tooltips.paddyProcurement.mandiInvoiceNo,
-                      controller: TextEditingController(), // Add if needed
+                      controller: _mandiInvoiceCtrl, // Add if needed
                       textCapitalization: TextCapitalization.characters,
                     ),
                     const SizedBox(height: 12),
@@ -1333,7 +1399,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                     TooltipFormField(
                       labelText: 'Tender Number',
                       tooltip: Tooltips.paddyProcurement.tenderNumber,
-                      controller: TextEditingController(), // Add if needed
+                      controller: _tenderNumberCtrl, // Add if needed
                       textCapitalization: TextCapitalization.characters,
                     ),
                     const SizedBox(height: 12),
@@ -1342,7 +1408,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                     TooltipFormField(
                       labelText: 'Commission Agent',
                       tooltip: Tooltips.paddyProcurement.commissionAgent,
-                      controller: TextEditingController(), // Add if needed
+                      controller: _commissionAgentCtrl, // Add if needed
                       textCapitalization: TextCapitalization.words,
                     ),
                     const SizedBox(height: 24),

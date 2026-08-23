@@ -259,6 +259,13 @@ class _VehicleEntryDetailPageState
     if (existing != null) {
       procurementId = existing.id!;
     } else {
+      // Resolve the product name from the loaded products (the repo requires a
+      // non-null productName; a vehicle entry only stores the productId).
+      final products =
+          ref.read(productsProvider).valueOrNull ?? const <Product>[];
+      final product = products.where((p) => p.id == entry.productId);
+      final productName = product.isEmpty ? 'Paddy' : product.first.name;
+
       final companion = PaddyProcurementCompanion(
         date: entry.date,
         slipNo: entry.slipNo,
@@ -268,10 +275,11 @@ class _VehicleEntryDetailPageState
         partyName: entry.partyName,
         partyId: entry.partyId,
         productId: entry.productId,
+        productName: productName,
         grossWeight: entry.firstWeight,
         tareWeight: entry.secondWeight,
         netWeight: entry.netWeight,
-        totalBags: entry.bags,
+        totalBags: entry.bags ?? 0,
         vehicleEntryId: entry.id,
         status: 'draft',
       );
@@ -446,6 +454,7 @@ class _VehicleEntryDetailPageState
                       ],
                       onChanged: (v) => setState(() => _selectedProductId = v),
                       validator: (v) => v != null ? null : 'Required',
+                      isExpanded: true, 
                     ),
                   ),
                 ],
@@ -490,7 +499,7 @@ class _VehicleEntryDetailPageState
                 children: [
                   const Text('Weigh Mode:  ',
                       style: TextStyle(fontWeight: FontWeight.w500)),
-                  Expanded(
+                  Flexible(
                     child: SegmentedButton<String>(
                       segments: const [
                         ButtonSegment(
@@ -520,7 +529,7 @@ class _VehicleEntryDetailPageState
               if (_weighMode == 'weighbridge') ...[
               Row(
                 children: [
-                  Expanded(
+                  Flexible(
                     child: TextFormField(
                       controller: _firstWtCtrl,
                       keyboardType: TextInputType.number,
