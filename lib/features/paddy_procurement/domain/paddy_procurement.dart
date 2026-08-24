@@ -59,6 +59,7 @@ class PaddyProcurement extends Equatable {
   final int? commissionAgentId;
   final int? warehouseId;
   final int? vehicleEntryId;
+  final String? weighMode; // 'weighbridge' or 'manual' (from the vehicle entry)
   final double? remainingStock;
   final String status; // 'draft', 'completed', 'cancelled'
   final DateTime createdAt;
@@ -123,6 +124,7 @@ class PaddyProcurement extends Equatable {
     this.commissionAgentId,
     this.warehouseId,
     this.vehicleEntryId,
+    this.weighMode,
     this.remainingStock,
     this.status = 'draft',
     required this.createdAt,
@@ -320,6 +322,7 @@ class PaddyProcurementCompanion {
   final int? commissionAgentId;
   final int? warehouseId;
   final int? vehicleEntryId;
+  final String? weighMode;
   final double? remainingStock;
   final String? status;
   final DateTime? createdAt;
@@ -384,6 +387,7 @@ class PaddyProcurementCompanion {
     this.commissionAgentId,
     this.warehouseId,
     this.vehicleEntryId,
+    this.weighMode,
     this.remainingStock,
     this.status,
     this.createdAt,
@@ -452,6 +456,7 @@ class PaddyProcurementCompanion {
       commissionAgentId: p.commissionAgentId,
       warehouseId: p.warehouseId,
       vehicleEntryId: p.vehicleEntryId,
+      weighMode: p.weighMode,
       remainingStock: p.remainingStock,
       status: p.status,
       createdAt: p.createdAt,

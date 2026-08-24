@@ -76,7 +76,7 @@ class FirestorePaddyProcurementRepository
   @override
   Future<int> createProcurement(PaddyProcurementCompanion data) async {
     final id = newIntId();
-    final now = DateTime.now();
+    final totalBags = (data.juteBags ?? 0) + (data.plasticBags ?? 0);
 
     await _col.doc('$id').set({
       'date': data.date,
@@ -94,9 +94,9 @@ class FirestorePaddyProcurementRepository
       'tareWeight': data.tareWeight,
       'juteBags': data.juteBags ?? 0,
       'plasticBags': data.plasticBags ?? 0,
-      'totalBags': (data.juteBags ?? 0) + (data.plasticBags ?? 0),
-      'avgBagWeight': data.netWeight != null && data.totalBags! > 0
-          ? data.netWeight! / data.totalBags!
+      'totalBags': totalBags,
+      'avgBagWeight': data.netWeight != null && totalBags > 0
+          ? data.netWeight! / totalBags
           : 0,
       'gnyWtLess': data.gnyWtLess ?? false,
       'bagReturn': data.bagReturn ?? false,
@@ -139,6 +139,7 @@ class FirestorePaddyProcurementRepository
       'commissionAgentId': data.commissionAgentId,
       'warehouseId': data.warehouseId,
       'vehicleEntryId': data.vehicleEntryId,
+      'weighMode': data.weighMode ?? 'weighbridge',
       'remainingStock': data.netWeight ?? 0,
       'status': 'draft',
       'createdAt': FieldValue.serverTimestamp(),
@@ -150,6 +151,7 @@ class FirestorePaddyProcurementRepository
   @override
   Future<void> updateProcurement(PaddyProcurementCompanion data) async {
     if (data.id == null) throw Exception('ID required for update');
+    final totalBags = (data.juteBags ?? 0) + (data.plasticBags ?? 0);
 
     await _col.doc('${data.id}').set({
       'date': data.date,
@@ -167,9 +169,9 @@ class FirestorePaddyProcurementRepository
       'tareWeight': data.tareWeight,
       'juteBags': data.juteBags ?? 0,
       'plasticBags': data.plasticBags ?? 0,
-      'totalBags': (data.juteBags ?? 0) + (data.plasticBags ?? 0),
-      'avgBagWeight': data.netWeight != null && data.totalBags! > 0
-          ? data.netWeight! / data.totalBags!
+      'totalBags': totalBags,
+      'avgBagWeight': data.netWeight != null && totalBags > 0
+          ? data.netWeight! / totalBags
           : 0,
       'gnyWtLess': data.gnyWtLess ?? false,
       'bagReturn': data.bagReturn ?? false,
@@ -212,6 +214,7 @@ class FirestorePaddyProcurementRepository
       'commissionAgentId': data.commissionAgentId,
       'warehouseId': data.warehouseId,
       'vehicleEntryId': data.vehicleEntryId,
+      'weighMode': data.weighMode ?? 'weighbridge',
       'status': data.status ?? 'draft',
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
@@ -364,6 +367,7 @@ class FirestorePaddyProcurementRepository
       commissionAgentId: (d['commissionAgentId'] as num?)?.toInt(),
       warehouseId: (d['warehouseId'] as num?)?.toInt(),
       vehicleEntryId: (d['vehicleEntryId'] as num?)?.toInt(),
+      weighMode: d['weighMode'] as String? ?? 'weighbridge',
       remainingStock: num_(d['remainingStock']),
       status: d['status'] as String? ?? 'draft',
       createdAt: (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),

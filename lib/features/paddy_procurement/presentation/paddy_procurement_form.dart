@@ -66,6 +66,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
   String _deliveryType = 'MD';
   String _truckRentType = 'Qntl';
   String _transportType = 'Direct';
+  String _weighMode = 'weighbridge'; // from the source vehicle entry
   bool _isLoading = false;
   int? _editingId;
 
@@ -172,6 +173,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                 ? procurement.procurementType
                 : 'Kharif';
         _vehicleNoCtrl.text = procurement.truckNo ?? '';
+        _weighMode = procurement.weighMode ?? 'weighbridge';
         _marketType = procurement.marketType;
         _grossWtCtrl.text = (procurement.grossWeight ?? 0).toString();
         _tareWtCtrl.text = (procurement.tareWeight ?? 0).toString();
@@ -208,6 +210,11 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
+
+  /// Recompute + refresh the read-only displays (Total Bags, Net Weight,
+  /// Avg Bag Weight, Total Amount) live as the user types. Safe to call from
+  /// onChanged; do NOT call from inside another setState.
+  void _recalc() => setState(_calculateTotal);
 
   void _calculateTotal() {
     final gross = double.tryParse(_grossWtCtrl.text) ?? 0;
@@ -262,6 +269,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
       totalAmount: double.tryParse(_totalAmountCtrl.text) ?? 0,
       netWeight: gross - tare - dustCut - polCut - otherCut - gunnyLess,
       status: 'draft',
+      weighMode: _weighMode,
       vType: _vType,
       rateCalculation: _rateCalculation,
       quantityNew: _quantityNew,
@@ -589,6 +597,9 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                     ),
                     const SizedBox(height: 12),
 
+                    // Gross/Tare/Net weighbridge block — hidden for manual-weigh
+                    // entries (there is no weighbridge reading to show).
+                    if (_weighMode != 'manual') ...[
                     // Gross Weight
                     TooltipFormField(
                       labelText: 'Gr.Wt',
@@ -597,7 +608,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                       keyboardType: TextInputType.number,
                       isRequired: true,
                       suffixText: 'Kg',
-                      onChanged: (_) => _calculateTotal(),
+                      onChanged: (_) => _recalc(),
                       validator: (v) {
                         if (v?.trim().isEmpty ?? true) return 'Required';
                         if (double.tryParse(v!) == null) return 'Invalid';
@@ -614,7 +625,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                       keyboardType: TextInputType.number,
                       isRequired: true,
                       suffixText: 'Kg',
-                      onChanged: (_) => _calculateTotal(),
+                      onChanged: (_) => _recalc(),
                       validator: (v) {
                         if (v?.trim().isEmpty ?? true) return 'Required';
                         if (double.tryParse(v!) == null) return 'Invalid';
@@ -661,6 +672,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    ],
 
                     // Jute Bags
                     TooltipFormField(
@@ -669,6 +681,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                       controller: _jutePktCtrl,
                       keyboardType: TextInputType.number,
                       isRequired: true,
+                      onChanged: (_) => _recalc(),
                       validator: (v) {
                         if (v?.trim().isEmpty ?? true) return 'Required';
                         if (int.tryParse(v!) == null) return 'Invalid';
@@ -684,6 +697,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                       controller: _plasticPktCtrl,
                       keyboardType: TextInputType.number,
                       isRequired: true,
+                      onChanged: (_) => _recalc(),
                       validator: (v) {
                         if (v?.trim().isEmpty ?? true) return 'Required';
                         if (int.tryParse(v!) == null) return 'Invalid';
@@ -776,7 +790,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                       controller: _gunnyWtLessCtrl,
                       keyboardType: TextInputType.number,
                       suffixText: 'Kg',
-                      onChanged: (_) => _calculateTotal(),
+                      onChanged: (_) => _recalc(),
                     ),
                     const SizedBox(height: 12),
 
@@ -827,7 +841,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                       controller: _otherCutCtrl,
                       keyboardType: TextInputType.number,
                       suffixText: 'Kg',
-                      onChanged: (_) => _calculateTotal(),
+                      onChanged: (_) => _recalc(),
                     ),
                     const SizedBox(height: 16),
 
@@ -1029,7 +1043,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                       keyboardType: TextInputType.number,
                       isRequired: true,
                       suffixText: '₹/Qntl',
-                      onChanged: (_) => _calculateTotal(),
+                      onChanged: (_) => _recalc(),
                       validator: (v) {
                         if (v?.trim().isEmpty ?? true) return 'Required';
                         if (double.tryParse(v!) == null) return 'Invalid';
@@ -1038,48 +1052,51 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                     ),
                     const SizedBox(height: 12),
 
-                    // Total Amount (auto-calculated)
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.green.shade200),
+                    // Total Amount (auto-calculated) — not shown for
+                    // Market/Mandi ('MKT'): mandi pricing isn't derived here.
+                    if (_marketType != 'MKT') ...[
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.currency_rupee,
+                                color: Colors.green, size: 20),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Total Amount:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '₹${_totalAmountCtrl.text.isEmpty ? '0.00' : _totalAmountCtrl.text}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: Colors.green,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Tooltip(
+                              message: Tooltips.paddyProcurement.totalAmount,
+                              child: Icon(
+                                Icons.info_outline,
+                                size: 16,
+                                color: Colors.green.shade400,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.currency_rupee,
-                              color: Colors.green, size: 20),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Total Amount:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            '₹${_totalAmountCtrl.text.isEmpty ? '0.00' : _totalAmountCtrl.text}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color: Colors.green,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Tooltip(
-                            message: Tooltips.paddyProcurement.totalAmount,
-                            child: Icon(
-                              Icons.info_outline,
-                              size: 16,
-                              color: Colors.green.shade400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
+                    ],
 
                     // ── QUALITY CUTS SECTION ──
                     _buildSectionHeader(
@@ -1123,7 +1140,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                                   controller: _dustCutCtrl,
                                   keyboardType: TextInputType.number,
                                   suffixText: 'Kg',
-                                  onChanged: (_) => _calculateTotal(),
+                                  onChanged: (_) => _recalc(),
                                 ),
                               ),
                             ],
@@ -1148,7 +1165,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                                   controller: _polCutCtrl,
                                   keyboardType: TextInputType.number,
                                   suffixText: 'Kg',
-                                  onChanged: (_) => _calculateTotal(),
+                                  onChanged: (_) => _recalc(),
                                 ),
                               ),
                             ],
@@ -1173,7 +1190,7 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                                   controller: _otherCutCtrl,
                                   keyboardType: TextInputType.number,
                                   suffixText: 'Kg',
-                                  onChanged: (_) => _calculateTotal(),
+                                  onChanged: (_) => _recalc(),
                                 ),
                               ),
                             ],

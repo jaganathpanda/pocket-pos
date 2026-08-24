@@ -34,6 +34,13 @@ class PocketPosApp extends ConsumerWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF005D4D)),
         useMaterial3: true,
+        // On touch devices Flutter tooltips only appear on long-press, which
+        // users don't discover. Make every tooltip show on tap and linger a
+        // few seconds so the info icons work on mobile.
+        tooltipTheme: const TooltipThemeData(
+          triggerMode: TooltipTriggerMode.tap,
+          showDuration: Duration(seconds: 3),
+        ),
       ),
       routerConfig: router,
     );

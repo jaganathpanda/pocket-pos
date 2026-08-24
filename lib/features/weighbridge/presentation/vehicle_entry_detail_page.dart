@@ -47,13 +47,23 @@ class _VehicleEntryDetailPageState
   DateTime? _firstTime;
   DateTime? _secondTime;
   DateTime? _completeDate;
-  String _entryType = 'inward'; // 👈 ADDED: 'inward' or 'outward'
-  String _weighMode = 'weighbridge'; // 'weighbridge' or 'manual'
+  String _entryType = 'inward';
+  String _weighMode = 'weighbridge';
   final List<_ManualLineControllers> _manualRows = [];
 
   @override
   void initState() {
     super.initState();
+    _initControllers();
+
+    if (widget.entryId != null) {
+      _loadEntry();
+    } else {
+      _setDefaults();
+    }
+  }
+
+  void _initControllers() {
     _dateCtrl = TextEditingController();
     _slipNoCtrl = TextEditingController();
     _voucherCtrl = TextEditingController();
@@ -69,18 +79,17 @@ class _VehicleEntryDetailPageState
     _remarkCtrl = TextEditingController();
     _completeCodeCtrl = TextEditingController();
     _completeDateCtrl = TextEditingController();
+  }
 
-    if (widget.entryId != null) {
-      _loadEntry();
-    } else {
-      // Set defaults
-      _date = DateTime.now();
-      _dateCtrl.text = DateFormat('dd/MM/yyyy').format(_date);
-      _slipNoCtrl.text = _generateSlipNo();
-      _firstTime = DateTime.now();
-      _firstTimeCtrl.text = DateFormat('dd/MM/yyyy HH:mm').format(_firstTime!);
-      _entryType = 'inward';
-    }
+  void _setDefaults() {
+    _date = DateTime.now();
+    _dateCtrl.text = DateFormat('dd/MM/yyyy').format(_date);
+    _slipNoCtrl.text = _generateSlipNo();
+    _firstTime = DateTime.now();
+    _firstTimeCtrl.text = DateFormat('dd/MM/yyyy HH:mm').format(_firstTime!);
+    _entryType = 'inward';
+    _weighMode = 'weighbridge';
+    _manualRows.clear();
   }
 
   @override
@@ -112,52 +121,68 @@ class _VehicleEntryDetailPageState
   }
 
   Future<void> _loadEntry() async {
-    final entry = await ref.read(vehicleEntryProvider(widget.entryId!).future);
-    if (entry == null) return;
-    setState(() {
-      _date = entry.date;
-      _dateCtrl.text = DateFormat('dd/MM/yyyy').format(_date);
-      _slipNoCtrl.text = entry.slipNo;
-      _voucherCtrl.text = entry.voucherNo ?? '';
-      _vehicleCtrl.text = entry.vehicleNo;
-      _rstCtrl.text = entry.rstManual ?? '';
-      _partyCtrl.text = entry.partyName;
-      _selectedPartyId = entry.partyId;
-      _selectedProductId = entry.productId;
-      _entryType = entry.entryType ?? 'inward'; // 👈 set from loaded entry
-      _weighMode = entry.weighMode;
-      _manualRows
-        ..forEach((r) => r.dispose())
-        ..clear();
-      for (final l in entry.manualWeights) {
-        _manualRows.add(_ManualLineControllers.fromLine(l));
+    try {
+      final entry =
+          await ref.read(vehicleEntryProvider(widget.entryId!).future);
+      if (entry == null) return;
+
+      setState(() {
+        _date = entry.date;
+        _dateCtrl.text = DateFormat('dd/MM/yyyy').format(_date);
+        _slipNoCtrl.text = entry.slipNo;
+        _voucherCtrl.text = entry.voucherNo ?? '';
+        _vehicleCtrl.text = entry.vehicleNo;
+        _rstCtrl.text = entry.rstManual ?? '';
+        _partyCtrl.text = entry.partyName;
+        _selectedPartyId = entry.partyId;
+        _selectedProductId = entry.productId;
+        _entryType = entry.entryType ?? 'inward';
+        _weighMode = entry.weighMode ?? 'weighbridge';
+
+        // Clear and rebuild manual rows
+        _manualRows.forEach((r) => r.dispose());
+        _manualRows.clear();
+        for (final l in entry.manualWeights) {
+          _manualRows.add(_ManualLineControllers.fromLine(l));
+        }
+
+        _firstWtCtrl.text = entry.firstWeight.toString();
+        _firstTime = entry.firstWeightTime;
+        _firstTimeCtrl.text = entry.firstWeightTime != null
+            ? DateFormat('dd/MM/yyyy HH:mm').format(entry.firstWeightTime!)
+            : '';
+        _secondWtCtrl.text = entry.secondWeight.toString();
+        _secondTime = entry.secondWeightTime;
+        _secondTimeCtrl.text = entry.secondWeightTime != null
+            ? DateFormat('dd/MM/yyyy HH:mm').format(entry.secondWeightTime!)
+            : '';
+        _bagsCtrl.text = entry.bags?.toString() ?? '';
+        _lotCtrl.text = entry.lotNumber ?? '';
+        _remarkCtrl.text = entry.remark ?? '';
+        _complete = entry.complete;
+        _completeCodeCtrl.text = entry.completeCode ?? '';
+        _completeDate = entry.completeDate;
+        _completeDateCtrl.text = entry.completeDate != null
+            ? DateFormat('dd/MM/yyyy').format(entry.completeDate!)
+            : '';
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading entry: $e')),
+        );
       }
-      _firstWtCtrl.text = entry.firstWeight.toString();
-      _firstTime = entry.firstWeightTime;
-      _firstTimeCtrl.text = entry.firstWeightTime != null
-          ? DateFormat('dd/MM/yyyy HH:mm').format(entry.firstWeightTime!)
-          : '';
-      _secondWtCtrl.text = entry.secondWeight.toString();
-      _secondTime = entry.secondWeightTime;
-      _secondTimeCtrl.text = entry.secondWeightTime != null
-          ? DateFormat('dd/MM/yyyy HH:mm').format(entry.secondWeightTime!)
-          : '';
-      _bagsCtrl.text = entry.bags?.toString() ?? '';
-      _lotCtrl.text = entry.lotNumber ?? '';
-      _remarkCtrl.text = entry.remark ?? '';
-      _complete = entry.complete;
-      _completeCodeCtrl.text = entry.completeCode ?? '';
-      _completeDate = entry.completeDate;
-      _completeDateCtrl.text = entry.completeDate != null
-          ? DateFormat('dd/MM/yyyy').format(entry.completeDate!)
-          : '';
-    });
+    }
   }
 
   double _calculateNetWeight() {
     if (_weighMode == 'manual') {
-      return _manualRows.fold<double>(
-          0, (s, r) => s + (double.tryParse(r.weightCtrl.text.trim()) ?? 0));
+      double total = 0;
+      for (final row in _manualRows) {
+        final weight = double.tryParse(row.weightCtrl.text.trim()) ?? 0;
+        total += weight;
+      }
+      return total;
     }
     final first = double.tryParse(_firstWtCtrl.text.trim()) ?? 0;
     final second = double.tryParse(_secondWtCtrl.text.trim()) ?? 0;
@@ -169,7 +194,7 @@ class _VehicleEntryDetailPageState
   }
 
   void _updateNetWeight() {
-    setState(() {}); // Just refresh the displayed net weight
+    setState(() {});
   }
 
   Future<void> _save() async {
@@ -183,6 +208,23 @@ class _VehicleEntryDetailPageState
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Select a product.')));
       return;
+    }
+
+    // Build manual weights list
+    final manualWeights = <ManualWeightLine>[];
+    if (_weighMode == 'manual') {
+      for (final row in _manualRows) {
+        final product = row.productCtrl.text.trim();
+        final bags = int.tryParse(row.bagsCtrl.text.trim());
+        final weight = double.tryParse(row.weightCtrl.text.trim()) ?? 0;
+        if (product.isNotEmpty || weight > 0) {
+          manualWeights.add(ManualWeightLine(
+            product: product,
+            bags: bags,
+            weight: weight,
+          ));
+        }
+      }
     }
 
     final companion = VehicleEntryCompanion(
@@ -203,18 +245,9 @@ class _VehicleEntryDetailPageState
       netWeight: netWt,
       bags: int.tryParse(_bagsCtrl.text.trim()),
       lotNumber: _lotCtrl.text.trim().isEmpty ? null : _lotCtrl.text.trim(),
-      entryType: _entryType, // 👈 PASS entryType
+      entryType: _entryType,
       weighMode: _weighMode,
-      manualWeights: _weighMode == 'manual'
-          ? _manualRows
-              .map((r) => ManualWeightLine(
-                    product: r.productCtrl.text.trim(),
-                    bags: int.tryParse(r.bagsCtrl.text.trim()),
-                    weight: double.tryParse(r.weightCtrl.text.trim()) ?? 0,
-                  ))
-              .where((l) => l.product.isNotEmpty || l.weight > 0)
-              .toList()
-          : const [],
+      manualWeights: manualWeights,
       complete: _complete,
       completeCode: _complete ? _completeCodeCtrl.text.trim() : null,
       completeDate: _complete ? _completeDate : null,
@@ -229,9 +262,10 @@ class _VehicleEntryDetailPageState
       }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     }
   }
 
@@ -245,9 +279,6 @@ class _VehicleEntryDetailPageState
     });
   }
 
-  /// Creates a paddy procurement pre-filled from this completed inward vehicle
-  /// entry, then opens the draft form. Idempotent: if a procurement already
-  /// links to this entry, we just reopen it instead of creating a duplicate.
   Future<void> _convertToProcurement() async {
     if (widget.entryId == null) return;
     final repo = ref.read(paddyProcurementRepositoryProvider);
@@ -259,13 +290,12 @@ class _VehicleEntryDetailPageState
     if (existing != null) {
       procurementId = existing.id!;
     } else {
-      // Resolve the product name from the loaded products (the repo requires a
-      // non-null productName; a vehicle entry only stores the productId).
       final products =
           ref.read(productsProvider).valueOrNull ?? const <Product>[];
       final product = products.where((p) => p.id == entry.productId);
       final productName = product.isEmpty ? 'Paddy' : product.first.name;
 
+      final isManual = entry.weighMode == 'manual';
       final companion = PaddyProcurementCompanion(
         date: entry.date,
         slipNo: entry.slipNo,
@@ -276,11 +306,14 @@ class _VehicleEntryDetailPageState
         partyId: entry.partyId,
         productId: entry.productId,
         productName: productName,
-        grossWeight: entry.firstWeight,
-        tareWeight: entry.secondWeight,
+        // Manual mode has no weighbridge gross/tare; carry the manual total as
+        // gross (tare 0) so the paddy form's gross-tare-cuts math still works.
+        grossWeight: isManual ? entry.netWeight : entry.firstWeight,
+        tareWeight: isManual ? 0 : entry.secondWeight,
         netWeight: entry.netWeight,
         totalBags: entry.bags ?? 0,
         vehicleEntryId: entry.id,
+        weighMode: entry.weighMode,
         status: 'draft',
       );
       procurementId = await repo.createProcurement(companion);
@@ -342,11 +375,13 @@ class _VehicleEntryDetailPageState
             : 'Edit Vehicle Entry'),
         actions: [
           if (widget.entryId != null && _complete && _entryType == 'inward')
-            TextButton.icon(
-              onPressed: _convertToProcurement,
-              icon: const Icon(Icons.move_down, color: Colors.white),
-              label: const Text('Convert to Procurement',
-                  style: TextStyle(color: Colors.white)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: FilledButton.tonalIcon(
+                onPressed: _convertToProcurement,
+                icon: const Icon(Icons.move_down, size: 18),
+                label: const Text('Convert to Procurement'),
+              ),
             ),
         ],
       ),
@@ -454,7 +489,7 @@ class _VehicleEntryDetailPageState
                       ],
                       onChanged: (v) => setState(() => _selectedProductId = v),
                       validator: (v) => v != null ? null : 'Required',
-                      isExpanded: true, 
+                      isExpanded: true,
                     ),
                   ),
                 ],
@@ -467,39 +502,49 @@ class _VehicleEntryDetailPageState
                     border: OutlineInputBorder()),
               ),
               const SizedBox(height: 16),
-              // 👇 ENTRY TYPE SEGMENTED BUTTON
-              Row(
+              // Entry Type
+              Wrap(
+                alignment: WrapAlignment.start,
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   const Text('Entry Type:  ',
                       style: TextStyle(fontWeight: FontWeight.w500)),
-                  SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(
-                          value: 'inward',
-                          label: Text('Inward'),
-                          icon: Icon(Icons.arrow_downward, size: 16)),
-                      ButtonSegment(
-                          value: 'outward',
-                          label: Text('Outward'),
-                          icon: Icon(Icons.arrow_upward, size: 16)),
-                    ],
-                    selected: {_entryType},
-                    onSelectionChanged: (s) {
-                      setState(() {
-                        _entryType = s.first;
-                        _updateNetWeight();
-                      });
-                    },
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width > 400 ? 240 : 200,
+                    child: SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(
+                            value: 'inward',
+                            label: Text('Inward'),
+                            icon: Icon(Icons.arrow_downward, size: 16)),
+                        ButtonSegment(
+                            value: 'outward',
+                            label: Text('Outward'),
+                            icon: Icon(Icons.arrow_upward, size: 16)),
+                      ],
+                      selected: {_entryType},
+                      onSelectionChanged: (s) {
+                        setState(() {
+                          _entryType = s.first;
+                          _updateNetWeight();
+                        });
+                      },
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              // 👇 WEIGH MODE SEGMENTED BUTTON
-              Row(
+              // Weigh Mode
+              Wrap(
+                alignment: WrapAlignment.start,
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   const Text('Weigh Mode:  ',
                       style: TextStyle(fontWeight: FontWeight.w500)),
-                  Flexible(
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width > 400 ? 260 : 200,
                     child: SegmentedButton<String>(
                       segments: const [
                         ButtonSegment(
@@ -527,60 +572,63 @@ class _VehicleEntryDetailPageState
                   style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               if (_weighMode == 'weighbridge') ...[
-              Row(
-                children: [
-                  Flexible(
-                    child: TextFormField(
-                      controller: _firstWtCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                          labelText: 'First Wt', border: OutlineInputBorder()),
-                      onChanged: (_) => _updateNetWeight(),
-                      validator: (v) =>
-                          v?.trim().isNotEmpty == true ? null : 'Required',
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _firstWtCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                            labelText: 'First Wt',
+                            border: OutlineInputBorder()),
+                        onChanged: (_) => _updateNetWeight(),
+                        validator: (v) =>
+                            v?.trim().isNotEmpty == true ? null : 'Required',
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(_firstTime != null
-                          ? DateFormat('dd/MM/yyyy HH:mm').format(_firstTime!)
-                          : 'Set time'),
-                      subtitle: const Text('Time'),
-                      onTap: () => _pickTime(
-                          _firstTimeCtrl, _firstTime, (dt) => _firstTime = dt),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(_firstTime != null
+                            ? DateFormat('dd/MM/yyyy HH:mm').format(_firstTime!)
+                            : 'Set time'),
+                        subtitle: const Text('Time'),
+                        onTap: () => _pickTime(_firstTimeCtrl, _firstTime,
+                            (dt) => _firstTime = dt),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _secondWtCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                          labelText: 'Second Wt', border: OutlineInputBorder()),
-                      onChanged: (_) => _updateNetWeight(),
-                      validator: (v) =>
-                          v?.trim().isNotEmpty == true ? null : 'Required',
+                  ],
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _secondWtCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                            labelText: 'Second Wt',
+                            border: OutlineInputBorder()),
+                        onChanged: (_) => _updateNetWeight(),
+                        validator: (v) =>
+                            v?.trim().isNotEmpty == true ? null : 'Required',
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(_secondTime != null
-                          ? DateFormat('dd/MM/yyyy HH:mm').format(_secondTime!)
-                          : 'Set time'),
-                      subtitle: const Text('Time'),
-                      onTap: () => _pickTime(_secondTimeCtrl, _secondTime,
-                          (dt) => _secondTime = dt),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(_secondTime != null
+                            ? DateFormat('dd/MM/yyyy HH:mm')
+                                .format(_secondTime!)
+                            : 'Set time'),
+                        subtitle: const Text('Time'),
+                        onTap: () => _pickTime(_secondTimeCtrl, _secondTime,
+                            (dt) => _secondTime = dt),
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
               ],
               if (_weighMode == 'manual') ...[
                 for (int i = 0; i < _manualRows.length; i++)
@@ -589,13 +637,16 @@ class _VehicleEntryDetailPageState
                     child: Row(
                       children: [
                         Expanded(
-                          flex: 3,
+                          flex: 4,
                           child: TextFormField(
                             controller: _manualRows[i].productCtrl,
                             decoration: const InputDecoration(
                                 labelText: 'Item',
                                 isDense: true,
-                                border: OutlineInputBorder()),
+                                border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 8)),
+                            style: const TextStyle(fontSize: 13),
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -607,7 +658,10 @@ class _VehicleEntryDetailPageState
                             decoration: const InputDecoration(
                                 labelText: 'Bags',
                                 isDense: true,
-                                border: OutlineInputBorder()),
+                                border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 8)),
+                            style: const TextStyle(fontSize: 13),
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -619,14 +673,20 @@ class _VehicleEntryDetailPageState
                             decoration: const InputDecoration(
                                 labelText: 'Wt',
                                 isDense: true,
-                                border: OutlineInputBorder()),
+                                border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 8)),
+                            style: const TextStyle(fontSize: 13),
                             onChanged: (_) => _updateNetWeight(),
                           ),
                         ),
+                        const SizedBox(width: 4),
                         IconButton(
                           icon: const Icon(Icons.remove_circle_outline,
-                              color: Colors.red),
+                              color: Colors.red, size: 22),
                           onPressed: () => _removeManualRow(i),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
                         ),
                       ],
                     ),
@@ -635,13 +695,16 @@ class _VehicleEntryDetailPageState
                   alignment: Alignment.centerLeft,
                   child: TextButton.icon(
                     onPressed: _addManualRow,
-                    icon: const Icon(Icons.add),
+                    icon: const Icon(Icons.add, size: 18),
                     label: const Text('Add line'),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                    ),
                   ),
                 ),
               ],
               const SizedBox(height: 8),
-              // 👇 Net Weight display with correct calculation
+              // Net Weight display
               Text(
                 'Net.Wt : ${netWt.toStringAsFixed(2)}',
                 style:
@@ -688,6 +751,7 @@ class _VehicleEntryDetailPageState
                 ],
               ),
               if (_complete) ...[
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
@@ -736,7 +800,7 @@ class _VehicleEntryDetailPageState
   }
 }
 
-/// Holds the text controllers for one manual weight line in Mode B.
+/// Holds the text controllers for one manual weight line.
 class _ManualLineControllers {
   _ManualLineControllers()
       : productCtrl = TextEditingController(),
@@ -746,8 +810,8 @@ class _ManualLineControllers {
   _ManualLineControllers.fromLine(ManualWeightLine l)
       : productCtrl = TextEditingController(text: l.product),
         bagsCtrl = TextEditingController(text: l.bags?.toString() ?? ''),
-        weightCtrl =
-            TextEditingController(text: l.weight == 0 ? '' : l.weight.toString());
+        weightCtrl = TextEditingController(
+            text: l.weight == 0 ? '' : l.weight.toString());
 
   final TextEditingController productCtrl;
   final TextEditingController bagsCtrl;
