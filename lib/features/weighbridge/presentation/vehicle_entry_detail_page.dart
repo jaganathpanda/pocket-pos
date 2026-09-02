@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/di/providers.dart';
 import '../domain/vehicle_entry.dart';
+import '../../notifications/providers/notification_providers.dart';
+import '../../store/presentation/store_auth_controller.dart';
 import '../../paddy_procurement/domain/paddy_procurement.dart';
 import '../../paddy_procurement/providers/paddy_procurement_providers.dart';
 import '../../paddy_procurement/presentation/paddy_procurement_form.dart';
@@ -50,6 +52,11 @@ class _VehicleEntryDetailPageState
   String _entryType = 'inward';
   String _weighMode = 'weighbridge';
   final List<_ManualLineControllers> _manualRows = [];
+
+  // Weighbridge-operator flow: the miller chosen to approve this entry.
+  String? _selectedMillerUid;
+  String? _selectedMillerName;
+  String _loadedStatus = 'approved';
 
   @override
   void initState() {
@@ -160,6 +167,9 @@ class _VehicleEntryDetailPageState
         _lotCtrl.text = entry.lotNumber ?? '';
         _remarkCtrl.text = entry.remark ?? '';
         _complete = entry.complete;
+        _loadedStatus = entry.status;
+        _selectedMillerUid = entry.approverUid;
+        _selectedMillerName = entry.approverName;
         _completeCodeCtrl.text = entry.completeCode ?? '';
         _completeDate = entry.completeDate;
         _completeDateCtrl.text = entry.completeDate != null
@@ -210,6 +220,14 @@ class _VehicleEntryDetailPageState
       return;
     }
 
+    final isOperator =
+        ref.read(currentUserProvider)?.isWeighbridgeOperator ?? false;
+    if (isOperator && (_selectedMillerUid == null || _selectedMillerUid!.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Select a miller to approve.')));
+      return;
+    }
+
     // Build manual weights list
     final manualWeights = <ManualWeightLine>[];
     if (_weighMode == 'manual') {
@@ -248,15 +266,30 @@ class _VehicleEntryDetailPageState
       entryType: _entryType,
       weighMode: _weighMode,
       manualWeights: manualWeights,
-      complete: _complete,
-      completeCode: _complete ? _completeCodeCtrl.text.trim() : null,
-      completeDate: _complete ? _completeDate : null,
+      // Operators submit for approval; owners save directly as approved.
+      complete: isOperator ? false : _complete,
+      completeCode: (!isOperator && _complete)
+          ? _completeCodeCtrl.text.trim()
+          : null,
+      completeDate: (!isOperator && _complete) ? _completeDate : null,
       remark: _remarkCtrl.text.trim().isEmpty ? null : _remarkCtrl.text.trim(),
+      status: isOperator ? 'pending' : null,
+      createdByUid: isOperator ? ref.read(currentUidProvider) : null,
+      createdByName: isOperator
+          ? ref.read(storeSessionProvider)?.username
+          : null,
+      createdByRole: isOperator ? 'weighbridgeOperator' : null,
+      approverUid: isOperator ? _selectedMillerUid : null,
+      approverName: isOperator ? _selectedMillerName : null,
     );
 
     try {
       if (widget.entryId == null) {
-        await ref.read(weighbridgeRepositoryProvider).createEntry(companion);
+        final newId =
+            await ref.read(weighbridgeRepositoryProvider).createEntry(companion);
+        if (isOperator) {
+          await _notifyMiller(newId);
+        }
       } else {
         await ref.read(weighbridgeRepositoryProvider).updateEntry(companion);
       }
@@ -267,6 +300,23 @@ class _VehicleEntryDetailPageState
             .showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
+  }
+
+  /// Sends the selected miller an in-app notification that an entry is pending.
+  Future<void> _notifyMiller(int entryId) async {
+    final millerUid = _selectedMillerUid;
+    if (millerUid == null || millerUid.isEmpty) return;
+    final operatorName = ref.read(storeSessionProvider)?.username ?? 'Operator';
+    await ref.read(notificationRepositoryProvider).create(
+          type: 'weighbridge_approval',
+          title: 'Weighbridge entry pending approval',
+          message:
+              '$operatorName submitted vehicle ${_vehicleCtrl.text.trim()} '
+              '(slip ${_slipNoCtrl.text.trim()}) for your approval.',
+          targetUid: millerUid,
+          entityType: 'vehicle_entry',
+          entityId: entryId,
+        );
   }
 
   void _addManualRow() {
@@ -367,6 +417,9 @@ class _VehicleEntryDetailPageState
     final suppliers =
         ref.watch(suppliersProvider).valueOrNull ?? const <Supplier>[];
     final netWt = _calculateNetWeight();
+    final isOperator =
+        ref.watch(currentUserProvider)?.isWeighbridgeOperator ?? false;
+    final millers = ref.watch(millersProvider).valueOrNull ?? const [];
 
     return Scaffold(
       appBar: AppBar(
@@ -374,7 +427,13 @@ class _VehicleEntryDetailPageState
             ? 'New Vehicle Entry'
             : 'Edit Vehicle Entry'),
         actions: [
-          if (widget.entryId != null && _complete && _entryType == 'inward')
+          // Convert is only for an approved, completed inward entry — and never
+          // for the operator (they can't convert, only submit for approval).
+          if (!isOperator &&
+              widget.entryId != null &&
+              _complete &&
+              _entryType == 'inward' &&
+              _loadedStatus == 'approved')
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               child: FilledButton.tonalIcon(
@@ -391,6 +450,37 @@ class _VehicleEntryDetailPageState
           key: _formKey,
           child: ListView(
             children: [
+              if (isOperator) ...[
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedMillerUid,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Select Miller (approver) *',
+                    prefixIcon: Icon(Icons.person_pin_circle_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    for (final m in millers)
+                      DropdownMenuItem(
+                        value: m.uid,
+                        child: Text(m.username),
+                      ),
+                  ],
+                  onChanged: (v) => setState(() {
+                    _selectedMillerUid = v;
+                    _selectedMillerName = millers
+                        .where((m) => m.uid == v)
+                        .map((m) => m.username)
+                        .cast<String?>()
+                        .firstWhere((_) => true, orElse: () => null);
+                  }),
+                  validator: (v) =>
+                      v == null || v.isEmpty ? 'Select a miller' : null,
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (!isOperator && widget.entryId != null)
+                _StatusBanner(status: _loadedStatus),
               // Date & Slip
               Row(
                 children: [
@@ -731,53 +821,57 @@ class _VehicleEntryDetailPageState
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              const Text('Completion',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              Row(
-                children: [
-                  Switch(
-                    value: _complete,
-                    onChanged: (v) => setState(() {
-                      _complete = v;
-                      if (v && _completeDate == null) {
-                        _completeDate = DateTime.now();
-                        _completeDateCtrl.text =
-                            DateFormat('dd/MM/yyyy').format(_completeDate!);
-                      }
-                    }),
-                  ),
-                  const Text('Complete'),
-                ],
-              ),
-              if (_complete) ...[
-                const SizedBox(height: 8),
+              // Operators submit for a miller to approve — completion is set by
+              // the miller flow, not the operator.
+              if (!isOperator) ...[
+                const SizedBox(height: 16),
+                const Text('Completion',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 Row(
                   children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _completeCodeCtrl,
-                        decoration: const InputDecoration(
-                            labelText: 'Complete Code',
-                            border: OutlineInputBorder()),
-                      ),
+                    Switch(
+                      value: _complete,
+                      onChanged: (v) => setState(() {
+                        _complete = v;
+                        if (v && _completeDate == null) {
+                          _completeDate = DateTime.now();
+                          _completeDateCtrl.text =
+                              DateFormat('dd/MM/yyyy').format(_completeDate!);
+                        }
+                      }),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(_completeDate != null
-                            ? DateFormat('dd/MM/yyyy').format(_completeDate!)
-                            : 'Pick date'),
-                        subtitle: const Text('Date'),
-                        onTap: () => _pickDate(
-                            _completeDateCtrl,
-                            _completeDate ?? DateTime.now(),
-                            (d) => _completeDate = d),
-                      ),
-                    ),
+                    const Text('Complete'),
                   ],
                 ),
+                if (_complete) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _completeCodeCtrl,
+                          decoration: const InputDecoration(
+                              labelText: 'Complete Code',
+                              border: OutlineInputBorder()),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(_completeDate != null
+                              ? DateFormat('dd/MM/yyyy').format(_completeDate!)
+                              : 'Pick date'),
+                          subtitle: const Text('Date'),
+                          onTap: () => _pickDate(
+                              _completeDateCtrl,
+                              _completeDate ?? DateTime.now(),
+                              (d) => _completeDate = d),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
               const SizedBox(height: 20),
               Row(
@@ -789,7 +883,9 @@ class _VehicleEntryDetailPageState
                   const SizedBox(width: 8),
                   FilledButton(
                       onPressed: _save,
-                      child: Text(widget.entryId == null ? 'Save' : 'Update')),
+                      child: Text(isOperator
+                          ? 'Submit for Approval'
+                          : (widget.entryId == null ? 'Save' : 'Update'))),
                 ],
               ),
             ],
@@ -821,5 +917,52 @@ class _ManualLineControllers {
     productCtrl.dispose();
     bagsCtrl.dispose();
     weightCtrl.dispose();
+  }
+}
+
+/// A small colored banner showing the entry's approval status to the miller.
+class _StatusBanner extends StatelessWidget {
+  const _StatusBanner({required this.status});
+
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    late final Color color;
+    late final IconData icon;
+    late final String label;
+    switch (status) {
+      case 'pending':
+        color = Colors.orange;
+        icon = Icons.hourglass_top;
+        label = 'Pending approval';
+        break;
+      case 'rejected':
+        color = Colors.red;
+        icon = Icons.cancel_outlined;
+        label = 'Rejected';
+        break;
+      default:
+        color = Colors.green;
+        icon = Icons.check_circle_outline;
+        label = 'Approved';
+    }
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: 8),
+          Text(label,
+              style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
   }
 }

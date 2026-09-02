@@ -9,6 +9,8 @@ class PendingApprovalPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(storeSessionProvider);
+    final operator = ref.watch(storeAuthControllerProvider).operator;
+    final isOperator = operator != null && session == null;
     final busy = ref.watch(storeAuthControllerProvider).busy;
 
     return Scaffold(
@@ -34,37 +36,45 @@ class PendingApprovalPage extends ConsumerWidget {
                     size: 64, color: Colors.orange),
                 const SizedBox(height: 16),
                 Text(
-                  'Hi ${session?.storeName ?? 'there'}!',
+                  isOperator
+                      ? 'Hi ${operator.name}!'
+                      : 'Hi ${session?.storeName ?? 'there'}!',
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Your store is registered and waiting for the platform admin '
-                  'to approve it. You can start selling once approved.',
+                Text(
+                  isOperator
+                      ? 'Your weighbridge operator account is registered and '
+                          'waiting for the platform admin to approve it. Once '
+                          'approved, log in and enter a mill by its Store ID.'
+                      : 'Your store is registered and waiting for the platform '
+                          'admin to approve it. You can start selling once approved.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey),
+                  style: const TextStyle(color: Colors.grey),
                 ),
                 const SizedBox(height: 20),
-                Card(
-                  color: const Color(0xFFE8F5E9),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        const Text('Your Store ID (save this)',
-                            style: TextStyle(fontSize: 12, color: Colors.grey)),
-                        const SizedBox(height: 4),
-                        SelectableText(
-                          session?.storeId ?? '—',
-                          style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.5),
-                        ),
-                      ],
+                if (!isOperator)
+                  Card(
+                    color: const Color(0xFFE8F5E9),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          const Text('Your Store ID (save this)',
+                              style:
+                                  TextStyle(fontSize: 12, color: Colors.grey)),
+                          const SizedBox(height: 4),
+                          SelectableText(
+                            session?.storeId ?? '—',
+                            style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.5),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
                 const SizedBox(height: 20),
                 FilledButton.icon(
                   onPressed: busy

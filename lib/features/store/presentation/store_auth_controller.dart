@@ -99,6 +99,86 @@ class StoreAuthController extends StateNotifier<StoreAuthState> {
     }
   }
 
+  /// Registers a platform weighbridge operator (pending admin approval).
+  Future<bool> registerOperator({
+    required String name,
+    required String email,
+    required String password,
+    String? mobile,
+  }) async {
+    state = state.copyWith(busy: true, error: null);
+    try {
+      await _service.registerOperator(
+        name: name,
+        email: email,
+        password: password,
+        mobile: mobile,
+      );
+      state = await _service.restore(); // pending operator session
+      return true;
+    } on FirebaseAuthException catch (e) {
+      state = state.copyWith(busy: false, error: _message(e));
+      return false;
+    } catch (e) {
+      state = state.copyWith(busy: false, error: _clean(e));
+      return false;
+    }
+  }
+
+  Future<bool> operatorLogin({
+    required String email,
+    required String password,
+  }) async {
+    state = state.copyWith(busy: true, error: null);
+    try {
+      final profile =
+          await _service.operatorLogin(email: email, password: password);
+      state = StoreAuthState(
+        stage: profile.isApproved
+            ? StoreAuthStage.operator
+            : StoreAuthStage.pending,
+        operator: profile,
+      );
+      return true;
+    } on FirebaseAuthException catch (e) {
+      state = state.copyWith(busy: false, error: _message(e));
+      return false;
+    } catch (e) {
+      state = state.copyWith(busy: false, error: _clean(e));
+      return false;
+    }
+  }
+
+  /// An approved operator enters a mill by Store ID; on success the app scopes
+  /// to that mill (role stays weighbridge_operator).
+  Future<bool> enterMill(String storeId) async {
+    final operator = state.operator;
+    if (operator == null) return false;
+    state = state.copyWith(busy: true, error: null);
+    try {
+      final session = await _service.operatorEnterMill(
+        storeId: storeId,
+        operator: operator,
+      );
+      state = StoreAuthState(
+        stage: StoreAuthStage.active,
+        session: session,
+        operator: operator,
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(busy: false, error: _clean(e));
+      return false;
+    }
+  }
+
+  /// Operator leaves the current mill and returns to the mill-selection screen.
+  void exitMill() {
+    final operator = state.operator;
+    if (operator == null) return;
+    state = StoreAuthState(stage: StoreAuthStage.operator, operator: operator);
+  }
+
   Future<bool> adminLogin({
     required String email,
     required String password,

@@ -85,6 +85,12 @@ class FirestoreWeighbridgeRepository implements WeighbridgeRepository {
       'weighMode': data.weighMode ?? 'weighbridge',
       'manualWeights':
           (data.manualWeights ?? const []).map((l) => l.toMap()).toList(),
+      'status': data.status ?? 'approved',
+      'createdByUid': data.createdByUid,
+      'createdByName': data.createdByName,
+      'createdByRole': data.createdByRole,
+      'approverUid': data.approverUid,
+      'approverName': data.approverName,
       'bags': data.bags,
       'lotNumber': data.lotNumber,
       'complete': data.complete ?? false,
@@ -119,6 +125,14 @@ class FirestoreWeighbridgeRepository implements WeighbridgeRepository {
       'weighMode': data.weighMode ?? 'weighbridge',
       'manualWeights':
           (data.manualWeights ?? const []).map((l) => l.toMap()).toList(),
+      // Only write approval fields when explicitly provided, so a routine edit
+      // (merge:true) never silently flips a pending entry to approved.
+      if (data.status != null) 'status': data.status,
+      if (data.createdByUid != null) 'createdByUid': data.createdByUid,
+      if (data.createdByName != null) 'createdByName': data.createdByName,
+      if (data.createdByRole != null) 'createdByRole': data.createdByRole,
+      if (data.approverUid != null) 'approverUid': data.approverUid,
+      if (data.approverName != null) 'approverName': data.approverName,
       'bags': data.bags,
       'lotNumber': data.lotNumber,
       'complete': data.complete ?? false,
@@ -132,6 +146,52 @@ class FirestoreWeighbridgeRepository implements WeighbridgeRepository {
   @override
   Future<void> deleteEntry(int id) async {
     await _col.doc('$id').delete();
+  }
+
+  @override
+  Stream<List<VehicleEntry>> watchPending({String? approverUid}) {
+    Query<Map<String, dynamic>> query =
+        _col.where('status', isEqualTo: 'pending');
+    if (approverUid != null && approverUid.isNotEmpty) {
+      query = query.where('approverUid', isEqualTo: approverUid);
+    }
+    return query.snapshots().map(
+        (snap) => snap.docs.map(_fromDoc).toList()
+          ..sort((a, b) => b.date.compareTo(a.date)));
+  }
+
+  @override
+  Stream<List<VehicleEntry>> watchByCreator(String createdByUid) {
+    return _col
+        .where('createdByUid', isEqualTo: createdByUid)
+        .snapshots()
+        .map((snap) => snap.docs.map(_fromDoc).toList()
+          ..sort((a, b) => b.date.compareTo(a.date)));
+  }
+
+  @override
+  Future<void> approveEntry(int id,
+      {required String approvedByUid, String? approverName}) async {
+    await _col.doc('$id').set({
+      'status': 'approved',
+      'approvedByUid': approvedByUid,
+      if (approverName != null) 'approverName': approverName,
+      'approvedAt': FieldValue.serverTimestamp(),
+      'rejectionReason': null,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> rejectEntry(int id,
+      {required String approvedByUid, String? reason}) async {
+    await _col.doc('$id').set({
+      'status': 'rejected',
+      'approvedByUid': approvedByUid,
+      'rejectionReason': reason,
+      'approvedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   @override
@@ -179,6 +239,14 @@ class FirestoreWeighbridgeRepository implements WeighbridgeRepository {
               ?.map((e) => ManualWeightLine.fromMap(e as Map<String, dynamic>))
               .toList() ??
           const [],
+      status: d['status'] as String? ?? 'approved',
+      createdByUid: d['createdByUid'] as String?,
+      createdByName: d['createdByName'] as String?,
+      approverUid: d['approverUid'] as String?,
+      approverName: d['approverName'] as String?,
+      approvedByUid: d['approvedByUid'] as String?,
+      approvedAt: (d['approvedAt'] as Timestamp?)?.toDate(),
+      rejectionReason: d['rejectionReason'] as String?,
     );
   }
 }

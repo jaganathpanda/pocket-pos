@@ -4,8 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:pocket_pos/features/farmers/presentation/farmer_list_page.dart';
 import 'package:pocket_pos/features/mill_run/presentation/milling_config_page.dart';
 import 'package:pocket_pos/features/paddy_procurement/presentation/paddy_procurement_form.dart';
+import 'package:pocket_pos/features/paddy_procurement/presentation/paddy_procurement_page.dart';
 import 'package:pocket_pos/features/weighbridge/presentation/vehicle_entry_detail_page.dart';
 import 'package:pocket_pos/features/weighbridge/presentation/vehicle_entry_list_page.dart';
+import 'package:pocket_pos/features/weighbridge/presentation/weighbridge_operator_dashboard.dart';
+import 'package:pocket_pos/features/weighbridge/presentation/pending_approvals_page.dart';
+import 'package:pocket_pos/features/notifications/presentation/notifications_page.dart';
+import 'package:pocket_pos/features/notifications/providers/notification_providers.dart';
 
 import '../core/di/providers.dart';
 import '../features/auth/domain/auth_models.dart';
@@ -32,6 +37,9 @@ import '../features/store/domain/store_models.dart';
 import '../features/store/presentation/admin_approval_page.dart';
 import '../features/store/presentation/admin_login_page.dart';
 import '../features/store/presentation/pending_approval_page.dart';
+import '../features/store/presentation/operator_login_page.dart';
+import '../features/store/presentation/operator_register_page.dart';
+import '../features/store/presentation/operator_home_page.dart';
 import '../features/store/presentation/public_storefront_page.dart';
 import '../features/store/presentation/shop_owner_profile_page.dart';
 import '../features/store/presentation/store_auth_controller.dart';
@@ -56,6 +64,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         '/store-login',
         '/store-register',
         '/admin-login',
+        '/operator-login',
+        '/operator-register',
         '/storefront',
       };
       switch (stage) {
@@ -67,9 +77,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return loc == '/pending' ? null : '/pending';
         case StoreAuthStage.admin:
           return loc == '/admin' ? null : '/admin';
+        case StoreAuthStage.operator:
+          // Approved operator who hasn't entered a mill yet.
+          return loc == '/operator-home' ? null : '/operator-home';
         case StoreAuthStage.active:
-          if (authRoutes.contains(loc) || loc == '/pending')
+          // Weighbridge operators are confined to their own dashboard (from
+          // which they push the entry form directly). Use the session role
+          // string since it's available on the same state that triggers this
+          // redirect (the bridged AppUser may lag by a frame).
+          final role = ref.read(storeAuthControllerProvider).session?.role;
+          if (role == 'weighbridge_operator') {
+            return loc == '/weighbridge-dashboard'
+                ? null
+                : '/weighbridge-dashboard';
+          }
+          if (authRoutes.contains(loc) ||
+              loc == '/pending' ||
+              loc == '/weighbridge-dashboard') {
             return '/dashboard';
+          }
           return null;
       }
     },
@@ -87,11 +113,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path: '/admin-login',
           builder: (context, state) => const AdminLoginPage()),
       GoRoute(
+          path: '/operator-login',
+          builder: (context, state) => const OperatorLoginPage()),
+      GoRoute(
+          path: '/operator-register',
+          builder: (context, state) => const OperatorRegisterPage()),
+      GoRoute(
+          path: '/operator-home',
+          builder: (context, state) => const OperatorHomePage()),
+      GoRoute(
           path: '/admin',
           builder: (context, state) => const AdminApprovalPage()),
       GoRoute(
           path: '/storefront',
           builder: (context, state) => const PublicStorefrontPage()),
+      // Weighbridge operator dashboard lives OUTSIDE the app shell — operators
+      // don't get the full navigation.
+      GoRoute(
+          path: '/weighbridge-dashboard',
+          builder: (context, state) => const WeighbridgeOperatorDashboard()),
       ShellRoute(
         builder: (context, state, child) => _AppShell(child: child),
         routes: [
@@ -187,6 +227,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const VehicleEntryListPage(),
           ),
           GoRoute(
+            path: '/pending-approvals',
+            builder: (context, state) => const PendingApprovalsPage(),
+          ),
+          GoRoute(
+            path: '/notifications',
+            builder: (context, state) => const NotificationsPage(),
+          ),
+          GoRoute(
             path: '/weighbridge/:id',
             builder: (context, state) {
               final id = int.tryParse(state.pathParameters['id'] ?? '');
@@ -194,10 +242,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             },
           ),
           GoRoute(
+            // The menu lands here: the LIST of entered procurements (with search,
+            // New Procurement, tap-to-edit, complete/delete).
             path: '/paddy-procurement',
-            builder: (context, state) => const PaddyProcurementForm(),
+            builder: (context, state) => const PaddyProcurementPage(),
           ),
           GoRoute(
+            // Direct edit of a single procurement (deep-link).
             path: '/paddy-procurement/:id',
             builder: (context, state) {
               final id = int.tryParse(state.pathParameters['id'] ?? '');
@@ -214,6 +265,169 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
 });
 
+/// A single navigation entry (route + label + icon).
+typedef NavDest = ({String route, String label, IconData icon});
+
+/// Navigation for a Rice Mill store, ordered by the operational flow:
+/// Overview → Procurement (paddy in) → Milling → Stock → Sales → Back office.
+/// This is the single place to arrange the rice-mill menu.
+List<NavDest> riceMillNav({
+  required bool scoped,
+  required bool canManage,
+  required bool canApprove,
+  required InventoryMode mode,
+  required int pendingCount,
+  required int unreadCount,
+}) {
+  return [
+    (route: '/dashboard', label: 'Dashboard', icon: Icons.dashboard_rounded),
+
+    // ── Procurement: paddy coming in ──
+    if (!scoped)
+      (route: '/weighbridge', label: 'Weighbridge', icon: Icons.scale_rounded),
+    if (!scoped && canApprove)
+      (
+        route: '/pending-approvals',
+        label: pendingCount > 0
+            ? 'Pending Approvals ($pendingCount)'
+            : 'Pending Approvals',
+        icon: Icons.approval_rounded,
+      ),
+    if (!scoped)
+      (
+        route: '/paddy-procurement',
+        label: 'Paddy Procurement',
+        icon: Icons.grass_rounded
+      ),
+    if (!scoped)
+      (
+        route: '/farmers',
+        label: 'Farmers / Mandi',
+        icon: Icons.groups_rounded
+      ),
+
+    // ── Milling: paddy → rice ──
+    if (!scoped)
+      (route: '/mill-runs', label: 'Mill Runs', icon: Icons.factory_rounded),
+    if (!scoped)
+      (
+        route: '/milling-charges',
+        label: 'Milling Charges',
+        icon: Icons.receipt_long_rounded
+      ),
+    if (!scoped)
+      (
+        route: '/milling-config',
+        label: 'Milling Config',
+        icon: Icons.tune_rounded
+      ),
+
+    // ── Stock: godowns & rice ──
+    if (!scoped && mode.usesWarehouses)
+      (route: '/warehouses', label: 'Godowns', icon: Icons.warehouse_rounded),
+    (
+      route: '/products',
+      label: 'Products / Stock',
+      icon: Icons.inventory_2_rounded
+    ),
+    if (!scoped && mode.tracksStock)
+      (route: '/inventory', label: 'Inventory', icon: Icons.inventory_rounded),
+
+    // ── Sales: rice going out ──
+    (route: '/billing', label: 'Rice Sales', icon: Icons.point_of_sale_rounded),
+    (route: '/customers', label: 'Rice Parties', icon: Icons.person_rounded),
+    (
+      route: '/ledger',
+      label: 'Khata / Udhar',
+      icon: Icons.account_balance_wallet_rounded
+    ),
+
+    // ── Back office ──
+    (route: '/reports', label: 'Reports', icon: Icons.analytics_rounded),
+    if (!scoped)
+      (
+        route: '/purchases',
+        label: 'Purchases',
+        icon: Icons.shopping_bag_rounded
+      ),
+    if (!scoped)
+      (route: '/expenses', label: 'Expenses', icon: Icons.receipt_outlined),
+    if (!scoped)
+      (
+        route: '/notifications',
+        label: unreadCount > 0
+            ? 'Notifications ($unreadCount)'
+            : 'Notifications',
+        icon: Icons.notifications_rounded
+      ),
+    if (!scoped)
+      (route: '/categories', label: 'Categories', icon: Icons.category_rounded),
+    if (!scoped) (route: '/staff', label: 'Staff', icon: Icons.badge_rounded),
+    if (!scoped)
+      (route: '/owner-profile', label: 'Owner', icon: Icons.badge_outlined),
+    if (!scoped)
+      (route: '/settings', label: 'Settings', icon: Icons.settings_rounded),
+    if (canManage)
+      (route: '/counters', label: 'Counters', icon: Icons.storefront_rounded),
+  ];
+}
+
+/// Navigation for a regular retail/POS store (the original ordering).
+List<NavDest> retailNav({
+  required bool scoped,
+  required bool canManage,
+  required InventoryMode mode,
+  required int unreadCount,
+}) {
+  return [
+    (route: '/dashboard', label: 'Dashboard', icon: Icons.dashboard_rounded),
+    if (!scoped)
+      (route: '/categories', label: 'Categories', icon: Icons.category_rounded),
+    (route: '/products', label: 'Products', icon: Icons.inventory_2_rounded),
+    if (!scoped && mode.tracksStock)
+      (route: '/inventory', label: 'Inventory', icon: Icons.inventory_rounded),
+    if (!scoped && mode.usesWarehouses)
+      (
+        route: '/warehouses',
+        label: 'Warehouses',
+        icon: Icons.warehouse_rounded
+      ),
+    (route: '/billing', label: 'POS', icon: Icons.point_of_sale_rounded),
+    (route: '/customers', label: 'Customers', icon: Icons.person_rounded),
+    if (!scoped)
+      (route: '/suppliers', label: 'Vendors', icon: Icons.storefront_rounded),
+    if (!scoped)
+      (
+        route: '/purchases',
+        label: 'Purchases',
+        icon: Icons.shopping_bag_rounded
+      ),
+    if (!scoped)
+      (
+        route: '/notifications',
+        label: unreadCount > 0
+            ? 'Notifications ($unreadCount)'
+            : 'Notifications',
+        icon: Icons.notifications_rounded
+      ),
+    (route: '/reports', label: 'Reports', icon: Icons.analytics_rounded),
+    (
+      route: '/ledger',
+      label: 'Udhar',
+      icon: Icons.account_balance_wallet_rounded
+    ),
+    if (!scoped)
+      (route: '/expenses', label: 'Expenses', icon: Icons.receipt_outlined),
+    if (!scoped) (route: '/staff', label: 'Staff', icon: Icons.badge_rounded),
+    if (!scoped)
+      (route: '/owner-profile', label: 'Owner', icon: Icons.badge_outlined),
+    if (!scoped)
+      (route: '/settings', label: 'Settings', icon: Icons.settings_rounded),
+    if (canManage)
+      (route: '/counters', label: 'Counters', icon: Icons.storefront_rounded),
+  ];
+}
+
 class _AppShell extends ConsumerWidget {
   const _AppShell({required this.child});
 
@@ -228,9 +442,13 @@ class _AppShell extends ConsumerWidget {
     // everything plus the Counters/Users management screen.
     final scoped = user?.isCounterScoped ?? false;
     final canManage = user?.canManagePos ?? false;
+    final canApprove = user?.canApproveWeighbridge ?? false;
     final mode =
         ref.watch(inventoryModeProvider).valueOrNull ?? InventoryMode.single;
     final isRiceMill = ref.watch(isRiceMillProvider);
+    final pendingCount = ref.watch(pendingApprovalsCountProvider);
+    final unreadCount =
+        ref.watch(myUnreadNotificationCountProvider).valueOrNull ?? 0;
 
     // Keep the warehouse + inventory caches warm for the whole authenticated
     // session. Firestore's one-time .get() throws ("client is offline") for a
@@ -242,100 +460,22 @@ class _AppShell extends ConsumerWidget {
     ref.watch(warehousesProvider);
     ref.watch(inventoryProvider);
 
-    final destinations = <({String route, String label, IconData icon})>[
-      (route: '/dashboard', label: 'Dashboard', icon: Icons.dashboard_rounded),
-      if (!scoped)
-        (
-          route: '/categories',
-          label: 'Categories',
-          icon: Icons.category_rounded
-        ),
-      (
-        route: '/products',
-        label: isRiceMill ? 'Products / Stock' : 'Products',
-        icon: Icons.inventory_2_rounded
-      ),
-      if (!scoped && mode.tracksStock)
-        (
-          route: '/inventory',
-          label: 'Inventory',
-          icon: Icons.inventory_rounded
-        ),
-      if (!scoped && mode.usesWarehouses)
-        (
-          route: '/warehouses',
-          label: isRiceMill ? 'Godowns' : 'Warehouses',
-          icon: Icons.warehouse_rounded
-        ),
-      (
-        route: '/billing',
-        label: isRiceMill ? 'Rice Sales' : 'POS',
-        icon: Icons.point_of_sale_rounded
-      ),
-      (
-        route: '/customers',
-        label: isRiceMill ? 'Rice Parties' : 'Customers',
-        icon: Icons.person_rounded
-      ),
-      if (!scoped && isRiceMill)
-        (
-          route: '/farmers',
-          label: 'Farmers / Mandi',
-          icon: Icons.storefront_rounded
-        ),
-      // Paddy Procurement (rice mill only)
-      if (!scoped && isRiceMill)
-        (
-          route: '/paddy-procurement',
-          label: 'Paddy Procurement',
-          icon: Icons.grass_rounded
-        ),
-
-      if (!scoped && !isRiceMill)
-        (route: '/suppliers', label: 'Vendors', icon: Icons.storefront_rounded),
-      if (!scoped)
-        (
-          route: '/purchases',
-          label: isRiceMill ? 'Paddy Procurement' : 'Purchases',
-          icon: Icons.shopping_bag_rounded
-        ),
-      // Rice mill-only menu items
-      if (!scoped && isRiceMill)
-        (route: '/mill-runs', label: 'Mill Runs', icon: Icons.factory_rounded),
-      if (!scoped && isRiceMill)
-        (
-          route: '/milling-config',
-          label: 'Milling Config',
-          icon: Icons.settings_rounded
-        ),
-      if (!scoped && isRiceMill)
-        (
-          route: '/milling-charges',
-          label: 'Milling Charges',
-          icon: Icons.receipt_long_rounded
-        ),
-      if (!scoped && isRiceMill)
-        (
-          route: '/weighbridge',
-          label: 'Weighbridge',
-          icon: Icons.scale_rounded
-        ),
-      (route: '/reports', label: 'Reports', icon: Icons.analytics_rounded),
-      (
-        route: '/ledger',
-        label: isRiceMill ? 'Khata / Udhar' : 'Udhar',
-        icon: Icons.account_balance_wallet_rounded
-      ),
-      if (!scoped)
-        (route: '/expenses', label: 'Expenses', icon: Icons.receipt_outlined),
-      if (!scoped) (route: '/staff', label: 'Staff', icon: Icons.badge_rounded),
-      if (!scoped)
-        (route: '/owner-profile', label: 'Owner', icon: Icons.badge_outlined),
-      if (!scoped)
-        (route: '/settings', label: 'Settings', icon: Icons.settings_rounded),
-      if (canManage)
-        (route: '/counters', label: 'Counters', icon: Icons.storefront_rounded),
-    ];
+    // Rice mills get a workflow-ordered menu; everything else the retail menu.
+    final destinations = isRiceMill
+        ? riceMillNav(
+            scoped: scoped,
+            canManage: canManage,
+            canApprove: canApprove,
+            mode: mode,
+            pendingCount: pendingCount,
+            unreadCount: unreadCount,
+          )
+        : retailNav(
+            scoped: scoped,
+            canManage: canManage,
+            mode: mode,
+            unreadCount: unreadCount,
+          );
 
     final isWide = MediaQuery.sizeOf(context).width >= 600;
 
@@ -388,10 +528,18 @@ class _AppShell extends ConsumerWidget {
     }
 
     // ── Phones: bottom tab bar with the most-used screens + a "Menu" sheet ───
-    const primary = <({String route, String label, IconData icon})>[
+    final primary = <NavDest>[
       (route: '/dashboard', label: 'Home', icon: Icons.home_rounded),
-      (route: '/billing', label: 'Billing', icon: Icons.point_of_sale_rounded),
-      (route: '/products', label: 'Items', icon: Icons.inventory_2_rounded),
+      (
+        route: '/billing',
+        label: isRiceMill ? 'Rice Sales' : 'Billing',
+        icon: Icons.point_of_sale_rounded
+      ),
+      (
+        route: '/products',
+        label: isRiceMill ? 'Stock' : 'Items',
+        icon: Icons.inventory_2_rounded
+      ),
       (route: '/customers', label: 'Parties', icon: Icons.people_alt_rounded),
     ];
 

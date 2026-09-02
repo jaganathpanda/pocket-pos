@@ -20,7 +20,9 @@ class AuthController extends StateNotifier<AsyncValue<AppUser?>> {
         ? UserRole.superAdmin
         : role == 'manager'
             ? UserRole.shopManager
-            : UserRole.cashier;
+            : role == 'weighbridge_operator'
+                ? UserRole.weighbridgeOperator
+                : UserRole.cashier;
     state = AsyncData(AppUser(
       id: 0,
       username: username.isEmpty ? 'user' : username,

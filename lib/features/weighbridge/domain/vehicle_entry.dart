@@ -60,9 +60,25 @@ class VehicleEntry extends Equatable {
   final String weighMode; // 'weighbridge' | 'manual'
   final List<ManualWeightLine> manualWeights;
 
+  // ── Approval workflow ──
+  /// 'approved' (owner-created, ready to convert) | 'pending' (operator-created,
+  /// awaiting miller approval) | 'rejected'.
+  final String status;
+  final String? createdByUid;
+  final String? createdByName;
+  final String? approverUid; // the miller chosen to approve
+  final String? approverName;
+  final String? approvedByUid;
+  final DateTime? approvedAt;
+  final String? rejectionReason;
+
   // Joined fields for display (not stored)
   final String? productName;
   final String? partyNameFromSupplier;
+
+  bool get isPending => status == 'pending';
+  bool get isApproved => status == 'approved';
+  bool get isRejected => status == 'rejected';
 
   const VehicleEntry({
     required this.id,
@@ -92,10 +108,18 @@ class VehicleEntry extends Equatable {
     this.entryType = 'inward',
     this.weighMode = 'weighbridge',
     this.manualWeights = const [],
+    this.status = 'approved',
+    this.createdByUid,
+    this.createdByName,
+    this.approverUid,
+    this.approverName,
+    this.approvedByUid,
+    this.approvedAt,
+    this.rejectionReason,
   });
 
   @override
-  List<Object?> get props => [id, slipNo];
+  List<Object?> get props => [id, slipNo, status];
 }
 
 // Companion class for creation/updates (like Drift's companion)
@@ -125,6 +149,12 @@ class VehicleEntryCompanion {
   final String? entryType;
   final String? weighMode;
   final List<ManualWeightLine>? manualWeights;
+  final String? status;
+  final String? createdByUid;
+  final String? createdByName;
+  final String? createdByRole;
+  final String? approverUid;
+  final String? approverName;
   VehicleEntryCompanion({
     this.id,
     this.date,
@@ -151,5 +181,11 @@ class VehicleEntryCompanion {
     this.entryType,
     this.weighMode,
     this.manualWeights,
+    this.status,
+    this.createdByUid,
+    this.createdByName,
+    this.createdByRole,
+    this.approverUid,
+    this.approverName,
   });
 }

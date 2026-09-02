@@ -9,6 +9,7 @@ import 'package:pocket_pos/core/widgets/DatePickerField.dart';
 import 'package:pocket_pos/core/widgets/help_dialog.dart';
 import 'package:pocket_pos/core/widgets/tooltip_form_field.dart';
 import 'package:pocket_pos/core/widgets/tooltip_icon.dart';
+import 'package:pocket_pos/core/di/providers.dart';
 import 'package:pocket_pos/features/paddy_procurement/domain/paddy_procurement.dart';
 import 'package:pocket_pos/features/paddy_procurement/providers/paddy_procurement_providers.dart';
 
@@ -67,6 +68,9 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
   String _truckRentType = 'Qntl';
   String _transportType = 'Direct';
   String _weighMode = 'weighbridge'; // from the source vehicle entry
+  // Multi-warehouse split: which godowns store how much of this paddy (Kg).
+  final List<_AllocRow> _allocRows = [];
+  bool _seededAlloc = false;
   bool _isLoading = false;
   int? _editingId;
 
@@ -153,6 +157,9 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
     _mandiInvoiceCtrl.dispose();
     _tenderNumberCtrl.dispose();
     _commissionAgentCtrl.dispose();
+    for (final r in _allocRows) {
+      r.dispose();
+    }
     super.dispose();
   }
 
@@ -173,6 +180,26 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                 ? procurement.procurementType
                 : 'Kharif';
         _vehicleNoCtrl.text = procurement.truckNo ?? '';
+        // Rebuild the godown-split editor from saved allocations (or from the
+        // legacy single warehouseId if there are no allocations yet).
+        for (final r in _allocRows) {
+          r.dispose();
+        }
+        _allocRows.clear();
+        if (procurement.warehouseAllocations.isNotEmpty) {
+          for (final a in procurement.warehouseAllocations) {
+            _allocRows.add(_AllocRow(
+              warehouseId: a.warehouseId,
+              qtyText: a.quantityKg == 0 ? '' : a.quantityKg.toString(),
+            ));
+          }
+        } else if (procurement.warehouseId != null) {
+          _allocRows.add(_AllocRow(
+            warehouseId: procurement.warehouseId,
+            qtyText: (procurement.netWeight).toString(),
+          ));
+        }
+        _seededAlloc = true;
         _weighMode = procurement.weighMode ?? 'weighbridge';
         _marketType = procurement.marketType;
         _grossWtCtrl.text = (procurement.grossWeight ?? 0).toString();
@@ -233,8 +260,70 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
     }
   }
 
+  /// Net weight (Kg) = gross − tare − all cuts. The amount to split across
+  /// godowns.
+  double _netWeightKg() {
+    final gross = double.tryParse(_grossWtCtrl.text) ?? 0;
+    final tare = double.tryParse(_tareWtCtrl.text) ?? 0;
+    final dust = double.tryParse(_dustCutCtrl.text) ?? 0;
+    final pol = double.tryParse(_polCutCtrl.text) ?? 0;
+    final other = double.tryParse(_otherCutCtrl.text) ?? 0;
+    final gunny = double.tryParse(_gunnyWtLessCtrl.text) ?? 0;
+    return gross - tare - dust - pol - other - gunny;
+  }
+
+  double _allocatedKg() => _allocRows.fold<double>(
+      0, (s, r) => s + (double.tryParse(r.qtyCtrl.text.trim()) ?? 0));
+
+  void _addAllocRow() =>
+      setState(() => _allocRows.add(_AllocRow(warehouseId: null, qtyText: '')));
+
+  void _removeAllocRow(int i) => setState(() => _allocRows.removeAt(i).dispose());
+
+  /// Returns an error message if the godown split is invalid, else null.
+  String? _validateAllocations() {
+    if (_allocRows.isEmpty) return 'Add at least one godown to store the paddy.';
+    final seen = <int>{};
+    for (final r in _allocRows) {
+      if (r.warehouseId == null) return 'Select a godown for every split line.';
+      if (!seen.add(r.warehouseId!)) {
+        return 'Each godown can only appear once in the split.';
+      }
+      final qty = double.tryParse(r.qtyCtrl.text.trim()) ?? 0;
+      if (qty <= 0) return 'Enter a quantity (Kg) for every godown.';
+    }
+    final net = _netWeightKg();
+    if ((net - _allocatedKg()).abs() > 1.0) {
+      return 'Allocated ${_allocatedKg().toStringAsFixed(0)} Kg must equal '
+          'net ${net.toStringAsFixed(0)} Kg.';
+    }
+    return null;
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // In multi-warehouse mode the paddy must be split across godowns and the
+    // split must add up to the net weight.
+    final usesWarehouses =
+        ref.read(inventoryModeProvider).valueOrNull?.usesWarehouses ?? false;
+    List<WarehouseAllocation> allocations = const [];
+    int? primaryWarehouseId;
+    if (usesWarehouses) {
+      final err = _validateAllocations();
+      if (err != null) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(err)));
+        return;
+      }
+      allocations = _allocRows
+          .map((r) => WarehouseAllocation(
+                warehouseId: r.warehouseId!,
+                quantityKg: double.tryParse(r.qtyCtrl.text.trim()) ?? 0,
+              ))
+          .toList();
+      primaryWarehouseId = allocations.first.warehouseId;
+    }
 
     final dustCut = double.tryParse(_dustCutCtrl.text) ?? 0;
     final polCut = double.tryParse(_polCutCtrl.text) ?? 0;
@@ -268,6 +357,8 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
       gnyWtLess: gunnyLess > 0,
       totalAmount: double.tryParse(_totalAmountCtrl.text) ?? 0,
       netWeight: gross - tare - dustCut - polCut - otherCut - gunnyLess,
+      warehouseId: primaryWarehouseId,
+      warehouseAllocations: allocations,
       status: 'draft',
       weighMode: _weighMode,
       vType: _vType,
@@ -312,6 +403,21 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
 
   @override
   Widget build(BuildContext context) {
+    final usesWarehouses =
+        ref.watch(inventoryModeProvider).valueOrNull?.usesWarehouses ?? false;
+    // For a brand-new procurement in multi-warehouse mode, seed one split row.
+    if (usesWarehouses &&
+        !_seededAlloc &&
+        _allocRows.isEmpty &&
+        widget.procurementId == null) {
+      _seededAlloc = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() =>
+              _allocRows.add(_AllocRow(warehouseId: null, qtyText: '')));
+        }
+      });
+    }
     return Scaffold(
       appBar: AppBar(
         title:
@@ -844,6 +950,99 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
                       onChanged: (_) => _recalc(),
                     ),
                     const SizedBox(height: 16),
+
+                    // ── STORAGE / GODOWN SPLIT (multi-warehouse only) ──
+                    if (usesWarehouses) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Storage (Godowns)',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold)),
+                          TextButton.icon(
+                            onPressed: _addAllocRow,
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text('Add godown'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Builder(builder: (context) {
+                        final warehouses =
+                            ref.watch(warehousesProvider).valueOrNull ??
+                                const [];
+                        final net = _netWeightKg();
+                        final allocated = _allocatedKg();
+                        final remaining = net - allocated;
+                        return Column(
+                          children: [
+                            for (int i = 0; i < _allocRows.length; i++)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 3,
+                                      child: DropdownButtonFormField<int>(
+                                        initialValue: _allocRows[i].warehouseId,
+                                        isExpanded: true,
+                                        decoration: const InputDecoration(
+                                          labelText: 'Godown',
+                                          border: OutlineInputBorder(),
+                                          isDense: true,
+                                        ),
+                                        items: [
+                                          for (final w in warehouses)
+                                            DropdownMenuItem(
+                                                value: w.id,
+                                                child: Text(w.name)),
+                                        ],
+                                        onChanged: (v) => setState(
+                                            () => _allocRows[i].warehouseId = v),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      flex: 2,
+                                      child: TextFormField(
+                                        controller: _allocRows[i].qtyCtrl,
+                                        keyboardType: TextInputType.number,
+                                        decoration: const InputDecoration(
+                                          labelText: 'Kg',
+                                          border: OutlineInputBorder(),
+                                          isDense: true,
+                                        ),
+                                        onChanged: (_) => setState(() {}),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                          Icons.remove_circle_outline,
+                                          color: Colors.red),
+                                      onPressed: () => _removeAllocRow(i),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Allocated ${allocated.toStringAsFixed(0)} / '
+                                'Net ${net.toStringAsFixed(0)} Kg'
+                                '${remaining.abs() > 1 ? '  •  Remaining ${remaining.toStringAsFixed(0)} Kg' : '  ✓'}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: remaining.abs() > 1
+                                      ? Colors.red
+                                      : Colors.green,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }),
+                      const SizedBox(height: 16),
+                    ],
 
                     // ── RATE & CALCULATION SECTION ──
                     _buildSectionHeader(
@@ -1514,4 +1713,15 @@ class _PaddyProcurementFormState extends ConsumerState<PaddyProcurementForm> {
         return Colors.grey;
     }
   }
+}
+
+/// One editable row of the multi-godown split: the chosen godown + its Kg.
+class _AllocRow {
+  _AllocRow({required this.warehouseId, required String qtyText})
+      : qtyCtrl = TextEditingController(text: qtyText);
+
+  int? warehouseId;
+  final TextEditingController qtyCtrl;
+
+  void dispose() => qtyCtrl.dispose();
 }

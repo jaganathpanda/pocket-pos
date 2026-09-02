@@ -138,6 +138,8 @@ class FirestorePaddyProcurementRepository
       'tenderNumber': data.tenderNumber,
       'commissionAgentId': data.commissionAgentId,
       'warehouseId': data.warehouseId,
+      'warehouseAllocations':
+          (data.warehouseAllocations ?? const []).map((a) => a.toMap()).toList(),
       'vehicleEntryId': data.vehicleEntryId,
       'weighMode': data.weighMode ?? 'weighbridge',
       'remainingStock': data.netWeight ?? 0,
@@ -213,6 +215,8 @@ class FirestorePaddyProcurementRepository
       'tenderNumber': data.tenderNumber,
       'commissionAgentId': data.commissionAgentId,
       'warehouseId': data.warehouseId,
+      'warehouseAllocations':
+          (data.warehouseAllocations ?? const []).map((a) => a.toMap()).toList(),
       'vehicleEntryId': data.vehicleEntryId,
       'weighMode': data.weighMode ?? 'weighbridge',
       'status': data.status ?? 'draft',
@@ -245,19 +249,43 @@ class FirestorePaddyProcurementRepository
         totalDeduction -
         ((data['otherCut'] as num?)?.toDouble() ?? 0);
 
-    final warehouseId = data['warehouseId'] as int? ?? 1;
-
-    // Stock-in to inventory (convert Kg to Qntl if needed)
-    final quantityInQntl = actualQty / 100;
     final ratePerQntl = (data['ratePerQntl'] as num?)?.toDouble() ?? 0;
+    final productId = data['productId'] as int;
+    final note = 'Paddy Procurement #$id - ${data['slipNo']}';
 
-    await _inventory.stockIn(
-      productId: data['productId'] as int,
-      warehouseId: warehouseId,
-      quantity: quantityInQntl,
-      unitCost: ratePerQntl,
-      note: 'Paddy Procurement #$id - ${data['slipNo']}',
-    );
+    final allocations = (data['warehouseAllocations'] as List?)
+            ?.map((e) => WarehouseAllocation.fromMap(e as Map<String, dynamic>))
+            .toList() ??
+        const <WarehouseAllocation>[];
+
+    if (allocations.isNotEmpty) {
+      // Split the post-cut quantity across the chosen godowns, in proportion to
+      // each godown's allocated share (so quality cuts are shared fairly).
+      final totalAlloc = allocations.fold<double>(0, (s, a) => s + a.quantityKg);
+      for (final a in allocations) {
+        final share = totalAlloc > 0
+            ? a.quantityKg / totalAlloc
+            : 1 / allocations.length;
+        final qtyQntl = (actualQty * share) / 100;
+        if (qtyQntl <= 0) continue;
+        await _inventory.stockIn(
+          productId: productId,
+          warehouseId: a.warehouseId,
+          quantity: qtyQntl,
+          unitCost: ratePerQntl,
+          note: note,
+        );
+      }
+    } else {
+      // Single-warehouse: stock everything into the chosen (or default) godown.
+      await _inventory.stockIn(
+        productId: productId,
+        warehouseId: data['warehouseId'] as int? ?? 1,
+        quantity: actualQty / 100,
+        unitCost: ratePerQntl,
+        note: note,
+      );
+    }
 
     // Update status
     await _col.doc('$id').set({
@@ -366,6 +394,11 @@ class FirestorePaddyProcurementRepository
       tenderNumber: d['tenderNumber'] as String?,
       commissionAgentId: (d['commissionAgentId'] as num?)?.toInt(),
       warehouseId: (d['warehouseId'] as num?)?.toInt(),
+      warehouseAllocations: (d['warehouseAllocations'] as List?)
+              ?.map((e) =>
+                  WarehouseAllocation.fromMap(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
       vehicleEntryId: (d['vehicleEntryId'] as num?)?.toInt(),
       weighMode: d['weighMode'] as String? ?? 'weighbridge',
       remainingStock: num_(d['remainingStock']),

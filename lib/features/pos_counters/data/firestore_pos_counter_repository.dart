@@ -123,6 +123,23 @@ class FirestorePosCounterRepository implements PosCounterRepository {
   }
 
   @override
+  Stream<List<PosUserRow>> watchMillers() {
+    return _users.snapshots().map((snap) {
+      const millerRoles = {'owner', 'super_admin', 'manager'};
+      return snap.docs
+          .where((d) => millerRoles.contains(d.data()['role'] as String?))
+          .map((d) {
+        final data = d.data();
+        return PosUserRow(
+          uid: d.id,
+          username: (data['username'] as String?) ?? '',
+          isActive: (data['isActive'] as bool?) ?? true,
+        );
+      }).toList();
+    });
+  }
+
+  @override
   Future<void> setUserActive(String uid, bool active) =>
       _users.doc(uid).set({'isActive': active}, SetOptions(merge: true));
 

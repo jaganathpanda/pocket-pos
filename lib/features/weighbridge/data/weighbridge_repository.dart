@@ -19,4 +19,20 @@ abstract class WeighbridgeRepository {
 
   /// Marks an entry as complete, optionally sets the completion code.
   Future<void> markComplete(int id, {String? completeCode});
+
+  // ── Approval workflow ──
+  /// Entries awaiting approval (status == 'pending'). If [approverUid] is given,
+  /// only those routed to that miller.
+  Stream<List<VehicleEntry>> watchPending({String? approverUid});
+
+  /// Entries created by a given operator (for their dashboard).
+  Stream<List<VehicleEntry>> watchByCreator(String createdByUid);
+
+  /// Miller approves a pending entry.
+  Future<void> approveEntry(int id,
+      {required String approvedByUid, String? approverName});
+
+  /// Miller rejects a pending entry with a reason.
+  Future<void> rejectEntry(int id,
+      {required String approvedByUid, String? reason});
 }

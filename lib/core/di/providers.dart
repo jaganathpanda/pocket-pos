@@ -83,6 +83,12 @@ final posUsersProvider = StreamProvider<List<PosUserRow>>((ref) {
   return ref.watch(posCounterRepositoryProvider).watchPosUsers();
 });
 
+/// Millers (owner/manager users) available to approve weighbridge entries.
+final millersProvider = StreamProvider<List<PosUserRow>>((ref) {
+  if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
+  return ref.watch(posCounterRepositoryProvider).watchMillers();
+});
+
 final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
   return FirestoreCategoryRepository(
       ref.watch(firestoreProvider), ref.watch(activeStoreIdProvider) ?? '');
@@ -331,6 +337,33 @@ final vehicleEntryProvider =
     return Future.value(null);
   }
   return ref.watch(weighbridgeRepositoryProvider).getEntry(id);
+});
+
+/// The current signed-in user's Firebase Auth uid (null when logged out).
+final currentUidProvider = Provider<String?>((ref) {
+  return ref.watch(storeSessionProvider)?.uid;
+});
+
+/// Weighbridge entries awaiting approval, routed to the current miller.
+final pendingApprovalsProvider = StreamProvider<List<VehicleEntry>>((ref) {
+  final uid = ref.watch(currentUidProvider);
+  if (uid == null || uid.isEmpty) return Stream.value(const []);
+  return ref
+      .watch(weighbridgeRepositoryProvider)
+      .watchPending(approverUid: uid);
+});
+
+/// Count of pending approvals for the current miller (badge).
+final pendingApprovalsCountProvider = Provider<int>((ref) {
+  return ref.watch(pendingApprovalsProvider).valueOrNull?.length ?? 0;
+});
+
+/// Vehicle entries created by the current weighbridge operator.
+final myWeighbridgeEntriesProvider =
+    StreamProvider<List<VehicleEntry>>((ref) {
+  final uid = ref.watch(currentUidProvider);
+  if (uid == null || uid.isEmpty) return Stream.value(const []);
+  return ref.watch(weighbridgeRepositoryProvider).watchByCreator(uid);
 });
 
 class DashboardMetrics {

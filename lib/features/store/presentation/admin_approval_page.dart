@@ -18,6 +18,20 @@ final _approvedStoresProvider = StreamProvider<List<StoreRecord>>((ref) {
       .watchStoresByStatus(StoreStatus.approved);
 });
 
+final _pendingOperatorsProvider =
+    StreamProvider<List<OperatorProfile>>((ref) {
+  return ref
+      .watch(storeAuthServiceProvider)
+      .watchOperatorsByStatus(StoreStatus.pending);
+});
+
+final _approvedOperatorsProvider =
+    StreamProvider<List<OperatorProfile>>((ref) {
+  return ref
+      .watch(storeAuthServiceProvider)
+      .watchOperatorsByStatus(StoreStatus.approved);
+});
+
 final _notificationFeaturesProvider =
     StreamProvider<NotificationFeatures>((ref) {
   return ref.watch(storeAuthServiceProvider).watchNotificationFeatures();
@@ -35,6 +49,8 @@ class AdminApprovalPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pending = ref.watch(_pendingStoresProvider);
     final approved = ref.watch(_approvedStoresProvider);
+    final pendingOps = ref.watch(_pendingOperatorsProvider);
+    final approvedOps = ref.watch(_approvedOperatorsProvider);
     final notificationFeatures = ref.watch(_notificationFeaturesProvider);
     final storefrontFeature = ref.watch(_storefrontFeatureFlagProvider);
     final service = ref.watch(storeAuthServiceProvider);
@@ -42,6 +58,17 @@ class AdminApprovalPage extends ConsumerWidget {
     Future<void> setStatus(StoreRecord s, StoreStatus status) async {
       try {
         await service.setStoreStatus(s.storeId, status);
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('$e')));
+        }
+      }
+    }
+
+    Future<void> setOpStatus(OperatorProfile o, StoreStatus status) async {
+      try {
+        await service.setOperatorStatus(o.uid, status);
       } catch (e) {
         if (context.mounted) {
           ScaffoldMessenger.of(context)
@@ -169,6 +196,68 @@ class AdminApprovalPage extends ConsumerWidget {
                             trailing: TextButton(
                               onPressed: () =>
                                   setStatus(s, StoreStatus.suspended),
+                              child: const Text('Suspend'),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => _Empty('Error: $e'),
+          ),
+          const SizedBox(height: 20),
+          const _SectionHeader('Pending weighbridge operators'),
+          pendingOps.when(
+            data: (list) => list.isEmpty
+                ? const _Empty('No operators awaiting approval.')
+                : Column(
+                    children: [
+                      for (final o in list)
+                        Card(
+                          child: ListTile(
+                            leading: const Icon(Icons.scale_rounded,
+                                color: Colors.orange),
+                            title: Text(o.name),
+                            subtitle: Text(o.email),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                TextButton(
+                                  onPressed: () =>
+                                      setOpStatus(o, StoreStatus.suspended),
+                                  child: const Text('Reject'),
+                                ),
+                                FilledButton(
+                                  onPressed: () =>
+                                      setOpStatus(o, StoreStatus.approved),
+                                  child: const Text('Approve'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => _Empty('Error: $e'),
+          ),
+          const SizedBox(height: 20),
+          const _SectionHeader('Approved operators'),
+          approvedOps.when(
+            data: (list) => list.isEmpty
+                ? const _Empty('No approved operators yet.')
+                : Column(
+                    children: [
+                      for (final o in list)
+                        Card(
+                          child: ListTile(
+                            leading: const Icon(Icons.check_circle,
+                                color: Colors.green),
+                            title: Text(o.name),
+                            subtitle: Text(o.email),
+                            trailing: TextButton(
+                              onPressed: () =>
+                                  setOpStatus(o, StoreStatus.suspended),
                               child: const Text('Suspend'),
                             ),
                           ),

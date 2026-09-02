@@ -58,6 +58,10 @@ class PaddyProcurement extends Equatable {
   final String? tenderNumber;
   final int? commissionAgentId;
   final int? warehouseId;
+
+  /// How the procured paddy is split across godowns (multi-warehouse mode).
+  /// Empty = store all in [warehouseId] (single-warehouse behaviour).
+  final List<WarehouseAllocation> warehouseAllocations;
   final int? vehicleEntryId;
   final String? weighMode; // 'weighbridge' or 'manual' (from the vehicle entry)
   final double? remainingStock;
@@ -123,6 +127,7 @@ class PaddyProcurement extends Equatable {
     this.tenderNumber,
     this.commissionAgentId,
     this.warehouseId,
+    this.warehouseAllocations = const [],
     this.vehicleEntryId,
     this.weighMode,
     this.remainingStock,
@@ -133,6 +138,30 @@ class PaddyProcurement extends Equatable {
 
   @override
   List<Object?> get props => [id, slipNo, partyName];
+}
+
+/// One line of a procurement's warehouse split: [quantityKg] of paddy stored
+/// in godown [warehouseId].
+class WarehouseAllocation extends Equatable {
+  final int warehouseId;
+  final double quantityKg;
+
+  const WarehouseAllocation({
+    required this.warehouseId,
+    required this.quantityKg,
+  });
+
+  Map<String, dynamic> toMap() =>
+      {'warehouseId': warehouseId, 'quantityKg': quantityKg};
+
+  factory WarehouseAllocation.fromMap(Map<String, dynamic> m) =>
+      WarehouseAllocation(
+        warehouseId: (m['warehouseId'] as num?)?.toInt() ?? 0,
+        quantityKg: (m['quantityKg'] as num?)?.toDouble() ?? 0,
+      );
+
+  @override
+  List<Object?> get props => [warehouseId, quantityKg];
 }
 
 class QualityCut extends Equatable {
@@ -321,6 +350,7 @@ class PaddyProcurementCompanion {
   final String? tenderNumber;
   final int? commissionAgentId;
   final int? warehouseId;
+  final List<WarehouseAllocation>? warehouseAllocations;
   final int? vehicleEntryId;
   final String? weighMode;
   final double? remainingStock;
@@ -386,6 +416,7 @@ class PaddyProcurementCompanion {
     this.tenderNumber,
     this.commissionAgentId,
     this.warehouseId,
+    this.warehouseAllocations,
     this.vehicleEntryId,
     this.weighMode,
     this.remainingStock,
@@ -455,6 +486,7 @@ class PaddyProcurementCompanion {
       tenderNumber: p.tenderNumber,
       commissionAgentId: p.commissionAgentId,
       warehouseId: p.warehouseId,
+      warehouseAllocations: p.warehouseAllocations,
       vehicleEntryId: p.vehicleEntryId,
       weighMode: p.weighMode,
       remainingStock: p.remainingStock,
