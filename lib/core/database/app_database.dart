@@ -368,6 +368,14 @@ class VehicleEntries extends Table {
       dateTime().clientDefault(() => DateTime.now())();
   DateTimeColumn get updatedAt =>
       dateTime().clientDefault(() => DateTime.now())();
+  TextColumn get status => text().withDefault(const Constant('approved'))();
+  TextColumn get createdByUid => text().nullable()();
+  TextColumn get createdByName => text().nullable()();
+  TextColumn get approverUid => text().nullable()();
+  TextColumn get approverName => text().nullable()();
+  TextColumn get approvedByUid => text().nullable()();
+  DateTimeColumn get approvedAt => dateTime().nullable()();
+  TextColumn get rejectionReason => text().nullable()();
 }
 // lib/core/database/app_database.dart
 

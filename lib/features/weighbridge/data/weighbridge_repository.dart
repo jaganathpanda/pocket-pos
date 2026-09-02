@@ -9,6 +9,7 @@ abstract class WeighbridgeRepository {
     String? partyName,
   });
 
+  Stream<VehicleEntry?> watchEntry(int id);
   Future<VehicleEntry?> getEntry(int id);
 
   Future<int> createEntry(VehicleEntryCompanion data);

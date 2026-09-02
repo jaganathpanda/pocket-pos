@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pocket_pos/core/database/database_provider.dart';
 import 'package:pocket_pos/features/weighbridge/data/firestore_weighbridge_repository.dart';
 import 'package:pocket_pos/features/weighbridge/data/weighbridge_repository.dart';
+import 'package:pocket_pos/features/weighbridge/data/weighbridge_repository_impl.dart';
 
 import '../../features/auth/domain/auth_models.dart';
 import '../../features/auth/presentation/auth_controller.dart';
@@ -301,14 +303,27 @@ final cartGrandTotalProvider =
 });
 
 // ── Weighbridge / Vehicle Entry ─────────────────────────────────────────────
+final useFirestoreProvider = Provider<bool>((ref) {
+  // Default to Firestore for production, but allow switching
+  // For web Chrome debugging, set to false to use Drift
+  // return false; // Use Drift for local testing
+  return true; // Use Firestore for production
+});
 
 final weighbridgeRepositoryProvider = Provider<WeighbridgeRepository>((ref) {
-  // Use Firestore implementation (or local Drift if needed). All other
-  // repositories use Firestore, so we follow that pattern.
-  return FirestoreWeighbridgeRepository(
-    ref.watch(firestoreProvider),
-    ref.watch(activeStoreIdProvider) ?? '',
-  );
+  final useFirestore = ref.watch(useFirestoreProvider);
+  final storeId = ref.watch(activeStoreIdProvider);
+
+  if (useFirestore && storeId != null && storeId.isNotEmpty) {
+    print('🏗️ Using FirestoreWeighbridgeRepository for store: $storeId');
+    return FirestoreWeighbridgeRepository(
+      ref.watch(firestoreProvider),
+      storeId,
+    );
+  } else {
+    print('🏗️ Using WeighbridgeRepositoryImpl (Drift)');
+    return WeighbridgeRepositoryImpl(ref.watch(appDatabaseProvider));
+  }
 });
 
 /// Filter state for the vehicle entry list.
@@ -319,7 +334,10 @@ final weighbridgeFilterProvider = StateProvider<WeighbridgeFilter>((ref) {
 /// Stream of vehicle entries filtered by the current filter state.
 final vehicleEntriesStreamProvider = StreamProvider<List<VehicleEntry>>((ref) {
   final filter = ref.watch(weighbridgeFilterProvider);
-  if (ref.watch(activeStoreIdProvider) == null) {
+  final storeId = ref.watch(activeStoreIdProvider);
+  final useFirestore = ref.watch(useFirestoreProvider);
+
+  if (useFirestore && storeId == null) {
     return Stream.value(const []);
   }
   return ref.watch(weighbridgeRepositoryProvider).watchAll(
@@ -330,13 +348,29 @@ final vehicleEntriesStreamProvider = StreamProvider<List<VehicleEntry>>((ref) {
       );
 });
 
-/// Fetches a single vehicle entry by ID.
+/// Fetches a single vehicle entry by ID (one-time fetch).
 final vehicleEntryProvider =
     FutureProvider.family<VehicleEntry?, int>((ref, id) {
-  if (ref.watch(activeStoreIdProvider) == null) {
+  final storeId = ref.watch(activeStoreIdProvider);
+  final useFirestore = ref.watch(useFirestoreProvider);
+
+  if (useFirestore && storeId == null) {
     return Future.value(null);
   }
   return ref.watch(weighbridgeRepositoryProvider).getEntry(id);
+});
+
+/// 👇 ADD THIS: Real-time stream of a single vehicle entry by ID.
+final vehicleEntryStreamProvider =
+    StreamProvider.family<VehicleEntry?, int>((ref, id) {
+  print('🔍 vehicleEntryStreamProvider called for ID: $id');
+  final storeId = ref.watch(activeStoreIdProvider);
+  final useFirestore = ref.watch(useFirestoreProvider);
+
+  if (useFirestore && storeId == null) {
+    return Stream.value(null);
+  }
+  return ref.watch(weighbridgeRepositoryProvider).watchEntry(id);
 });
 
 /// The current signed-in user's Firebase Auth uid (null when logged out).
@@ -359,8 +393,7 @@ final pendingApprovalsCountProvider = Provider<int>((ref) {
 });
 
 /// Vehicle entries created by the current weighbridge operator.
-final myWeighbridgeEntriesProvider =
-    StreamProvider<List<VehicleEntry>>((ref) {
+final myWeighbridgeEntriesProvider = StreamProvider<List<VehicleEntry>>((ref) {
   final uid = ref.watch(currentUidProvider);
   if (uid == null || uid.isEmpty) return Stream.value(const []);
   return ref.watch(weighbridgeRepositoryProvider).watchByCreator(uid);

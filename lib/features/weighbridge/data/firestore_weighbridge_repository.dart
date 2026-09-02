@@ -56,6 +56,27 @@ class FirestoreWeighbridgeRepository implements WeighbridgeRepository {
     });
   }
 
+  // lib/features/weighbridge/data/firestore_weighbridge_repository.dart
+
+  @override
+  Stream<VehicleEntry?> watchEntry(int id) {
+    print('🔍 FirestoreWeighbridgeRepository.watchEntry() called for ID: $id');
+    print('   Store ID: $_storeId');
+
+    return _col.doc('$id').snapshots().map((doc) {
+      if (!doc.exists) {
+        print('❌ Document not found for ID: $id');
+        return null;
+      }
+      final entry = _fromDoc(doc);
+      print('✅ Entry stream updated: ${entry.slipNo}');
+      return entry;
+    }).handleError((e) {
+      print('❌ Error in watchEntry: $e');
+      return null;
+    });
+  }
+
   @override
   Future<VehicleEntry?> getEntry(int id) async {
     final doc = await _col.doc('$id').get();
@@ -155,17 +176,14 @@ class FirestoreWeighbridgeRepository implements WeighbridgeRepository {
     if (approverUid != null && approverUid.isNotEmpty) {
       query = query.where('approverUid', isEqualTo: approverUid);
     }
-    return query.snapshots().map(
-        (snap) => snap.docs.map(_fromDoc).toList()
-          ..sort((a, b) => b.date.compareTo(a.date)));
+    return query.snapshots().map((snap) => snap.docs.map(_fromDoc).toList()
+      ..sort((a, b) => b.date.compareTo(a.date)));
   }
 
   @override
   Stream<List<VehicleEntry>> watchByCreator(String createdByUid) {
-    return _col
-        .where('createdByUid', isEqualTo: createdByUid)
-        .snapshots()
-        .map((snap) => snap.docs.map(_fromDoc).toList()
+    return _col.where('createdByUid', isEqualTo: createdByUid).snapshots().map(
+        (snap) => snap.docs.map(_fromDoc).toList()
           ..sort((a, b) => b.date.compareTo(a.date)));
   }
 

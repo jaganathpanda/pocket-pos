@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../../core/database/app_database.dart';
+import '../../../core/database/app_database.dart' hide VehicleEntry;
 import '../../../core/di/providers.dart';
 import '../domain/vehicle_entry.dart';
 import '../../notifications/providers/notification_providers.dart';
@@ -57,6 +57,7 @@ class _VehicleEntryDetailPageState
   String? _selectedMillerUid;
   String? _selectedMillerName;
   String _loadedStatus = 'approved';
+  bool _loaded = false;
 
   @override
   void initState() {
@@ -64,9 +65,10 @@ class _VehicleEntryDetailPageState
     _initControllers();
 
     if (widget.entryId != null) {
-      _loadEntry();
+      _loaded = false;
     } else {
       _setDefaults();
+      _loaded = true;
     }
   }
 
@@ -97,6 +99,7 @@ class _VehicleEntryDetailPageState
     _entryType = 'inward';
     _weighMode = 'weighbridge';
     _manualRows.clear();
+    _loaded = true;
   }
 
   @override
@@ -127,62 +130,53 @@ class _VehicleEntryDetailPageState
     return '${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${DateTime.now().millisecondsSinceEpoch.toString().substring(0, 4)}';
   }
 
-  Future<void> _loadEntry() async {
-    try {
-      final entry =
-          await ref.read(vehicleEntryProvider(widget.entryId!).future);
-      if (entry == null) return;
+  void _loadEntry(VehicleEntry entry) {
+    if (_loaded) return;
+    _loaded = true;
 
-      setState(() {
-        _date = entry.date;
-        _dateCtrl.text = DateFormat('dd/MM/yyyy').format(_date);
-        _slipNoCtrl.text = entry.slipNo;
-        _voucherCtrl.text = entry.voucherNo ?? '';
-        _vehicleCtrl.text = entry.vehicleNo;
-        _rstCtrl.text = entry.rstManual ?? '';
-        _partyCtrl.text = entry.partyName;
-        _selectedPartyId = entry.partyId;
-        _selectedProductId = entry.productId;
-        _entryType = entry.entryType ?? 'inward';
-        _weighMode = entry.weighMode ?? 'weighbridge';
+    setState(() {
+      _date = entry.date;
+      _dateCtrl.text = DateFormat('dd/MM/yyyy').format(_date);
+      _slipNoCtrl.text = entry.slipNo;
+      _voucherCtrl.text = entry.voucherNo ?? '';
+      _vehicleCtrl.text = entry.vehicleNo;
+      _rstCtrl.text = entry.rstManual ?? '';
+      _partyCtrl.text = entry.partyName;
+      _selectedPartyId = entry.partyId;
+      _selectedProductId = entry.productId;
+      _entryType = entry.entryType ?? 'inward';
+      _weighMode = entry.weighMode ?? 'weighbridge';
 
-        // Clear and rebuild manual rows
-        _manualRows.forEach((r) => r.dispose());
-        _manualRows.clear();
-        for (final l in entry.manualWeights) {
-          _manualRows.add(_ManualLineControllers.fromLine(l));
-        }
-
-        _firstWtCtrl.text = entry.firstWeight.toString();
-        _firstTime = entry.firstWeightTime;
-        _firstTimeCtrl.text = entry.firstWeightTime != null
-            ? DateFormat('dd/MM/yyyy HH:mm').format(entry.firstWeightTime!)
-            : '';
-        _secondWtCtrl.text = entry.secondWeight.toString();
-        _secondTime = entry.secondWeightTime;
-        _secondTimeCtrl.text = entry.secondWeightTime != null
-            ? DateFormat('dd/MM/yyyy HH:mm').format(entry.secondWeightTime!)
-            : '';
-        _bagsCtrl.text = entry.bags?.toString() ?? '';
-        _lotCtrl.text = entry.lotNumber ?? '';
-        _remarkCtrl.text = entry.remark ?? '';
-        _complete = entry.complete;
-        _loadedStatus = entry.status;
-        _selectedMillerUid = entry.approverUid;
-        _selectedMillerName = entry.approverName;
-        _completeCodeCtrl.text = entry.completeCode ?? '';
-        _completeDate = entry.completeDate;
-        _completeDateCtrl.text = entry.completeDate != null
-            ? DateFormat('dd/MM/yyyy').format(entry.completeDate!)
-            : '';
-      });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading entry: $e')),
-        );
+      // Clear and rebuild manual rows
+      _manualRows.forEach((r) => r.dispose());
+      _manualRows.clear();
+      for (final l in entry.manualWeights) {
+        _manualRows.add(_ManualLineControllers.fromLine(l));
       }
-    }
+
+      _firstWtCtrl.text = entry.firstWeight.toString();
+      _firstTime = entry.firstWeightTime;
+      _firstTimeCtrl.text = entry.firstWeightTime != null
+          ? DateFormat('dd/MM/yyyy HH:mm').format(entry.firstWeightTime!)
+          : '';
+      _secondWtCtrl.text = entry.secondWeight.toString();
+      _secondTime = entry.secondWeightTime;
+      _secondTimeCtrl.text = entry.secondWeightTime != null
+          ? DateFormat('dd/MM/yyyy HH:mm').format(entry.secondWeightTime!)
+          : '';
+      _bagsCtrl.text = entry.bags?.toString() ?? '';
+      _lotCtrl.text = entry.lotNumber ?? '';
+      _remarkCtrl.text = entry.remark ?? '';
+      _complete = entry.complete;
+      _loadedStatus = entry.status;
+      _selectedMillerUid = entry.approverUid;
+      _selectedMillerName = entry.approverName;
+      _completeCodeCtrl.text = entry.completeCode ?? '';
+      _completeDate = entry.completeDate;
+      _completeDateCtrl.text = entry.completeDate != null
+          ? DateFormat('dd/MM/yyyy').format(entry.completeDate!)
+          : '';
+    });
   }
 
   double _calculateNetWeight() {
@@ -222,7 +216,8 @@ class _VehicleEntryDetailPageState
 
     final isOperator =
         ref.read(currentUserProvider)?.isWeighbridgeOperator ?? false;
-    if (isOperator && (_selectedMillerUid == null || _selectedMillerUid!.isEmpty)) {
+    if (isOperator &&
+        (_selectedMillerUid == null || _selectedMillerUid!.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Select a miller to approve.')));
       return;
@@ -245,6 +240,10 @@ class _VehicleEntryDetailPageState
       }
     }
 
+    final currentUid = ref.read(currentUidProvider);
+    final currentUsername =
+        ref.read(storeSessionProvider)?.username ?? 'Operator';
+
     final companion = VehicleEntryCompanion(
       id: widget.entryId,
       date: _date,
@@ -266,18 +265,14 @@ class _VehicleEntryDetailPageState
       entryType: _entryType,
       weighMode: _weighMode,
       manualWeights: manualWeights,
-      // Operators submit for approval; owners save directly as approved.
       complete: isOperator ? false : _complete,
-      completeCode: (!isOperator && _complete)
-          ? _completeCodeCtrl.text.trim()
-          : null,
+      completeCode:
+          (!isOperator && _complete) ? _completeCodeCtrl.text.trim() : null,
       completeDate: (!isOperator && _complete) ? _completeDate : null,
       remark: _remarkCtrl.text.trim().isEmpty ? null : _remarkCtrl.text.trim(),
       status: isOperator ? 'pending' : null,
-      createdByUid: isOperator ? ref.read(currentUidProvider) : null,
-      createdByName: isOperator
-          ? ref.read(storeSessionProvider)?.username
-          : null,
+      createdByUid: isOperator ? currentUid : null,
+      createdByName: isOperator ? currentUsername : null,
       createdByRole: isOperator ? 'weighbridgeOperator' : null,
       approverUid: isOperator ? _selectedMillerUid : null,
       approverName: isOperator ? _selectedMillerName : null,
@@ -285,8 +280,9 @@ class _VehicleEntryDetailPageState
 
     try {
       if (widget.entryId == null) {
-        final newId =
-            await ref.read(weighbridgeRepositoryProvider).createEntry(companion);
+        final newId = await ref
+            .read(weighbridgeRepositoryProvider)
+            .createEntry(companion);
         if (isOperator) {
           await _notifyMiller(newId);
         }
@@ -356,8 +352,6 @@ class _VehicleEntryDetailPageState
         partyId: entry.partyId,
         productId: entry.productId,
         productName: productName,
-        // Manual mode has no weighbridge gross/tare; carry the manual total as
-        // gross (tare 0) so the paddy form's gross-tare-cuts math still works.
         grossWeight: isManual ? entry.netWeight : entry.firstWeight,
         tareWeight: isManual ? 0 : entry.secondWeight,
         netWeight: entry.netWeight,
@@ -421,6 +415,70 @@ class _VehicleEntryDetailPageState
         ref.watch(currentUserProvider)?.isWeighbridgeOperator ?? false;
     final millers = ref.watch(millersProvider).valueOrNull ?? const [];
 
+    // ── If editing, use StreamProvider for real-time updates ──
+    if (widget.entryId != null && !_loaded) {
+      final entryAsync = ref.watch(vehicleEntryStreamProvider(widget.entryId!));
+
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Edit Vehicle Entry'),
+        ),
+        body: Center(
+          child: entryAsync.when(
+            data: (entry) {
+              if (entry == null) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline,
+                        size: 48, color: Colors.red),
+                    const SizedBox(height: 12),
+                    const Text('Entry not found.'),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Go Back'),
+                    ),
+                  ],
+                );
+              }
+
+              // Load the entry into the form
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!_loaded) {
+                  _loadEntry(entry);
+                }
+              });
+
+              return const SizedBox.shrink();
+            },
+            loading: () => const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 12),
+                Text('Loading entry...'),
+              ],
+            ),
+            error: (e, _) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 12),
+                Text('Error: $e'),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Go Back'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // ── Main form ──
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.entryId == null
@@ -452,7 +510,7 @@ class _VehicleEntryDetailPageState
             children: [
               if (isOperator) ...[
                 DropdownButtonFormField<String>(
-                  initialValue: _selectedMillerUid,
+                  value: _selectedMillerUid,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Select Miller (approver) *',

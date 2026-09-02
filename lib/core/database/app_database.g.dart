@@ -11363,6 +11363,55 @@ class $VehicleEntriesTable extends VehicleEntries
       type: DriftSqlType.dateTime,
       requiredDuringInsert: false,
       clientDefault: () => DateTime.now());
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('approved'));
+  static const VerificationMeta _createdByUidMeta =
+      const VerificationMeta('createdByUid');
+  @override
+  late final GeneratedColumn<String> createdByUid = GeneratedColumn<String>(
+      'created_by_uid', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _createdByNameMeta =
+      const VerificationMeta('createdByName');
+  @override
+  late final GeneratedColumn<String> createdByName = GeneratedColumn<String>(
+      'created_by_name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _approverUidMeta =
+      const VerificationMeta('approverUid');
+  @override
+  late final GeneratedColumn<String> approverUid = GeneratedColumn<String>(
+      'approver_uid', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _approverNameMeta =
+      const VerificationMeta('approverName');
+  @override
+  late final GeneratedColumn<String> approverName = GeneratedColumn<String>(
+      'approver_name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _approvedByUidMeta =
+      const VerificationMeta('approvedByUid');
+  @override
+  late final GeneratedColumn<String> approvedByUid = GeneratedColumn<String>(
+      'approved_by_uid', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _approvedAtMeta =
+      const VerificationMeta('approvedAt');
+  @override
+  late final GeneratedColumn<DateTime> approvedAt = GeneratedColumn<DateTime>(
+      'approved_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _rejectionReasonMeta =
+      const VerificationMeta('rejectionReason');
+  @override
+  late final GeneratedColumn<String> rejectionReason = GeneratedColumn<String>(
+      'rejection_reason', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -11389,7 +11438,15 @@ class $VehicleEntriesTable extends VehicleEntries
         weighMode,
         manualWeightsJson,
         createdAt,
-        updatedAt
+        updatedAt,
+        status,
+        createdByUid,
+        createdByName,
+        approverUid,
+        approverName,
+        approvedByUid,
+        approvedAt,
+        rejectionReason
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -11530,6 +11587,52 @@ class $VehicleEntriesTable extends VehicleEntries
       context.handle(_updatedAtMeta,
           updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
     }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    }
+    if (data.containsKey('created_by_uid')) {
+      context.handle(
+          _createdByUidMeta,
+          createdByUid.isAcceptableOrUnknown(
+              data['created_by_uid']!, _createdByUidMeta));
+    }
+    if (data.containsKey('created_by_name')) {
+      context.handle(
+          _createdByNameMeta,
+          createdByName.isAcceptableOrUnknown(
+              data['created_by_name']!, _createdByNameMeta));
+    }
+    if (data.containsKey('approver_uid')) {
+      context.handle(
+          _approverUidMeta,
+          approverUid.isAcceptableOrUnknown(
+              data['approver_uid']!, _approverUidMeta));
+    }
+    if (data.containsKey('approver_name')) {
+      context.handle(
+          _approverNameMeta,
+          approverName.isAcceptableOrUnknown(
+              data['approver_name']!, _approverNameMeta));
+    }
+    if (data.containsKey('approved_by_uid')) {
+      context.handle(
+          _approvedByUidMeta,
+          approvedByUid.isAcceptableOrUnknown(
+              data['approved_by_uid']!, _approvedByUidMeta));
+    }
+    if (data.containsKey('approved_at')) {
+      context.handle(
+          _approvedAtMeta,
+          approvedAt.isAcceptableOrUnknown(
+              data['approved_at']!, _approvedAtMeta));
+    }
+    if (data.containsKey('rejection_reason')) {
+      context.handle(
+          _rejectionReasonMeta,
+          rejectionReason.isAcceptableOrUnknown(
+              data['rejection_reason']!, _rejectionReasonMeta));
+    }
     return context;
   }
 
@@ -11589,6 +11692,22 @@ class $VehicleEntriesTable extends VehicleEntries
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       updatedAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      createdByUid: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}created_by_uid']),
+      createdByName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}created_by_name']),
+      approverUid: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}approver_uid']),
+      approverName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}approver_name']),
+      approvedByUid: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}approved_by_uid']),
+      approvedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}approved_at']),
+      rejectionReason: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}rejection_reason']),
     );
   }
 
@@ -11624,6 +11743,14 @@ class VehicleEntry extends DataClass implements Insertable<VehicleEntry> {
   final String manualWeightsJson;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String status;
+  final String? createdByUid;
+  final String? createdByName;
+  final String? approverUid;
+  final String? approverName;
+  final String? approvedByUid;
+  final DateTime? approvedAt;
+  final String? rejectionReason;
   const VehicleEntry(
       {required this.id,
       required this.date,
@@ -11649,7 +11776,15 @@ class VehicleEntry extends DataClass implements Insertable<VehicleEntry> {
       required this.weighMode,
       required this.manualWeightsJson,
       required this.createdAt,
-      required this.updatedAt});
+      required this.updatedAt,
+      required this.status,
+      this.createdByUid,
+      this.createdByName,
+      this.approverUid,
+      this.approverName,
+      this.approvedByUid,
+      this.approvedAt,
+      this.rejectionReason});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -11698,6 +11833,28 @@ class VehicleEntry extends DataClass implements Insertable<VehicleEntry> {
     map['manual_weights_json'] = Variable<String>(manualWeightsJson);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || createdByUid != null) {
+      map['created_by_uid'] = Variable<String>(createdByUid);
+    }
+    if (!nullToAbsent || createdByName != null) {
+      map['created_by_name'] = Variable<String>(createdByName);
+    }
+    if (!nullToAbsent || approverUid != null) {
+      map['approver_uid'] = Variable<String>(approverUid);
+    }
+    if (!nullToAbsent || approverName != null) {
+      map['approver_name'] = Variable<String>(approverName);
+    }
+    if (!nullToAbsent || approvedByUid != null) {
+      map['approved_by_uid'] = Variable<String>(approvedByUid);
+    }
+    if (!nullToAbsent || approvedAt != null) {
+      map['approved_at'] = Variable<DateTime>(approvedAt);
+    }
+    if (!nullToAbsent || rejectionReason != null) {
+      map['rejection_reason'] = Variable<String>(rejectionReason);
+    }
     return map;
   }
 
@@ -11745,6 +11902,28 @@ class VehicleEntry extends DataClass implements Insertable<VehicleEntry> {
       manualWeightsJson: Value(manualWeightsJson),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
+      status: Value(status),
+      createdByUid: createdByUid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdByUid),
+      createdByName: createdByName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdByName),
+      approverUid: approverUid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(approverUid),
+      approverName: approverName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(approverName),
+      approvedByUid: approvedByUid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(approvedByUid),
+      approvedAt: approvedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(approvedAt),
+      rejectionReason: rejectionReason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rejectionReason),
     );
   }
 
@@ -11778,6 +11957,14 @@ class VehicleEntry extends DataClass implements Insertable<VehicleEntry> {
       manualWeightsJson: serializer.fromJson<String>(json['manualWeightsJson']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      status: serializer.fromJson<String>(json['status']),
+      createdByUid: serializer.fromJson<String?>(json['createdByUid']),
+      createdByName: serializer.fromJson<String?>(json['createdByName']),
+      approverUid: serializer.fromJson<String?>(json['approverUid']),
+      approverName: serializer.fromJson<String?>(json['approverName']),
+      approvedByUid: serializer.fromJson<String?>(json['approvedByUid']),
+      approvedAt: serializer.fromJson<DateTime?>(json['approvedAt']),
+      rejectionReason: serializer.fromJson<String?>(json['rejectionReason']),
     );
   }
   @override
@@ -11809,6 +11996,14 @@ class VehicleEntry extends DataClass implements Insertable<VehicleEntry> {
       'manualWeightsJson': serializer.toJson<String>(manualWeightsJson),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'status': serializer.toJson<String>(status),
+      'createdByUid': serializer.toJson<String?>(createdByUid),
+      'createdByName': serializer.toJson<String?>(createdByName),
+      'approverUid': serializer.toJson<String?>(approverUid),
+      'approverName': serializer.toJson<String?>(approverName),
+      'approvedByUid': serializer.toJson<String?>(approvedByUid),
+      'approvedAt': serializer.toJson<DateTime?>(approvedAt),
+      'rejectionReason': serializer.toJson<String?>(rejectionReason),
     };
   }
 
@@ -11837,7 +12032,15 @@ class VehicleEntry extends DataClass implements Insertable<VehicleEntry> {
           String? weighMode,
           String? manualWeightsJson,
           DateTime? createdAt,
-          DateTime? updatedAt}) =>
+          DateTime? updatedAt,
+          String? status,
+          Value<String?> createdByUid = const Value.absent(),
+          Value<String?> createdByName = const Value.absent(),
+          Value<String?> approverUid = const Value.absent(),
+          Value<String?> approverName = const Value.absent(),
+          Value<String?> approvedByUid = const Value.absent(),
+          Value<DateTime?> approvedAt = const Value.absent(),
+          Value<String?> rejectionReason = const Value.absent()}) =>
       VehicleEntry(
         id: id ?? this.id,
         date: date ?? this.date,
@@ -11870,6 +12073,20 @@ class VehicleEntry extends DataClass implements Insertable<VehicleEntry> {
         manualWeightsJson: manualWeightsJson ?? this.manualWeightsJson,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
+        status: status ?? this.status,
+        createdByUid:
+            createdByUid.present ? createdByUid.value : this.createdByUid,
+        createdByName:
+            createdByName.present ? createdByName.value : this.createdByName,
+        approverUid: approverUid.present ? approverUid.value : this.approverUid,
+        approverName:
+            approverName.present ? approverName.value : this.approverName,
+        approvedByUid:
+            approvedByUid.present ? approvedByUid.value : this.approvedByUid,
+        approvedAt: approvedAt.present ? approvedAt.value : this.approvedAt,
+        rejectionReason: rejectionReason.present
+            ? rejectionReason.value
+            : this.rejectionReason,
       );
   VehicleEntry copyWithCompanion(VehicleEntriesCompanion data) {
     return VehicleEntry(
@@ -11911,6 +12128,26 @@ class VehicleEntry extends DataClass implements Insertable<VehicleEntry> {
           : this.manualWeightsJson,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      status: data.status.present ? data.status.value : this.status,
+      createdByUid: data.createdByUid.present
+          ? data.createdByUid.value
+          : this.createdByUid,
+      createdByName: data.createdByName.present
+          ? data.createdByName.value
+          : this.createdByName,
+      approverUid:
+          data.approverUid.present ? data.approverUid.value : this.approverUid,
+      approverName: data.approverName.present
+          ? data.approverName.value
+          : this.approverName,
+      approvedByUid: data.approvedByUid.present
+          ? data.approvedByUid.value
+          : this.approvedByUid,
+      approvedAt:
+          data.approvedAt.present ? data.approvedAt.value : this.approvedAt,
+      rejectionReason: data.rejectionReason.present
+          ? data.rejectionReason.value
+          : this.rejectionReason,
     );
   }
 
@@ -11941,7 +12178,15 @@ class VehicleEntry extends DataClass implements Insertable<VehicleEntry> {
           ..write('weighMode: $weighMode, ')
           ..write('manualWeightsJson: $manualWeightsJson, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('status: $status, ')
+          ..write('createdByUid: $createdByUid, ')
+          ..write('createdByName: $createdByName, ')
+          ..write('approverUid: $approverUid, ')
+          ..write('approverName: $approverName, ')
+          ..write('approvedByUid: $approvedByUid, ')
+          ..write('approvedAt: $approvedAt, ')
+          ..write('rejectionReason: $rejectionReason')
           ..write(')'))
         .toString();
   }
@@ -11972,7 +12217,15 @@ class VehicleEntry extends DataClass implements Insertable<VehicleEntry> {
         weighMode,
         manualWeightsJson,
         createdAt,
-        updatedAt
+        updatedAt,
+        status,
+        createdByUid,
+        createdByName,
+        approverUid,
+        approverName,
+        approvedByUid,
+        approvedAt,
+        rejectionReason
       ]);
   @override
   bool operator ==(Object other) =>
@@ -12002,7 +12255,15 @@ class VehicleEntry extends DataClass implements Insertable<VehicleEntry> {
           other.weighMode == this.weighMode &&
           other.manualWeightsJson == this.manualWeightsJson &&
           other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.status == this.status &&
+          other.createdByUid == this.createdByUid &&
+          other.createdByName == this.createdByName &&
+          other.approverUid == this.approverUid &&
+          other.approverName == this.approverName &&
+          other.approvedByUid == this.approvedByUid &&
+          other.approvedAt == this.approvedAt &&
+          other.rejectionReason == this.rejectionReason);
 }
 
 class VehicleEntriesCompanion extends UpdateCompanion<VehicleEntry> {
@@ -12031,6 +12292,14 @@ class VehicleEntriesCompanion extends UpdateCompanion<VehicleEntry> {
   final Value<String> manualWeightsJson;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
+  final Value<String> status;
+  final Value<String?> createdByUid;
+  final Value<String?> createdByName;
+  final Value<String?> approverUid;
+  final Value<String?> approverName;
+  final Value<String?> approvedByUid;
+  final Value<DateTime?> approvedAt;
+  final Value<String?> rejectionReason;
   const VehicleEntriesCompanion({
     this.id = const Value.absent(),
     this.date = const Value.absent(),
@@ -12057,6 +12326,14 @@ class VehicleEntriesCompanion extends UpdateCompanion<VehicleEntry> {
     this.manualWeightsJson = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.status = const Value.absent(),
+    this.createdByUid = const Value.absent(),
+    this.createdByName = const Value.absent(),
+    this.approverUid = const Value.absent(),
+    this.approverName = const Value.absent(),
+    this.approvedByUid = const Value.absent(),
+    this.approvedAt = const Value.absent(),
+    this.rejectionReason = const Value.absent(),
   });
   VehicleEntriesCompanion.insert({
     this.id = const Value.absent(),
@@ -12084,6 +12361,14 @@ class VehicleEntriesCompanion extends UpdateCompanion<VehicleEntry> {
     this.manualWeightsJson = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.status = const Value.absent(),
+    this.createdByUid = const Value.absent(),
+    this.createdByName = const Value.absent(),
+    this.approverUid = const Value.absent(),
+    this.approverName = const Value.absent(),
+    this.approvedByUid = const Value.absent(),
+    this.approvedAt = const Value.absent(),
+    this.rejectionReason = const Value.absent(),
   })  : date = Value(date),
         slipNo = Value(slipNo),
         vehicleNo = Value(vehicleNo),
@@ -12118,6 +12403,14 @@ class VehicleEntriesCompanion extends UpdateCompanion<VehicleEntry> {
     Expression<String>? manualWeightsJson,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<String>? status,
+    Expression<String>? createdByUid,
+    Expression<String>? createdByName,
+    Expression<String>? approverUid,
+    Expression<String>? approverName,
+    Expression<String>? approvedByUid,
+    Expression<DateTime>? approvedAt,
+    Expression<String>? rejectionReason,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -12145,6 +12438,14 @@ class VehicleEntriesCompanion extends UpdateCompanion<VehicleEntry> {
       if (manualWeightsJson != null) 'manual_weights_json': manualWeightsJson,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (status != null) 'status': status,
+      if (createdByUid != null) 'created_by_uid': createdByUid,
+      if (createdByName != null) 'created_by_name': createdByName,
+      if (approverUid != null) 'approver_uid': approverUid,
+      if (approverName != null) 'approver_name': approverName,
+      if (approvedByUid != null) 'approved_by_uid': approvedByUid,
+      if (approvedAt != null) 'approved_at': approvedAt,
+      if (rejectionReason != null) 'rejection_reason': rejectionReason,
     });
   }
 
@@ -12173,7 +12474,15 @@ class VehicleEntriesCompanion extends UpdateCompanion<VehicleEntry> {
       Value<String>? weighMode,
       Value<String>? manualWeightsJson,
       Value<DateTime>? createdAt,
-      Value<DateTime>? updatedAt}) {
+      Value<DateTime>? updatedAt,
+      Value<String>? status,
+      Value<String?>? createdByUid,
+      Value<String?>? createdByName,
+      Value<String?>? approverUid,
+      Value<String?>? approverName,
+      Value<String?>? approvedByUid,
+      Value<DateTime?>? approvedAt,
+      Value<String?>? rejectionReason}) {
     return VehicleEntriesCompanion(
       id: id ?? this.id,
       date: date ?? this.date,
@@ -12200,6 +12509,14 @@ class VehicleEntriesCompanion extends UpdateCompanion<VehicleEntry> {
       manualWeightsJson: manualWeightsJson ?? this.manualWeightsJson,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      status: status ?? this.status,
+      createdByUid: createdByUid ?? this.createdByUid,
+      createdByName: createdByName ?? this.createdByName,
+      approverUid: approverUid ?? this.approverUid,
+      approverName: approverName ?? this.approverName,
+      approvedByUid: approvedByUid ?? this.approvedByUid,
+      approvedAt: approvedAt ?? this.approvedAt,
+      rejectionReason: rejectionReason ?? this.rejectionReason,
     );
   }
 
@@ -12281,6 +12598,30 @@ class VehicleEntriesCompanion extends UpdateCompanion<VehicleEntry> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (createdByUid.present) {
+      map['created_by_uid'] = Variable<String>(createdByUid.value);
+    }
+    if (createdByName.present) {
+      map['created_by_name'] = Variable<String>(createdByName.value);
+    }
+    if (approverUid.present) {
+      map['approver_uid'] = Variable<String>(approverUid.value);
+    }
+    if (approverName.present) {
+      map['approver_name'] = Variable<String>(approverName.value);
+    }
+    if (approvedByUid.present) {
+      map['approved_by_uid'] = Variable<String>(approvedByUid.value);
+    }
+    if (approvedAt.present) {
+      map['approved_at'] = Variable<DateTime>(approvedAt.value);
+    }
+    if (rejectionReason.present) {
+      map['rejection_reason'] = Variable<String>(rejectionReason.value);
+    }
     return map;
   }
 
@@ -12311,7 +12652,15 @@ class VehicleEntriesCompanion extends UpdateCompanion<VehicleEntry> {
           ..write('weighMode: $weighMode, ')
           ..write('manualWeightsJson: $manualWeightsJson, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('status: $status, ')
+          ..write('createdByUid: $createdByUid, ')
+          ..write('createdByName: $createdByName, ')
+          ..write('approverUid: $approverUid, ')
+          ..write('approverName: $approverName, ')
+          ..write('approvedByUid: $approvedByUid, ')
+          ..write('approvedAt: $approvedAt, ')
+          ..write('rejectionReason: $rejectionReason')
           ..write(')'))
         .toString();
   }
@@ -27489,6 +27838,14 @@ typedef $$VehicleEntriesTableCreateCompanionBuilder = VehicleEntriesCompanion
   Value<String> manualWeightsJson,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
+  Value<String> status,
+  Value<String?> createdByUid,
+  Value<String?> createdByName,
+  Value<String?> approverUid,
+  Value<String?> approverName,
+  Value<String?> approvedByUid,
+  Value<DateTime?> approvedAt,
+  Value<String?> rejectionReason,
 });
 typedef $$VehicleEntriesTableUpdateCompanionBuilder = VehicleEntriesCompanion
     Function({
@@ -27517,6 +27874,14 @@ typedef $$VehicleEntriesTableUpdateCompanionBuilder = VehicleEntriesCompanion
   Value<String> manualWeightsJson,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
+  Value<String> status,
+  Value<String?> createdByUid,
+  Value<String?> createdByName,
+  Value<String?> approverUid,
+  Value<String?> approverName,
+  Value<String?> approvedByUid,
+  Value<DateTime?> approvedAt,
+  Value<String?> rejectionReason,
 });
 
 final class $$VehicleEntriesTableReferences
@@ -27652,6 +28017,31 @@ class $$VehicleEntriesTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
       column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get createdByUid => $composableBuilder(
+      column: $table.createdByUid, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get createdByName => $composableBuilder(
+      column: $table.createdByName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get approverUid => $composableBuilder(
+      column: $table.approverUid, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get approverName => $composableBuilder(
+      column: $table.approverName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get approvedByUid => $composableBuilder(
+      column: $table.approvedByUid, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get approvedAt => $composableBuilder(
+      column: $table.approvedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get rejectionReason => $composableBuilder(
+      column: $table.rejectionReason,
+      builder: (column) => ColumnFilters(column));
 
   $$SuppliersTableFilterComposer get partyId {
     final $$SuppliersTableFilterComposer composer = $composerBuilder(
@@ -27799,6 +28189,35 @@ class $$VehicleEntriesTableOrderingComposer
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
       column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get createdByUid => $composableBuilder(
+      column: $table.createdByUid,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get createdByName => $composableBuilder(
+      column: $table.createdByName,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get approverUid => $composableBuilder(
+      column: $table.approverUid, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get approverName => $composableBuilder(
+      column: $table.approverName,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get approvedByUid => $composableBuilder(
+      column: $table.approvedByUid,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get approvedAt => $composableBuilder(
+      column: $table.approvedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get rejectionReason => $composableBuilder(
+      column: $table.rejectionReason,
+      builder: (column) => ColumnOrderings(column));
+
   $$SuppliersTableOrderingComposer get partyId {
     final $$SuppliersTableOrderingComposer composer = $composerBuilder(
         composer: this,
@@ -27918,6 +28337,30 @@ class $$VehicleEntriesTableAnnotationComposer
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get createdByUid => $composableBuilder(
+      column: $table.createdByUid, builder: (column) => column);
+
+  GeneratedColumn<String> get createdByName => $composableBuilder(
+      column: $table.createdByName, builder: (column) => column);
+
+  GeneratedColumn<String> get approverUid => $composableBuilder(
+      column: $table.approverUid, builder: (column) => column);
+
+  GeneratedColumn<String> get approverName => $composableBuilder(
+      column: $table.approverName, builder: (column) => column);
+
+  GeneratedColumn<String> get approvedByUid => $composableBuilder(
+      column: $table.approvedByUid, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get approvedAt => $composableBuilder(
+      column: $table.approvedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get rejectionReason => $composableBuilder(
+      column: $table.rejectionReason, builder: (column) => column);
+
   $$SuppliersTableAnnotationComposer get partyId {
     final $$SuppliersTableAnnotationComposer composer = $composerBuilder(
         composer: this,
@@ -28031,6 +28474,14 @@ class $$VehicleEntriesTableTableManager extends RootTableManager<
             Value<String> manualWeightsJson = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<String?> createdByUid = const Value.absent(),
+            Value<String?> createdByName = const Value.absent(),
+            Value<String?> approverUid = const Value.absent(),
+            Value<String?> approverName = const Value.absent(),
+            Value<String?> approvedByUid = const Value.absent(),
+            Value<DateTime?> approvedAt = const Value.absent(),
+            Value<String?> rejectionReason = const Value.absent(),
           }) =>
               VehicleEntriesCompanion(
             id: id,
@@ -28058,6 +28509,14 @@ class $$VehicleEntriesTableTableManager extends RootTableManager<
             manualWeightsJson: manualWeightsJson,
             createdAt: createdAt,
             updatedAt: updatedAt,
+            status: status,
+            createdByUid: createdByUid,
+            createdByName: createdByName,
+            approverUid: approverUid,
+            approverName: approverName,
+            approvedByUid: approvedByUid,
+            approvedAt: approvedAt,
+            rejectionReason: rejectionReason,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -28085,6 +28544,14 @@ class $$VehicleEntriesTableTableManager extends RootTableManager<
             Value<String> manualWeightsJson = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<String?> createdByUid = const Value.absent(),
+            Value<String?> createdByName = const Value.absent(),
+            Value<String?> approverUid = const Value.absent(),
+            Value<String?> approverName = const Value.absent(),
+            Value<String?> approvedByUid = const Value.absent(),
+            Value<DateTime?> approvedAt = const Value.absent(),
+            Value<String?> rejectionReason = const Value.absent(),
           }) =>
               VehicleEntriesCompanion.insert(
             id: id,
@@ -28112,6 +28579,14 @@ class $$VehicleEntriesTableTableManager extends RootTableManager<
             manualWeightsJson: manualWeightsJson,
             createdAt: createdAt,
             updatedAt: updatedAt,
+            status: status,
+            createdByUid: createdByUid,
+            createdByName: createdByName,
+            approverUid: approverUid,
+            approverName: approverName,
+            approvedByUid: approvedByUid,
+            approvedAt: approvedAt,
+            rejectionReason: rejectionReason,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (
