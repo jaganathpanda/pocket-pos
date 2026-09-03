@@ -57,31 +57,54 @@ class StoreRecord {
   final String? email;
 }
 
+/// A platform-level weighbridge operator (not tied to any store). Approved by
+/// a platform admin, then logs in and selects a mill by Store ID.
+class OperatorProfile {
+  const OperatorProfile({
+    required this.uid,
+    required this.name,
+    required this.email,
+    required this.status,
+  });
+
+  final String uid;
+  final String name;
+  final String email;
+  final StoreStatus status; // pending / approved / suspended
+
+  bool get isApproved => status == StoreStatus.approved;
+}
+
 /// Where the app boots to, based on Firebase auth + store status.
-enum StoreAuthStage { unknown, loggedOut, pending, active, admin }
+/// [operator] = an approved weighbridge operator who hasn't entered a mill yet.
+enum StoreAuthStage { unknown, loggedOut, pending, active, admin, operator }
 
 class StoreAuthState {
   const StoreAuthState({
     required this.stage,
     this.session,
+    this.operator,
     this.busy = false,
     this.error,
   });
 
   final StoreAuthStage stage;
   final StoreSession? session;
+  final OperatorProfile? operator;
   final bool busy;
   final String? error;
 
   StoreAuthState copyWith({
     StoreAuthStage? stage,
     StoreSession? session,
+    OperatorProfile? operator,
     bool? busy,
     String? error,
   }) {
     return StoreAuthState(
       stage: stage ?? this.stage,
       session: session ?? this.session,
+      operator: operator ?? this.operator,
       busy: busy ?? this.busy,
       error: error,
     );

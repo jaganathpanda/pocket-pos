@@ -11188,6 +11188,4956 @@ class AuditLogsCompanion extends UpdateCompanion<AuditLog> {
   }
 }
 
+class $VehicleEntriesTable extends VehicleEntries
+    with TableInfo<$VehicleEntriesTable, VehicleEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VehicleEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
+      'date', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _slipNoMeta = const VerificationMeta('slipNo');
+  @override
+  late final GeneratedColumn<String> slipNo = GeneratedColumn<String>(
+      'slip_no', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _voucherNoMeta =
+      const VerificationMeta('voucherNo');
+  @override
+  late final GeneratedColumn<String> voucherNo = GeneratedColumn<String>(
+      'voucher_no', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _vehicleNoMeta =
+      const VerificationMeta('vehicleNo');
+  @override
+  late final GeneratedColumn<String> vehicleNo = GeneratedColumn<String>(
+      'vehicle_no', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _rstManualMeta =
+      const VerificationMeta('rstManual');
+  @override
+  late final GeneratedColumn<String> rstManual = GeneratedColumn<String>(
+      'rst_manual', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _partyNameMeta =
+      const VerificationMeta('partyName');
+  @override
+  late final GeneratedColumn<String> partyName = GeneratedColumn<String>(
+      'party_name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _partyIdMeta =
+      const VerificationMeta('partyId');
+  @override
+  late final GeneratedColumn<int> partyId = GeneratedColumn<int>(
+      'party_id', aliasedName, true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES suppliers (id)'));
+  static const VerificationMeta _productIdMeta =
+      const VerificationMeta('productId');
+  @override
+  late final GeneratedColumn<int> productId = GeneratedColumn<int>(
+      'product_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES products (id)'));
+  static const VerificationMeta _entryTypeMeta =
+      const VerificationMeta('entryType');
+  @override
+  late final GeneratedColumn<String> entryType = GeneratedColumn<String>(
+      'entry_type', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('inward'));
+  static const VerificationMeta _firstWeightMeta =
+      const VerificationMeta('firstWeight');
+  @override
+  late final GeneratedColumn<double> firstWeight = GeneratedColumn<double>(
+      'first_weight', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _firstWeightTimeMeta =
+      const VerificationMeta('firstWeightTime');
+  @override
+  late final GeneratedColumn<DateTime> firstWeightTime =
+      GeneratedColumn<DateTime>('first_weight_time', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _secondWeightMeta =
+      const VerificationMeta('secondWeight');
+  @override
+  late final GeneratedColumn<double> secondWeight = GeneratedColumn<double>(
+      'second_weight', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _secondWeightTimeMeta =
+      const VerificationMeta('secondWeightTime');
+  @override
+  late final GeneratedColumn<DateTime> secondWeightTime =
+      GeneratedColumn<DateTime>('second_weight_time', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _netWeightMeta =
+      const VerificationMeta('netWeight');
+  @override
+  late final GeneratedColumn<double> netWeight = GeneratedColumn<double>(
+      'net_weight', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _bagsMeta = const VerificationMeta('bags');
+  @override
+  late final GeneratedColumn<int> bags = GeneratedColumn<int>(
+      'bags', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _lotNumberMeta =
+      const VerificationMeta('lotNumber');
+  @override
+  late final GeneratedColumn<String> lotNumber = GeneratedColumn<String>(
+      'lot_number', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _completeMeta =
+      const VerificationMeta('complete');
+  @override
+  late final GeneratedColumn<bool> complete = GeneratedColumn<bool>(
+      'complete', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("complete" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _completeCodeMeta =
+      const VerificationMeta('completeCode');
+  @override
+  late final GeneratedColumn<String> completeCode = GeneratedColumn<String>(
+      'complete_code', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _completeDateMeta =
+      const VerificationMeta('completeDate');
+  @override
+  late final GeneratedColumn<DateTime> completeDate = GeneratedColumn<DateTime>(
+      'complete_date', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _remarkMeta = const VerificationMeta('remark');
+  @override
+  late final GeneratedColumn<String> remark = GeneratedColumn<String>(
+      'remark', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _weighModeMeta =
+      const VerificationMeta('weighMode');
+  @override
+  late final GeneratedColumn<String> weighMode = GeneratedColumn<String>(
+      'weigh_mode', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('weighbridge'));
+  static const VerificationMeta _manualWeightsJsonMeta =
+      const VerificationMeta('manualWeightsJson');
+  @override
+  late final GeneratedColumn<String> manualWeightsJson =
+      GeneratedColumn<String>('manual_weights_json', aliasedName, false,
+          type: DriftSqlType.string,
+          requiredDuringInsert: false,
+          defaultValue: const Constant('[]'));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      clientDefault: () => DateTime.now());
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      clientDefault: () => DateTime.now());
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('approved'));
+  static const VerificationMeta _createdByUidMeta =
+      const VerificationMeta('createdByUid');
+  @override
+  late final GeneratedColumn<String> createdByUid = GeneratedColumn<String>(
+      'created_by_uid', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _createdByNameMeta =
+      const VerificationMeta('createdByName');
+  @override
+  late final GeneratedColumn<String> createdByName = GeneratedColumn<String>(
+      'created_by_name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _approverUidMeta =
+      const VerificationMeta('approverUid');
+  @override
+  late final GeneratedColumn<String> approverUid = GeneratedColumn<String>(
+      'approver_uid', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _approverNameMeta =
+      const VerificationMeta('approverName');
+  @override
+  late final GeneratedColumn<String> approverName = GeneratedColumn<String>(
+      'approver_name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _approvedByUidMeta =
+      const VerificationMeta('approvedByUid');
+  @override
+  late final GeneratedColumn<String> approvedByUid = GeneratedColumn<String>(
+      'approved_by_uid', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _approvedAtMeta =
+      const VerificationMeta('approvedAt');
+  @override
+  late final GeneratedColumn<DateTime> approvedAt = GeneratedColumn<DateTime>(
+      'approved_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _rejectionReasonMeta =
+      const VerificationMeta('rejectionReason');
+  @override
+  late final GeneratedColumn<String> rejectionReason = GeneratedColumn<String>(
+      'rejection_reason', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        date,
+        slipNo,
+        voucherNo,
+        vehicleNo,
+        rstManual,
+        partyName,
+        partyId,
+        productId,
+        entryType,
+        firstWeight,
+        firstWeightTime,
+        secondWeight,
+        secondWeightTime,
+        netWeight,
+        bags,
+        lotNumber,
+        complete,
+        completeCode,
+        completeDate,
+        remark,
+        weighMode,
+        manualWeightsJson,
+        createdAt,
+        updatedAt,
+        status,
+        createdByUid,
+        createdByName,
+        approverUid,
+        approverName,
+        approvedByUid,
+        approvedAt,
+        rejectionReason
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'vehicle_entries';
+  @override
+  VerificationContext validateIntegrity(Insertable<VehicleEntry> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+          _dateMeta, date.isAcceptableOrUnknown(data['date']!, _dateMeta));
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('slip_no')) {
+      context.handle(_slipNoMeta,
+          slipNo.isAcceptableOrUnknown(data['slip_no']!, _slipNoMeta));
+    } else if (isInserting) {
+      context.missing(_slipNoMeta);
+    }
+    if (data.containsKey('voucher_no')) {
+      context.handle(_voucherNoMeta,
+          voucherNo.isAcceptableOrUnknown(data['voucher_no']!, _voucherNoMeta));
+    }
+    if (data.containsKey('vehicle_no')) {
+      context.handle(_vehicleNoMeta,
+          vehicleNo.isAcceptableOrUnknown(data['vehicle_no']!, _vehicleNoMeta));
+    } else if (isInserting) {
+      context.missing(_vehicleNoMeta);
+    }
+    if (data.containsKey('rst_manual')) {
+      context.handle(_rstManualMeta,
+          rstManual.isAcceptableOrUnknown(data['rst_manual']!, _rstManualMeta));
+    }
+    if (data.containsKey('party_name')) {
+      context.handle(_partyNameMeta,
+          partyName.isAcceptableOrUnknown(data['party_name']!, _partyNameMeta));
+    } else if (isInserting) {
+      context.missing(_partyNameMeta);
+    }
+    if (data.containsKey('party_id')) {
+      context.handle(_partyIdMeta,
+          partyId.isAcceptableOrUnknown(data['party_id']!, _partyIdMeta));
+    }
+    if (data.containsKey('product_id')) {
+      context.handle(_productIdMeta,
+          productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta));
+    } else if (isInserting) {
+      context.missing(_productIdMeta);
+    }
+    if (data.containsKey('entry_type')) {
+      context.handle(_entryTypeMeta,
+          entryType.isAcceptableOrUnknown(data['entry_type']!, _entryTypeMeta));
+    }
+    if (data.containsKey('first_weight')) {
+      context.handle(
+          _firstWeightMeta,
+          firstWeight.isAcceptableOrUnknown(
+              data['first_weight']!, _firstWeightMeta));
+    } else if (isInserting) {
+      context.missing(_firstWeightMeta);
+    }
+    if (data.containsKey('first_weight_time')) {
+      context.handle(
+          _firstWeightTimeMeta,
+          firstWeightTime.isAcceptableOrUnknown(
+              data['first_weight_time']!, _firstWeightTimeMeta));
+    }
+    if (data.containsKey('second_weight')) {
+      context.handle(
+          _secondWeightMeta,
+          secondWeight.isAcceptableOrUnknown(
+              data['second_weight']!, _secondWeightMeta));
+    } else if (isInserting) {
+      context.missing(_secondWeightMeta);
+    }
+    if (data.containsKey('second_weight_time')) {
+      context.handle(
+          _secondWeightTimeMeta,
+          secondWeightTime.isAcceptableOrUnknown(
+              data['second_weight_time']!, _secondWeightTimeMeta));
+    }
+    if (data.containsKey('net_weight')) {
+      context.handle(_netWeightMeta,
+          netWeight.isAcceptableOrUnknown(data['net_weight']!, _netWeightMeta));
+    } else if (isInserting) {
+      context.missing(_netWeightMeta);
+    }
+    if (data.containsKey('bags')) {
+      context.handle(
+          _bagsMeta, bags.isAcceptableOrUnknown(data['bags']!, _bagsMeta));
+    }
+    if (data.containsKey('lot_number')) {
+      context.handle(_lotNumberMeta,
+          lotNumber.isAcceptableOrUnknown(data['lot_number']!, _lotNumberMeta));
+    }
+    if (data.containsKey('complete')) {
+      context.handle(_completeMeta,
+          complete.isAcceptableOrUnknown(data['complete']!, _completeMeta));
+    }
+    if (data.containsKey('complete_code')) {
+      context.handle(
+          _completeCodeMeta,
+          completeCode.isAcceptableOrUnknown(
+              data['complete_code']!, _completeCodeMeta));
+    }
+    if (data.containsKey('complete_date')) {
+      context.handle(
+          _completeDateMeta,
+          completeDate.isAcceptableOrUnknown(
+              data['complete_date']!, _completeDateMeta));
+    }
+    if (data.containsKey('remark')) {
+      context.handle(_remarkMeta,
+          remark.isAcceptableOrUnknown(data['remark']!, _remarkMeta));
+    }
+    if (data.containsKey('weigh_mode')) {
+      context.handle(_weighModeMeta,
+          weighMode.isAcceptableOrUnknown(data['weigh_mode']!, _weighModeMeta));
+    }
+    if (data.containsKey('manual_weights_json')) {
+      context.handle(
+          _manualWeightsJsonMeta,
+          manualWeightsJson.isAcceptableOrUnknown(
+              data['manual_weights_json']!, _manualWeightsJsonMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    }
+    if (data.containsKey('created_by_uid')) {
+      context.handle(
+          _createdByUidMeta,
+          createdByUid.isAcceptableOrUnknown(
+              data['created_by_uid']!, _createdByUidMeta));
+    }
+    if (data.containsKey('created_by_name')) {
+      context.handle(
+          _createdByNameMeta,
+          createdByName.isAcceptableOrUnknown(
+              data['created_by_name']!, _createdByNameMeta));
+    }
+    if (data.containsKey('approver_uid')) {
+      context.handle(
+          _approverUidMeta,
+          approverUid.isAcceptableOrUnknown(
+              data['approver_uid']!, _approverUidMeta));
+    }
+    if (data.containsKey('approver_name')) {
+      context.handle(
+          _approverNameMeta,
+          approverName.isAcceptableOrUnknown(
+              data['approver_name']!, _approverNameMeta));
+    }
+    if (data.containsKey('approved_by_uid')) {
+      context.handle(
+          _approvedByUidMeta,
+          approvedByUid.isAcceptableOrUnknown(
+              data['approved_by_uid']!, _approvedByUidMeta));
+    }
+    if (data.containsKey('approved_at')) {
+      context.handle(
+          _approvedAtMeta,
+          approvedAt.isAcceptableOrUnknown(
+              data['approved_at']!, _approvedAtMeta));
+    }
+    if (data.containsKey('rejection_reason')) {
+      context.handle(
+          _rejectionReasonMeta,
+          rejectionReason.isAcceptableOrUnknown(
+              data['rejection_reason']!, _rejectionReasonMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  VehicleEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VehicleEntry(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      date: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}date'])!,
+      slipNo: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}slip_no'])!,
+      voucherNo: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}voucher_no']),
+      vehicleNo: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}vehicle_no'])!,
+      rstManual: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}rst_manual']),
+      partyName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}party_name'])!,
+      partyId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}party_id']),
+      productId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}product_id'])!,
+      entryType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}entry_type'])!,
+      firstWeight: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}first_weight'])!,
+      firstWeightTime: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}first_weight_time']),
+      secondWeight: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}second_weight'])!,
+      secondWeightTime: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}second_weight_time']),
+      netWeight: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}net_weight'])!,
+      bags: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}bags']),
+      lotNumber: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}lot_number']),
+      complete: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}complete'])!,
+      completeCode: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}complete_code']),
+      completeDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}complete_date']),
+      remark: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}remark']),
+      weighMode: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}weigh_mode'])!,
+      manualWeightsJson: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}manual_weights_json'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      createdByUid: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}created_by_uid']),
+      createdByName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}created_by_name']),
+      approverUid: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}approver_uid']),
+      approverName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}approver_name']),
+      approvedByUid: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}approved_by_uid']),
+      approvedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}approved_at']),
+      rejectionReason: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}rejection_reason']),
+    );
+  }
+
+  @override
+  $VehicleEntriesTable createAlias(String alias) {
+    return $VehicleEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class VehicleEntry extends DataClass implements Insertable<VehicleEntry> {
+  final int id;
+  final DateTime date;
+  final String slipNo;
+  final String? voucherNo;
+  final String vehicleNo;
+  final String? rstManual;
+  final String partyName;
+  final int? partyId;
+  final int productId;
+  final String entryType;
+  final double firstWeight;
+  final DateTime? firstWeightTime;
+  final double secondWeight;
+  final DateTime? secondWeightTime;
+  final double netWeight;
+  final int? bags;
+  final String? lotNumber;
+  final bool complete;
+  final String? completeCode;
+  final DateTime? completeDate;
+  final String? remark;
+  final String weighMode;
+  final String manualWeightsJson;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String status;
+  final String? createdByUid;
+  final String? createdByName;
+  final String? approverUid;
+  final String? approverName;
+  final String? approvedByUid;
+  final DateTime? approvedAt;
+  final String? rejectionReason;
+  const VehicleEntry(
+      {required this.id,
+      required this.date,
+      required this.slipNo,
+      this.voucherNo,
+      required this.vehicleNo,
+      this.rstManual,
+      required this.partyName,
+      this.partyId,
+      required this.productId,
+      required this.entryType,
+      required this.firstWeight,
+      this.firstWeightTime,
+      required this.secondWeight,
+      this.secondWeightTime,
+      required this.netWeight,
+      this.bags,
+      this.lotNumber,
+      required this.complete,
+      this.completeCode,
+      this.completeDate,
+      this.remark,
+      required this.weighMode,
+      required this.manualWeightsJson,
+      required this.createdAt,
+      required this.updatedAt,
+      required this.status,
+      this.createdByUid,
+      this.createdByName,
+      this.approverUid,
+      this.approverName,
+      this.approvedByUid,
+      this.approvedAt,
+      this.rejectionReason});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['date'] = Variable<DateTime>(date);
+    map['slip_no'] = Variable<String>(slipNo);
+    if (!nullToAbsent || voucherNo != null) {
+      map['voucher_no'] = Variable<String>(voucherNo);
+    }
+    map['vehicle_no'] = Variable<String>(vehicleNo);
+    if (!nullToAbsent || rstManual != null) {
+      map['rst_manual'] = Variable<String>(rstManual);
+    }
+    map['party_name'] = Variable<String>(partyName);
+    if (!nullToAbsent || partyId != null) {
+      map['party_id'] = Variable<int>(partyId);
+    }
+    map['product_id'] = Variable<int>(productId);
+    map['entry_type'] = Variable<String>(entryType);
+    map['first_weight'] = Variable<double>(firstWeight);
+    if (!nullToAbsent || firstWeightTime != null) {
+      map['first_weight_time'] = Variable<DateTime>(firstWeightTime);
+    }
+    map['second_weight'] = Variable<double>(secondWeight);
+    if (!nullToAbsent || secondWeightTime != null) {
+      map['second_weight_time'] = Variable<DateTime>(secondWeightTime);
+    }
+    map['net_weight'] = Variable<double>(netWeight);
+    if (!nullToAbsent || bags != null) {
+      map['bags'] = Variable<int>(bags);
+    }
+    if (!nullToAbsent || lotNumber != null) {
+      map['lot_number'] = Variable<String>(lotNumber);
+    }
+    map['complete'] = Variable<bool>(complete);
+    if (!nullToAbsent || completeCode != null) {
+      map['complete_code'] = Variable<String>(completeCode);
+    }
+    if (!nullToAbsent || completeDate != null) {
+      map['complete_date'] = Variable<DateTime>(completeDate);
+    }
+    if (!nullToAbsent || remark != null) {
+      map['remark'] = Variable<String>(remark);
+    }
+    map['weigh_mode'] = Variable<String>(weighMode);
+    map['manual_weights_json'] = Variable<String>(manualWeightsJson);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || createdByUid != null) {
+      map['created_by_uid'] = Variable<String>(createdByUid);
+    }
+    if (!nullToAbsent || createdByName != null) {
+      map['created_by_name'] = Variable<String>(createdByName);
+    }
+    if (!nullToAbsent || approverUid != null) {
+      map['approver_uid'] = Variable<String>(approverUid);
+    }
+    if (!nullToAbsent || approverName != null) {
+      map['approver_name'] = Variable<String>(approverName);
+    }
+    if (!nullToAbsent || approvedByUid != null) {
+      map['approved_by_uid'] = Variable<String>(approvedByUid);
+    }
+    if (!nullToAbsent || approvedAt != null) {
+      map['approved_at'] = Variable<DateTime>(approvedAt);
+    }
+    if (!nullToAbsent || rejectionReason != null) {
+      map['rejection_reason'] = Variable<String>(rejectionReason);
+    }
+    return map;
+  }
+
+  VehicleEntriesCompanion toCompanion(bool nullToAbsent) {
+    return VehicleEntriesCompanion(
+      id: Value(id),
+      date: Value(date),
+      slipNo: Value(slipNo),
+      voucherNo: voucherNo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(voucherNo),
+      vehicleNo: Value(vehicleNo),
+      rstManual: rstManual == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rstManual),
+      partyName: Value(partyName),
+      partyId: partyId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(partyId),
+      productId: Value(productId),
+      entryType: Value(entryType),
+      firstWeight: Value(firstWeight),
+      firstWeightTime: firstWeightTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(firstWeightTime),
+      secondWeight: Value(secondWeight),
+      secondWeightTime: secondWeightTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(secondWeightTime),
+      netWeight: Value(netWeight),
+      bags: bags == null && nullToAbsent ? const Value.absent() : Value(bags),
+      lotNumber: lotNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lotNumber),
+      complete: Value(complete),
+      completeCode: completeCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completeCode),
+      completeDate: completeDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completeDate),
+      remark:
+          remark == null && nullToAbsent ? const Value.absent() : Value(remark),
+      weighMode: Value(weighMode),
+      manualWeightsJson: Value(manualWeightsJson),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      status: Value(status),
+      createdByUid: createdByUid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdByUid),
+      createdByName: createdByName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdByName),
+      approverUid: approverUid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(approverUid),
+      approverName: approverName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(approverName),
+      approvedByUid: approvedByUid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(approvedByUid),
+      approvedAt: approvedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(approvedAt),
+      rejectionReason: rejectionReason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rejectionReason),
+    );
+  }
+
+  factory VehicleEntry.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VehicleEntry(
+      id: serializer.fromJson<int>(json['id']),
+      date: serializer.fromJson<DateTime>(json['date']),
+      slipNo: serializer.fromJson<String>(json['slipNo']),
+      voucherNo: serializer.fromJson<String?>(json['voucherNo']),
+      vehicleNo: serializer.fromJson<String>(json['vehicleNo']),
+      rstManual: serializer.fromJson<String?>(json['rstManual']),
+      partyName: serializer.fromJson<String>(json['partyName']),
+      partyId: serializer.fromJson<int?>(json['partyId']),
+      productId: serializer.fromJson<int>(json['productId']),
+      entryType: serializer.fromJson<String>(json['entryType']),
+      firstWeight: serializer.fromJson<double>(json['firstWeight']),
+      firstWeightTime: serializer.fromJson<DateTime?>(json['firstWeightTime']),
+      secondWeight: serializer.fromJson<double>(json['secondWeight']),
+      secondWeightTime:
+          serializer.fromJson<DateTime?>(json['secondWeightTime']),
+      netWeight: serializer.fromJson<double>(json['netWeight']),
+      bags: serializer.fromJson<int?>(json['bags']),
+      lotNumber: serializer.fromJson<String?>(json['lotNumber']),
+      complete: serializer.fromJson<bool>(json['complete']),
+      completeCode: serializer.fromJson<String?>(json['completeCode']),
+      completeDate: serializer.fromJson<DateTime?>(json['completeDate']),
+      remark: serializer.fromJson<String?>(json['remark']),
+      weighMode: serializer.fromJson<String>(json['weighMode']),
+      manualWeightsJson: serializer.fromJson<String>(json['manualWeightsJson']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      status: serializer.fromJson<String>(json['status']),
+      createdByUid: serializer.fromJson<String?>(json['createdByUid']),
+      createdByName: serializer.fromJson<String?>(json['createdByName']),
+      approverUid: serializer.fromJson<String?>(json['approverUid']),
+      approverName: serializer.fromJson<String?>(json['approverName']),
+      approvedByUid: serializer.fromJson<String?>(json['approvedByUid']),
+      approvedAt: serializer.fromJson<DateTime?>(json['approvedAt']),
+      rejectionReason: serializer.fromJson<String?>(json['rejectionReason']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'date': serializer.toJson<DateTime>(date),
+      'slipNo': serializer.toJson<String>(slipNo),
+      'voucherNo': serializer.toJson<String?>(voucherNo),
+      'vehicleNo': serializer.toJson<String>(vehicleNo),
+      'rstManual': serializer.toJson<String?>(rstManual),
+      'partyName': serializer.toJson<String>(partyName),
+      'partyId': serializer.toJson<int?>(partyId),
+      'productId': serializer.toJson<int>(productId),
+      'entryType': serializer.toJson<String>(entryType),
+      'firstWeight': serializer.toJson<double>(firstWeight),
+      'firstWeightTime': serializer.toJson<DateTime?>(firstWeightTime),
+      'secondWeight': serializer.toJson<double>(secondWeight),
+      'secondWeightTime': serializer.toJson<DateTime?>(secondWeightTime),
+      'netWeight': serializer.toJson<double>(netWeight),
+      'bags': serializer.toJson<int?>(bags),
+      'lotNumber': serializer.toJson<String?>(lotNumber),
+      'complete': serializer.toJson<bool>(complete),
+      'completeCode': serializer.toJson<String?>(completeCode),
+      'completeDate': serializer.toJson<DateTime?>(completeDate),
+      'remark': serializer.toJson<String?>(remark),
+      'weighMode': serializer.toJson<String>(weighMode),
+      'manualWeightsJson': serializer.toJson<String>(manualWeightsJson),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'status': serializer.toJson<String>(status),
+      'createdByUid': serializer.toJson<String?>(createdByUid),
+      'createdByName': serializer.toJson<String?>(createdByName),
+      'approverUid': serializer.toJson<String?>(approverUid),
+      'approverName': serializer.toJson<String?>(approverName),
+      'approvedByUid': serializer.toJson<String?>(approvedByUid),
+      'approvedAt': serializer.toJson<DateTime?>(approvedAt),
+      'rejectionReason': serializer.toJson<String?>(rejectionReason),
+    };
+  }
+
+  VehicleEntry copyWith(
+          {int? id,
+          DateTime? date,
+          String? slipNo,
+          Value<String?> voucherNo = const Value.absent(),
+          String? vehicleNo,
+          Value<String?> rstManual = const Value.absent(),
+          String? partyName,
+          Value<int?> partyId = const Value.absent(),
+          int? productId,
+          String? entryType,
+          double? firstWeight,
+          Value<DateTime?> firstWeightTime = const Value.absent(),
+          double? secondWeight,
+          Value<DateTime?> secondWeightTime = const Value.absent(),
+          double? netWeight,
+          Value<int?> bags = const Value.absent(),
+          Value<String?> lotNumber = const Value.absent(),
+          bool? complete,
+          Value<String?> completeCode = const Value.absent(),
+          Value<DateTime?> completeDate = const Value.absent(),
+          Value<String?> remark = const Value.absent(),
+          String? weighMode,
+          String? manualWeightsJson,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          String? status,
+          Value<String?> createdByUid = const Value.absent(),
+          Value<String?> createdByName = const Value.absent(),
+          Value<String?> approverUid = const Value.absent(),
+          Value<String?> approverName = const Value.absent(),
+          Value<String?> approvedByUid = const Value.absent(),
+          Value<DateTime?> approvedAt = const Value.absent(),
+          Value<String?> rejectionReason = const Value.absent()}) =>
+      VehicleEntry(
+        id: id ?? this.id,
+        date: date ?? this.date,
+        slipNo: slipNo ?? this.slipNo,
+        voucherNo: voucherNo.present ? voucherNo.value : this.voucherNo,
+        vehicleNo: vehicleNo ?? this.vehicleNo,
+        rstManual: rstManual.present ? rstManual.value : this.rstManual,
+        partyName: partyName ?? this.partyName,
+        partyId: partyId.present ? partyId.value : this.partyId,
+        productId: productId ?? this.productId,
+        entryType: entryType ?? this.entryType,
+        firstWeight: firstWeight ?? this.firstWeight,
+        firstWeightTime: firstWeightTime.present
+            ? firstWeightTime.value
+            : this.firstWeightTime,
+        secondWeight: secondWeight ?? this.secondWeight,
+        secondWeightTime: secondWeightTime.present
+            ? secondWeightTime.value
+            : this.secondWeightTime,
+        netWeight: netWeight ?? this.netWeight,
+        bags: bags.present ? bags.value : this.bags,
+        lotNumber: lotNumber.present ? lotNumber.value : this.lotNumber,
+        complete: complete ?? this.complete,
+        completeCode:
+            completeCode.present ? completeCode.value : this.completeCode,
+        completeDate:
+            completeDate.present ? completeDate.value : this.completeDate,
+        remark: remark.present ? remark.value : this.remark,
+        weighMode: weighMode ?? this.weighMode,
+        manualWeightsJson: manualWeightsJson ?? this.manualWeightsJson,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        status: status ?? this.status,
+        createdByUid:
+            createdByUid.present ? createdByUid.value : this.createdByUid,
+        createdByName:
+            createdByName.present ? createdByName.value : this.createdByName,
+        approverUid: approverUid.present ? approverUid.value : this.approverUid,
+        approverName:
+            approverName.present ? approverName.value : this.approverName,
+        approvedByUid:
+            approvedByUid.present ? approvedByUid.value : this.approvedByUid,
+        approvedAt: approvedAt.present ? approvedAt.value : this.approvedAt,
+        rejectionReason: rejectionReason.present
+            ? rejectionReason.value
+            : this.rejectionReason,
+      );
+  VehicleEntry copyWithCompanion(VehicleEntriesCompanion data) {
+    return VehicleEntry(
+      id: data.id.present ? data.id.value : this.id,
+      date: data.date.present ? data.date.value : this.date,
+      slipNo: data.slipNo.present ? data.slipNo.value : this.slipNo,
+      voucherNo: data.voucherNo.present ? data.voucherNo.value : this.voucherNo,
+      vehicleNo: data.vehicleNo.present ? data.vehicleNo.value : this.vehicleNo,
+      rstManual: data.rstManual.present ? data.rstManual.value : this.rstManual,
+      partyName: data.partyName.present ? data.partyName.value : this.partyName,
+      partyId: data.partyId.present ? data.partyId.value : this.partyId,
+      productId: data.productId.present ? data.productId.value : this.productId,
+      entryType: data.entryType.present ? data.entryType.value : this.entryType,
+      firstWeight:
+          data.firstWeight.present ? data.firstWeight.value : this.firstWeight,
+      firstWeightTime: data.firstWeightTime.present
+          ? data.firstWeightTime.value
+          : this.firstWeightTime,
+      secondWeight: data.secondWeight.present
+          ? data.secondWeight.value
+          : this.secondWeight,
+      secondWeightTime: data.secondWeightTime.present
+          ? data.secondWeightTime.value
+          : this.secondWeightTime,
+      netWeight: data.netWeight.present ? data.netWeight.value : this.netWeight,
+      bags: data.bags.present ? data.bags.value : this.bags,
+      lotNumber: data.lotNumber.present ? data.lotNumber.value : this.lotNumber,
+      complete: data.complete.present ? data.complete.value : this.complete,
+      completeCode: data.completeCode.present
+          ? data.completeCode.value
+          : this.completeCode,
+      completeDate: data.completeDate.present
+          ? data.completeDate.value
+          : this.completeDate,
+      remark: data.remark.present ? data.remark.value : this.remark,
+      weighMode: data.weighMode.present ? data.weighMode.value : this.weighMode,
+      manualWeightsJson: data.manualWeightsJson.present
+          ? data.manualWeightsJson.value
+          : this.manualWeightsJson,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      status: data.status.present ? data.status.value : this.status,
+      createdByUid: data.createdByUid.present
+          ? data.createdByUid.value
+          : this.createdByUid,
+      createdByName: data.createdByName.present
+          ? data.createdByName.value
+          : this.createdByName,
+      approverUid:
+          data.approverUid.present ? data.approverUid.value : this.approverUid,
+      approverName: data.approverName.present
+          ? data.approverName.value
+          : this.approverName,
+      approvedByUid: data.approvedByUid.present
+          ? data.approvedByUid.value
+          : this.approvedByUid,
+      approvedAt:
+          data.approvedAt.present ? data.approvedAt.value : this.approvedAt,
+      rejectionReason: data.rejectionReason.present
+          ? data.rejectionReason.value
+          : this.rejectionReason,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VehicleEntry(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('slipNo: $slipNo, ')
+          ..write('voucherNo: $voucherNo, ')
+          ..write('vehicleNo: $vehicleNo, ')
+          ..write('rstManual: $rstManual, ')
+          ..write('partyName: $partyName, ')
+          ..write('partyId: $partyId, ')
+          ..write('productId: $productId, ')
+          ..write('entryType: $entryType, ')
+          ..write('firstWeight: $firstWeight, ')
+          ..write('firstWeightTime: $firstWeightTime, ')
+          ..write('secondWeight: $secondWeight, ')
+          ..write('secondWeightTime: $secondWeightTime, ')
+          ..write('netWeight: $netWeight, ')
+          ..write('bags: $bags, ')
+          ..write('lotNumber: $lotNumber, ')
+          ..write('complete: $complete, ')
+          ..write('completeCode: $completeCode, ')
+          ..write('completeDate: $completeDate, ')
+          ..write('remark: $remark, ')
+          ..write('weighMode: $weighMode, ')
+          ..write('manualWeightsJson: $manualWeightsJson, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('status: $status, ')
+          ..write('createdByUid: $createdByUid, ')
+          ..write('createdByName: $createdByName, ')
+          ..write('approverUid: $approverUid, ')
+          ..write('approverName: $approverName, ')
+          ..write('approvedByUid: $approvedByUid, ')
+          ..write('approvedAt: $approvedAt, ')
+          ..write('rejectionReason: $rejectionReason')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+        id,
+        date,
+        slipNo,
+        voucherNo,
+        vehicleNo,
+        rstManual,
+        partyName,
+        partyId,
+        productId,
+        entryType,
+        firstWeight,
+        firstWeightTime,
+        secondWeight,
+        secondWeightTime,
+        netWeight,
+        bags,
+        lotNumber,
+        complete,
+        completeCode,
+        completeDate,
+        remark,
+        weighMode,
+        manualWeightsJson,
+        createdAt,
+        updatedAt,
+        status,
+        createdByUid,
+        createdByName,
+        approverUid,
+        approverName,
+        approvedByUid,
+        approvedAt,
+        rejectionReason
+      ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VehicleEntry &&
+          other.id == this.id &&
+          other.date == this.date &&
+          other.slipNo == this.slipNo &&
+          other.voucherNo == this.voucherNo &&
+          other.vehicleNo == this.vehicleNo &&
+          other.rstManual == this.rstManual &&
+          other.partyName == this.partyName &&
+          other.partyId == this.partyId &&
+          other.productId == this.productId &&
+          other.entryType == this.entryType &&
+          other.firstWeight == this.firstWeight &&
+          other.firstWeightTime == this.firstWeightTime &&
+          other.secondWeight == this.secondWeight &&
+          other.secondWeightTime == this.secondWeightTime &&
+          other.netWeight == this.netWeight &&
+          other.bags == this.bags &&
+          other.lotNumber == this.lotNumber &&
+          other.complete == this.complete &&
+          other.completeCode == this.completeCode &&
+          other.completeDate == this.completeDate &&
+          other.remark == this.remark &&
+          other.weighMode == this.weighMode &&
+          other.manualWeightsJson == this.manualWeightsJson &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.status == this.status &&
+          other.createdByUid == this.createdByUid &&
+          other.createdByName == this.createdByName &&
+          other.approverUid == this.approverUid &&
+          other.approverName == this.approverName &&
+          other.approvedByUid == this.approvedByUid &&
+          other.approvedAt == this.approvedAt &&
+          other.rejectionReason == this.rejectionReason);
+}
+
+class VehicleEntriesCompanion extends UpdateCompanion<VehicleEntry> {
+  final Value<int> id;
+  final Value<DateTime> date;
+  final Value<String> slipNo;
+  final Value<String?> voucherNo;
+  final Value<String> vehicleNo;
+  final Value<String?> rstManual;
+  final Value<String> partyName;
+  final Value<int?> partyId;
+  final Value<int> productId;
+  final Value<String> entryType;
+  final Value<double> firstWeight;
+  final Value<DateTime?> firstWeightTime;
+  final Value<double> secondWeight;
+  final Value<DateTime?> secondWeightTime;
+  final Value<double> netWeight;
+  final Value<int?> bags;
+  final Value<String?> lotNumber;
+  final Value<bool> complete;
+  final Value<String?> completeCode;
+  final Value<DateTime?> completeDate;
+  final Value<String?> remark;
+  final Value<String> weighMode;
+  final Value<String> manualWeightsJson;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> status;
+  final Value<String?> createdByUid;
+  final Value<String?> createdByName;
+  final Value<String?> approverUid;
+  final Value<String?> approverName;
+  final Value<String?> approvedByUid;
+  final Value<DateTime?> approvedAt;
+  final Value<String?> rejectionReason;
+  const VehicleEntriesCompanion({
+    this.id = const Value.absent(),
+    this.date = const Value.absent(),
+    this.slipNo = const Value.absent(),
+    this.voucherNo = const Value.absent(),
+    this.vehicleNo = const Value.absent(),
+    this.rstManual = const Value.absent(),
+    this.partyName = const Value.absent(),
+    this.partyId = const Value.absent(),
+    this.productId = const Value.absent(),
+    this.entryType = const Value.absent(),
+    this.firstWeight = const Value.absent(),
+    this.firstWeightTime = const Value.absent(),
+    this.secondWeight = const Value.absent(),
+    this.secondWeightTime = const Value.absent(),
+    this.netWeight = const Value.absent(),
+    this.bags = const Value.absent(),
+    this.lotNumber = const Value.absent(),
+    this.complete = const Value.absent(),
+    this.completeCode = const Value.absent(),
+    this.completeDate = const Value.absent(),
+    this.remark = const Value.absent(),
+    this.weighMode = const Value.absent(),
+    this.manualWeightsJson = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.status = const Value.absent(),
+    this.createdByUid = const Value.absent(),
+    this.createdByName = const Value.absent(),
+    this.approverUid = const Value.absent(),
+    this.approverName = const Value.absent(),
+    this.approvedByUid = const Value.absent(),
+    this.approvedAt = const Value.absent(),
+    this.rejectionReason = const Value.absent(),
+  });
+  VehicleEntriesCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime date,
+    required String slipNo,
+    this.voucherNo = const Value.absent(),
+    required String vehicleNo,
+    this.rstManual = const Value.absent(),
+    required String partyName,
+    this.partyId = const Value.absent(),
+    required int productId,
+    this.entryType = const Value.absent(),
+    required double firstWeight,
+    this.firstWeightTime = const Value.absent(),
+    required double secondWeight,
+    this.secondWeightTime = const Value.absent(),
+    required double netWeight,
+    this.bags = const Value.absent(),
+    this.lotNumber = const Value.absent(),
+    this.complete = const Value.absent(),
+    this.completeCode = const Value.absent(),
+    this.completeDate = const Value.absent(),
+    this.remark = const Value.absent(),
+    this.weighMode = const Value.absent(),
+    this.manualWeightsJson = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.status = const Value.absent(),
+    this.createdByUid = const Value.absent(),
+    this.createdByName = const Value.absent(),
+    this.approverUid = const Value.absent(),
+    this.approverName = const Value.absent(),
+    this.approvedByUid = const Value.absent(),
+    this.approvedAt = const Value.absent(),
+    this.rejectionReason = const Value.absent(),
+  })  : date = Value(date),
+        slipNo = Value(slipNo),
+        vehicleNo = Value(vehicleNo),
+        partyName = Value(partyName),
+        productId = Value(productId),
+        firstWeight = Value(firstWeight),
+        secondWeight = Value(secondWeight),
+        netWeight = Value(netWeight);
+  static Insertable<VehicleEntry> custom({
+    Expression<int>? id,
+    Expression<DateTime>? date,
+    Expression<String>? slipNo,
+    Expression<String>? voucherNo,
+    Expression<String>? vehicleNo,
+    Expression<String>? rstManual,
+    Expression<String>? partyName,
+    Expression<int>? partyId,
+    Expression<int>? productId,
+    Expression<String>? entryType,
+    Expression<double>? firstWeight,
+    Expression<DateTime>? firstWeightTime,
+    Expression<double>? secondWeight,
+    Expression<DateTime>? secondWeightTime,
+    Expression<double>? netWeight,
+    Expression<int>? bags,
+    Expression<String>? lotNumber,
+    Expression<bool>? complete,
+    Expression<String>? completeCode,
+    Expression<DateTime>? completeDate,
+    Expression<String>? remark,
+    Expression<String>? weighMode,
+    Expression<String>? manualWeightsJson,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? status,
+    Expression<String>? createdByUid,
+    Expression<String>? createdByName,
+    Expression<String>? approverUid,
+    Expression<String>? approverName,
+    Expression<String>? approvedByUid,
+    Expression<DateTime>? approvedAt,
+    Expression<String>? rejectionReason,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (date != null) 'date': date,
+      if (slipNo != null) 'slip_no': slipNo,
+      if (voucherNo != null) 'voucher_no': voucherNo,
+      if (vehicleNo != null) 'vehicle_no': vehicleNo,
+      if (rstManual != null) 'rst_manual': rstManual,
+      if (partyName != null) 'party_name': partyName,
+      if (partyId != null) 'party_id': partyId,
+      if (productId != null) 'product_id': productId,
+      if (entryType != null) 'entry_type': entryType,
+      if (firstWeight != null) 'first_weight': firstWeight,
+      if (firstWeightTime != null) 'first_weight_time': firstWeightTime,
+      if (secondWeight != null) 'second_weight': secondWeight,
+      if (secondWeightTime != null) 'second_weight_time': secondWeightTime,
+      if (netWeight != null) 'net_weight': netWeight,
+      if (bags != null) 'bags': bags,
+      if (lotNumber != null) 'lot_number': lotNumber,
+      if (complete != null) 'complete': complete,
+      if (completeCode != null) 'complete_code': completeCode,
+      if (completeDate != null) 'complete_date': completeDate,
+      if (remark != null) 'remark': remark,
+      if (weighMode != null) 'weigh_mode': weighMode,
+      if (manualWeightsJson != null) 'manual_weights_json': manualWeightsJson,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (status != null) 'status': status,
+      if (createdByUid != null) 'created_by_uid': createdByUid,
+      if (createdByName != null) 'created_by_name': createdByName,
+      if (approverUid != null) 'approver_uid': approverUid,
+      if (approverName != null) 'approver_name': approverName,
+      if (approvedByUid != null) 'approved_by_uid': approvedByUid,
+      if (approvedAt != null) 'approved_at': approvedAt,
+      if (rejectionReason != null) 'rejection_reason': rejectionReason,
+    });
+  }
+
+  VehicleEntriesCompanion copyWith(
+      {Value<int>? id,
+      Value<DateTime>? date,
+      Value<String>? slipNo,
+      Value<String?>? voucherNo,
+      Value<String>? vehicleNo,
+      Value<String?>? rstManual,
+      Value<String>? partyName,
+      Value<int?>? partyId,
+      Value<int>? productId,
+      Value<String>? entryType,
+      Value<double>? firstWeight,
+      Value<DateTime?>? firstWeightTime,
+      Value<double>? secondWeight,
+      Value<DateTime?>? secondWeightTime,
+      Value<double>? netWeight,
+      Value<int?>? bags,
+      Value<String?>? lotNumber,
+      Value<bool>? complete,
+      Value<String?>? completeCode,
+      Value<DateTime?>? completeDate,
+      Value<String?>? remark,
+      Value<String>? weighMode,
+      Value<String>? manualWeightsJson,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<String>? status,
+      Value<String?>? createdByUid,
+      Value<String?>? createdByName,
+      Value<String?>? approverUid,
+      Value<String?>? approverName,
+      Value<String?>? approvedByUid,
+      Value<DateTime?>? approvedAt,
+      Value<String?>? rejectionReason}) {
+    return VehicleEntriesCompanion(
+      id: id ?? this.id,
+      date: date ?? this.date,
+      slipNo: slipNo ?? this.slipNo,
+      voucherNo: voucherNo ?? this.voucherNo,
+      vehicleNo: vehicleNo ?? this.vehicleNo,
+      rstManual: rstManual ?? this.rstManual,
+      partyName: partyName ?? this.partyName,
+      partyId: partyId ?? this.partyId,
+      productId: productId ?? this.productId,
+      entryType: entryType ?? this.entryType,
+      firstWeight: firstWeight ?? this.firstWeight,
+      firstWeightTime: firstWeightTime ?? this.firstWeightTime,
+      secondWeight: secondWeight ?? this.secondWeight,
+      secondWeightTime: secondWeightTime ?? this.secondWeightTime,
+      netWeight: netWeight ?? this.netWeight,
+      bags: bags ?? this.bags,
+      lotNumber: lotNumber ?? this.lotNumber,
+      complete: complete ?? this.complete,
+      completeCode: completeCode ?? this.completeCode,
+      completeDate: completeDate ?? this.completeDate,
+      remark: remark ?? this.remark,
+      weighMode: weighMode ?? this.weighMode,
+      manualWeightsJson: manualWeightsJson ?? this.manualWeightsJson,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      status: status ?? this.status,
+      createdByUid: createdByUid ?? this.createdByUid,
+      createdByName: createdByName ?? this.createdByName,
+      approverUid: approverUid ?? this.approverUid,
+      approverName: approverName ?? this.approverName,
+      approvedByUid: approvedByUid ?? this.approvedByUid,
+      approvedAt: approvedAt ?? this.approvedAt,
+      rejectionReason: rejectionReason ?? this.rejectionReason,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<DateTime>(date.value);
+    }
+    if (slipNo.present) {
+      map['slip_no'] = Variable<String>(slipNo.value);
+    }
+    if (voucherNo.present) {
+      map['voucher_no'] = Variable<String>(voucherNo.value);
+    }
+    if (vehicleNo.present) {
+      map['vehicle_no'] = Variable<String>(vehicleNo.value);
+    }
+    if (rstManual.present) {
+      map['rst_manual'] = Variable<String>(rstManual.value);
+    }
+    if (partyName.present) {
+      map['party_name'] = Variable<String>(partyName.value);
+    }
+    if (partyId.present) {
+      map['party_id'] = Variable<int>(partyId.value);
+    }
+    if (productId.present) {
+      map['product_id'] = Variable<int>(productId.value);
+    }
+    if (entryType.present) {
+      map['entry_type'] = Variable<String>(entryType.value);
+    }
+    if (firstWeight.present) {
+      map['first_weight'] = Variable<double>(firstWeight.value);
+    }
+    if (firstWeightTime.present) {
+      map['first_weight_time'] = Variable<DateTime>(firstWeightTime.value);
+    }
+    if (secondWeight.present) {
+      map['second_weight'] = Variable<double>(secondWeight.value);
+    }
+    if (secondWeightTime.present) {
+      map['second_weight_time'] = Variable<DateTime>(secondWeightTime.value);
+    }
+    if (netWeight.present) {
+      map['net_weight'] = Variable<double>(netWeight.value);
+    }
+    if (bags.present) {
+      map['bags'] = Variable<int>(bags.value);
+    }
+    if (lotNumber.present) {
+      map['lot_number'] = Variable<String>(lotNumber.value);
+    }
+    if (complete.present) {
+      map['complete'] = Variable<bool>(complete.value);
+    }
+    if (completeCode.present) {
+      map['complete_code'] = Variable<String>(completeCode.value);
+    }
+    if (completeDate.present) {
+      map['complete_date'] = Variable<DateTime>(completeDate.value);
+    }
+    if (remark.present) {
+      map['remark'] = Variable<String>(remark.value);
+    }
+    if (weighMode.present) {
+      map['weigh_mode'] = Variable<String>(weighMode.value);
+    }
+    if (manualWeightsJson.present) {
+      map['manual_weights_json'] = Variable<String>(manualWeightsJson.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (createdByUid.present) {
+      map['created_by_uid'] = Variable<String>(createdByUid.value);
+    }
+    if (createdByName.present) {
+      map['created_by_name'] = Variable<String>(createdByName.value);
+    }
+    if (approverUid.present) {
+      map['approver_uid'] = Variable<String>(approverUid.value);
+    }
+    if (approverName.present) {
+      map['approver_name'] = Variable<String>(approverName.value);
+    }
+    if (approvedByUid.present) {
+      map['approved_by_uid'] = Variable<String>(approvedByUid.value);
+    }
+    if (approvedAt.present) {
+      map['approved_at'] = Variable<DateTime>(approvedAt.value);
+    }
+    if (rejectionReason.present) {
+      map['rejection_reason'] = Variable<String>(rejectionReason.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VehicleEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('slipNo: $slipNo, ')
+          ..write('voucherNo: $voucherNo, ')
+          ..write('vehicleNo: $vehicleNo, ')
+          ..write('rstManual: $rstManual, ')
+          ..write('partyName: $partyName, ')
+          ..write('partyId: $partyId, ')
+          ..write('productId: $productId, ')
+          ..write('entryType: $entryType, ')
+          ..write('firstWeight: $firstWeight, ')
+          ..write('firstWeightTime: $firstWeightTime, ')
+          ..write('secondWeight: $secondWeight, ')
+          ..write('secondWeightTime: $secondWeightTime, ')
+          ..write('netWeight: $netWeight, ')
+          ..write('bags: $bags, ')
+          ..write('lotNumber: $lotNumber, ')
+          ..write('complete: $complete, ')
+          ..write('completeCode: $completeCode, ')
+          ..write('completeDate: $completeDate, ')
+          ..write('remark: $remark, ')
+          ..write('weighMode: $weighMode, ')
+          ..write('manualWeightsJson: $manualWeightsJson, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('status: $status, ')
+          ..write('createdByUid: $createdByUid, ')
+          ..write('createdByName: $createdByName, ')
+          ..write('approverUid: $approverUid, ')
+          ..write('approverName: $approverName, ')
+          ..write('approvedByUid: $approvedByUid, ')
+          ..write('approvedAt: $approvedAt, ')
+          ..write('rejectionReason: $rejectionReason')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $FarmersTable extends Farmers with TableInfo<$FarmersTable, FarmerRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FarmersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+      'type', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('farmer'));
+  static const VerificationMeta _mobileMeta = const VerificationMeta('mobile');
+  @override
+  late final GeneratedColumn<String> mobile = GeneratedColumn<String>(
+      'mobile', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _gstNumberMeta =
+      const VerificationMeta('gstNumber');
+  @override
+  late final GeneratedColumn<String> gstNumber = GeneratedColumn<String>(
+      'gst_number', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _emailMeta = const VerificationMeta('email');
+  @override
+  late final GeneratedColumn<String> email = GeneratedColumn<String>(
+      'email', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _addressMeta =
+      const VerificationMeta('address');
+  @override
+  late final GeneratedColumn<String> address = GeneratedColumn<String>(
+      'address', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _contactPersonMeta =
+      const VerificationMeta('contactPerson');
+  @override
+  late final GeneratedColumn<String> contactPerson = GeneratedColumn<String>(
+      'contact_person', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _outstandingBalanceMeta =
+      const VerificationMeta('outstandingBalance');
+  @override
+  late final GeneratedColumn<double> outstandingBalance =
+      GeneratedColumn<double>('outstanding_balance', aliasedName, false,
+          type: DriftSqlType.double,
+          requiredDuringInsert: false,
+          defaultValue: const Constant(0));
+  static const VerificationMeta _isActiveMeta =
+      const VerificationMeta('isActive');
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+      'is_active', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _kisanCardNumberMeta =
+      const VerificationMeta('kisanCardNumber');
+  @override
+  late final GeneratedColumn<String> kisanCardNumber = GeneratedColumn<String>(
+      'kisan_card_number', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _aadhaarNumberMeta =
+      const VerificationMeta('aadhaarNumber');
+  @override
+  late final GeneratedColumn<String> aadhaarNumber = GeneratedColumn<String>(
+      'aadhaar_number', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _villageMeta =
+      const VerificationMeta('village');
+  @override
+  late final GeneratedColumn<String> village = GeneratedColumn<String>(
+      'village', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _districtMeta =
+      const VerificationMeta('district');
+  @override
+  late final GeneratedColumn<String> district = GeneratedColumn<String>(
+      'district', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _mandiLicenseNumberMeta =
+      const VerificationMeta('mandiLicenseNumber');
+  @override
+  late final GeneratedColumn<String> mandiLicenseNumber =
+      GeneratedColumn<String>('mandi_license_number', aliasedName, true,
+          type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        name,
+        type,
+        mobile,
+        gstNumber,
+        email,
+        address,
+        contactPerson,
+        outstandingBalance,
+        isActive,
+        createdAt,
+        kisanCardNumber,
+        aadhaarNumber,
+        village,
+        district,
+        mandiLicenseNumber
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'farmers';
+  @override
+  VerificationContext validateIntegrity(Insertable<FarmerRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+          _typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
+    }
+    if (data.containsKey('mobile')) {
+      context.handle(_mobileMeta,
+          mobile.isAcceptableOrUnknown(data['mobile']!, _mobileMeta));
+    }
+    if (data.containsKey('gst_number')) {
+      context.handle(_gstNumberMeta,
+          gstNumber.isAcceptableOrUnknown(data['gst_number']!, _gstNumberMeta));
+    }
+    if (data.containsKey('email')) {
+      context.handle(
+          _emailMeta, email.isAcceptableOrUnknown(data['email']!, _emailMeta));
+    }
+    if (data.containsKey('address')) {
+      context.handle(_addressMeta,
+          address.isAcceptableOrUnknown(data['address']!, _addressMeta));
+    }
+    if (data.containsKey('contact_person')) {
+      context.handle(
+          _contactPersonMeta,
+          contactPerson.isAcceptableOrUnknown(
+              data['contact_person']!, _contactPersonMeta));
+    }
+    if (data.containsKey('outstanding_balance')) {
+      context.handle(
+          _outstandingBalanceMeta,
+          outstandingBalance.isAcceptableOrUnknown(
+              data['outstanding_balance']!, _outstandingBalanceMeta));
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(_isActiveMeta,
+          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('kisan_card_number')) {
+      context.handle(
+          _kisanCardNumberMeta,
+          kisanCardNumber.isAcceptableOrUnknown(
+              data['kisan_card_number']!, _kisanCardNumberMeta));
+    }
+    if (data.containsKey('aadhaar_number')) {
+      context.handle(
+          _aadhaarNumberMeta,
+          aadhaarNumber.isAcceptableOrUnknown(
+              data['aadhaar_number']!, _aadhaarNumberMeta));
+    }
+    if (data.containsKey('village')) {
+      context.handle(_villageMeta,
+          village.isAcceptableOrUnknown(data['village']!, _villageMeta));
+    }
+    if (data.containsKey('district')) {
+      context.handle(_districtMeta,
+          district.isAcceptableOrUnknown(data['district']!, _districtMeta));
+    }
+    if (data.containsKey('mandi_license_number')) {
+      context.handle(
+          _mandiLicenseNumberMeta,
+          mandiLicenseNumber.isAcceptableOrUnknown(
+              data['mandi_license_number']!, _mandiLicenseNumberMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FarmerRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FarmerRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      type: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
+      mobile: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}mobile']),
+      gstNumber: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}gst_number']),
+      email: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}email']),
+      address: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}address']),
+      contactPerson: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}contact_person']),
+      outstandingBalance: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}outstanding_balance'])!,
+      isActive: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      kisanCardNumber: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}kisan_card_number']),
+      aadhaarNumber: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}aadhaar_number']),
+      village: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}village']),
+      district: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}district']),
+      mandiLicenseNumber: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}mandi_license_number']),
+    );
+  }
+
+  @override
+  $FarmersTable createAlias(String alias) {
+    return $FarmersTable(attachedDatabase, alias);
+  }
+}
+
+class FarmerRow extends DataClass implements Insertable<FarmerRow> {
+  final int id;
+  final String name;
+  final String type;
+  final String? mobile;
+  final String? gstNumber;
+  final String? email;
+  final String? address;
+  final String? contactPerson;
+  final double outstandingBalance;
+  final bool isActive;
+  final DateTime createdAt;
+  final String? kisanCardNumber;
+  final String? aadhaarNumber;
+  final String? village;
+  final String? district;
+  final String? mandiLicenseNumber;
+  const FarmerRow(
+      {required this.id,
+      required this.name,
+      required this.type,
+      this.mobile,
+      this.gstNumber,
+      this.email,
+      this.address,
+      this.contactPerson,
+      required this.outstandingBalance,
+      required this.isActive,
+      required this.createdAt,
+      this.kisanCardNumber,
+      this.aadhaarNumber,
+      this.village,
+      this.district,
+      this.mandiLicenseNumber});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['type'] = Variable<String>(type);
+    if (!nullToAbsent || mobile != null) {
+      map['mobile'] = Variable<String>(mobile);
+    }
+    if (!nullToAbsent || gstNumber != null) {
+      map['gst_number'] = Variable<String>(gstNumber);
+    }
+    if (!nullToAbsent || email != null) {
+      map['email'] = Variable<String>(email);
+    }
+    if (!nullToAbsent || address != null) {
+      map['address'] = Variable<String>(address);
+    }
+    if (!nullToAbsent || contactPerson != null) {
+      map['contact_person'] = Variable<String>(contactPerson);
+    }
+    map['outstanding_balance'] = Variable<double>(outstandingBalance);
+    map['is_active'] = Variable<bool>(isActive);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || kisanCardNumber != null) {
+      map['kisan_card_number'] = Variable<String>(kisanCardNumber);
+    }
+    if (!nullToAbsent || aadhaarNumber != null) {
+      map['aadhaar_number'] = Variable<String>(aadhaarNumber);
+    }
+    if (!nullToAbsent || village != null) {
+      map['village'] = Variable<String>(village);
+    }
+    if (!nullToAbsent || district != null) {
+      map['district'] = Variable<String>(district);
+    }
+    if (!nullToAbsent || mandiLicenseNumber != null) {
+      map['mandi_license_number'] = Variable<String>(mandiLicenseNumber);
+    }
+    return map;
+  }
+
+  FarmersCompanion toCompanion(bool nullToAbsent) {
+    return FarmersCompanion(
+      id: Value(id),
+      name: Value(name),
+      type: Value(type),
+      mobile:
+          mobile == null && nullToAbsent ? const Value.absent() : Value(mobile),
+      gstNumber: gstNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gstNumber),
+      email:
+          email == null && nullToAbsent ? const Value.absent() : Value(email),
+      address: address == null && nullToAbsent
+          ? const Value.absent()
+          : Value(address),
+      contactPerson: contactPerson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contactPerson),
+      outstandingBalance: Value(outstandingBalance),
+      isActive: Value(isActive),
+      createdAt: Value(createdAt),
+      kisanCardNumber: kisanCardNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(kisanCardNumber),
+      aadhaarNumber: aadhaarNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(aadhaarNumber),
+      village: village == null && nullToAbsent
+          ? const Value.absent()
+          : Value(village),
+      district: district == null && nullToAbsent
+          ? const Value.absent()
+          : Value(district),
+      mandiLicenseNumber: mandiLicenseNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mandiLicenseNumber),
+    );
+  }
+
+  factory FarmerRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FarmerRow(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      type: serializer.fromJson<String>(json['type']),
+      mobile: serializer.fromJson<String?>(json['mobile']),
+      gstNumber: serializer.fromJson<String?>(json['gstNumber']),
+      email: serializer.fromJson<String?>(json['email']),
+      address: serializer.fromJson<String?>(json['address']),
+      contactPerson: serializer.fromJson<String?>(json['contactPerson']),
+      outstandingBalance:
+          serializer.fromJson<double>(json['outstandingBalance']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      kisanCardNumber: serializer.fromJson<String?>(json['kisanCardNumber']),
+      aadhaarNumber: serializer.fromJson<String?>(json['aadhaarNumber']),
+      village: serializer.fromJson<String?>(json['village']),
+      district: serializer.fromJson<String?>(json['district']),
+      mandiLicenseNumber:
+          serializer.fromJson<String?>(json['mandiLicenseNumber']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'type': serializer.toJson<String>(type),
+      'mobile': serializer.toJson<String?>(mobile),
+      'gstNumber': serializer.toJson<String?>(gstNumber),
+      'email': serializer.toJson<String?>(email),
+      'address': serializer.toJson<String?>(address),
+      'contactPerson': serializer.toJson<String?>(contactPerson),
+      'outstandingBalance': serializer.toJson<double>(outstandingBalance),
+      'isActive': serializer.toJson<bool>(isActive),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'kisanCardNumber': serializer.toJson<String?>(kisanCardNumber),
+      'aadhaarNumber': serializer.toJson<String?>(aadhaarNumber),
+      'village': serializer.toJson<String?>(village),
+      'district': serializer.toJson<String?>(district),
+      'mandiLicenseNumber': serializer.toJson<String?>(mandiLicenseNumber),
+    };
+  }
+
+  FarmerRow copyWith(
+          {int? id,
+          String? name,
+          String? type,
+          Value<String?> mobile = const Value.absent(),
+          Value<String?> gstNumber = const Value.absent(),
+          Value<String?> email = const Value.absent(),
+          Value<String?> address = const Value.absent(),
+          Value<String?> contactPerson = const Value.absent(),
+          double? outstandingBalance,
+          bool? isActive,
+          DateTime? createdAt,
+          Value<String?> kisanCardNumber = const Value.absent(),
+          Value<String?> aadhaarNumber = const Value.absent(),
+          Value<String?> village = const Value.absent(),
+          Value<String?> district = const Value.absent(),
+          Value<String?> mandiLicenseNumber = const Value.absent()}) =>
+      FarmerRow(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        type: type ?? this.type,
+        mobile: mobile.present ? mobile.value : this.mobile,
+        gstNumber: gstNumber.present ? gstNumber.value : this.gstNumber,
+        email: email.present ? email.value : this.email,
+        address: address.present ? address.value : this.address,
+        contactPerson:
+            contactPerson.present ? contactPerson.value : this.contactPerson,
+        outstandingBalance: outstandingBalance ?? this.outstandingBalance,
+        isActive: isActive ?? this.isActive,
+        createdAt: createdAt ?? this.createdAt,
+        kisanCardNumber: kisanCardNumber.present
+            ? kisanCardNumber.value
+            : this.kisanCardNumber,
+        aadhaarNumber:
+            aadhaarNumber.present ? aadhaarNumber.value : this.aadhaarNumber,
+        village: village.present ? village.value : this.village,
+        district: district.present ? district.value : this.district,
+        mandiLicenseNumber: mandiLicenseNumber.present
+            ? mandiLicenseNumber.value
+            : this.mandiLicenseNumber,
+      );
+  FarmerRow copyWithCompanion(FarmersCompanion data) {
+    return FarmerRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      type: data.type.present ? data.type.value : this.type,
+      mobile: data.mobile.present ? data.mobile.value : this.mobile,
+      gstNumber: data.gstNumber.present ? data.gstNumber.value : this.gstNumber,
+      email: data.email.present ? data.email.value : this.email,
+      address: data.address.present ? data.address.value : this.address,
+      contactPerson: data.contactPerson.present
+          ? data.contactPerson.value
+          : this.contactPerson,
+      outstandingBalance: data.outstandingBalance.present
+          ? data.outstandingBalance.value
+          : this.outstandingBalance,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      kisanCardNumber: data.kisanCardNumber.present
+          ? data.kisanCardNumber.value
+          : this.kisanCardNumber,
+      aadhaarNumber: data.aadhaarNumber.present
+          ? data.aadhaarNumber.value
+          : this.aadhaarNumber,
+      village: data.village.present ? data.village.value : this.village,
+      district: data.district.present ? data.district.value : this.district,
+      mandiLicenseNumber: data.mandiLicenseNumber.present
+          ? data.mandiLicenseNumber.value
+          : this.mandiLicenseNumber,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FarmerRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('type: $type, ')
+          ..write('mobile: $mobile, ')
+          ..write('gstNumber: $gstNumber, ')
+          ..write('email: $email, ')
+          ..write('address: $address, ')
+          ..write('contactPerson: $contactPerson, ')
+          ..write('outstandingBalance: $outstandingBalance, ')
+          ..write('isActive: $isActive, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('kisanCardNumber: $kisanCardNumber, ')
+          ..write('aadhaarNumber: $aadhaarNumber, ')
+          ..write('village: $village, ')
+          ..write('district: $district, ')
+          ..write('mandiLicenseNumber: $mandiLicenseNumber')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      name,
+      type,
+      mobile,
+      gstNumber,
+      email,
+      address,
+      contactPerson,
+      outstandingBalance,
+      isActive,
+      createdAt,
+      kisanCardNumber,
+      aadhaarNumber,
+      village,
+      district,
+      mandiLicenseNumber);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FarmerRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.type == this.type &&
+          other.mobile == this.mobile &&
+          other.gstNumber == this.gstNumber &&
+          other.email == this.email &&
+          other.address == this.address &&
+          other.contactPerson == this.contactPerson &&
+          other.outstandingBalance == this.outstandingBalance &&
+          other.isActive == this.isActive &&
+          other.createdAt == this.createdAt &&
+          other.kisanCardNumber == this.kisanCardNumber &&
+          other.aadhaarNumber == this.aadhaarNumber &&
+          other.village == this.village &&
+          other.district == this.district &&
+          other.mandiLicenseNumber == this.mandiLicenseNumber);
+}
+
+class FarmersCompanion extends UpdateCompanion<FarmerRow> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String> type;
+  final Value<String?> mobile;
+  final Value<String?> gstNumber;
+  final Value<String?> email;
+  final Value<String?> address;
+  final Value<String?> contactPerson;
+  final Value<double> outstandingBalance;
+  final Value<bool> isActive;
+  final Value<DateTime> createdAt;
+  final Value<String?> kisanCardNumber;
+  final Value<String?> aadhaarNumber;
+  final Value<String?> village;
+  final Value<String?> district;
+  final Value<String?> mandiLicenseNumber;
+  const FarmersCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.type = const Value.absent(),
+    this.mobile = const Value.absent(),
+    this.gstNumber = const Value.absent(),
+    this.email = const Value.absent(),
+    this.address = const Value.absent(),
+    this.contactPerson = const Value.absent(),
+    this.outstandingBalance = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.kisanCardNumber = const Value.absent(),
+    this.aadhaarNumber = const Value.absent(),
+    this.village = const Value.absent(),
+    this.district = const Value.absent(),
+    this.mandiLicenseNumber = const Value.absent(),
+  });
+  FarmersCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    this.type = const Value.absent(),
+    this.mobile = const Value.absent(),
+    this.gstNumber = const Value.absent(),
+    this.email = const Value.absent(),
+    this.address = const Value.absent(),
+    this.contactPerson = const Value.absent(),
+    this.outstandingBalance = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.kisanCardNumber = const Value.absent(),
+    this.aadhaarNumber = const Value.absent(),
+    this.village = const Value.absent(),
+    this.district = const Value.absent(),
+    this.mandiLicenseNumber = const Value.absent(),
+  }) : name = Value(name);
+  static Insertable<FarmerRow> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? type,
+    Expression<String>? mobile,
+    Expression<String>? gstNumber,
+    Expression<String>? email,
+    Expression<String>? address,
+    Expression<String>? contactPerson,
+    Expression<double>? outstandingBalance,
+    Expression<bool>? isActive,
+    Expression<DateTime>? createdAt,
+    Expression<String>? kisanCardNumber,
+    Expression<String>? aadhaarNumber,
+    Expression<String>? village,
+    Expression<String>? district,
+    Expression<String>? mandiLicenseNumber,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (type != null) 'type': type,
+      if (mobile != null) 'mobile': mobile,
+      if (gstNumber != null) 'gst_number': gstNumber,
+      if (email != null) 'email': email,
+      if (address != null) 'address': address,
+      if (contactPerson != null) 'contact_person': contactPerson,
+      if (outstandingBalance != null) 'outstanding_balance': outstandingBalance,
+      if (isActive != null) 'is_active': isActive,
+      if (createdAt != null) 'created_at': createdAt,
+      if (kisanCardNumber != null) 'kisan_card_number': kisanCardNumber,
+      if (aadhaarNumber != null) 'aadhaar_number': aadhaarNumber,
+      if (village != null) 'village': village,
+      if (district != null) 'district': district,
+      if (mandiLicenseNumber != null)
+        'mandi_license_number': mandiLicenseNumber,
+    });
+  }
+
+  FarmersCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? name,
+      Value<String>? type,
+      Value<String?>? mobile,
+      Value<String?>? gstNumber,
+      Value<String?>? email,
+      Value<String?>? address,
+      Value<String?>? contactPerson,
+      Value<double>? outstandingBalance,
+      Value<bool>? isActive,
+      Value<DateTime>? createdAt,
+      Value<String?>? kisanCardNumber,
+      Value<String?>? aadhaarNumber,
+      Value<String?>? village,
+      Value<String?>? district,
+      Value<String?>? mandiLicenseNumber}) {
+    return FarmersCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      type: type ?? this.type,
+      mobile: mobile ?? this.mobile,
+      gstNumber: gstNumber ?? this.gstNumber,
+      email: email ?? this.email,
+      address: address ?? this.address,
+      contactPerson: contactPerson ?? this.contactPerson,
+      outstandingBalance: outstandingBalance ?? this.outstandingBalance,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+      kisanCardNumber: kisanCardNumber ?? this.kisanCardNumber,
+      aadhaarNumber: aadhaarNumber ?? this.aadhaarNumber,
+      village: village ?? this.village,
+      district: district ?? this.district,
+      mandiLicenseNumber: mandiLicenseNumber ?? this.mandiLicenseNumber,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (mobile.present) {
+      map['mobile'] = Variable<String>(mobile.value);
+    }
+    if (gstNumber.present) {
+      map['gst_number'] = Variable<String>(gstNumber.value);
+    }
+    if (email.present) {
+      map['email'] = Variable<String>(email.value);
+    }
+    if (address.present) {
+      map['address'] = Variable<String>(address.value);
+    }
+    if (contactPerson.present) {
+      map['contact_person'] = Variable<String>(contactPerson.value);
+    }
+    if (outstandingBalance.present) {
+      map['outstanding_balance'] = Variable<double>(outstandingBalance.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (kisanCardNumber.present) {
+      map['kisan_card_number'] = Variable<String>(kisanCardNumber.value);
+    }
+    if (aadhaarNumber.present) {
+      map['aadhaar_number'] = Variable<String>(aadhaarNumber.value);
+    }
+    if (village.present) {
+      map['village'] = Variable<String>(village.value);
+    }
+    if (district.present) {
+      map['district'] = Variable<String>(district.value);
+    }
+    if (mandiLicenseNumber.present) {
+      map['mandi_license_number'] = Variable<String>(mandiLicenseNumber.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FarmersCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('type: $type, ')
+          ..write('mobile: $mobile, ')
+          ..write('gstNumber: $gstNumber, ')
+          ..write('email: $email, ')
+          ..write('address: $address, ')
+          ..write('contactPerson: $contactPerson, ')
+          ..write('outstandingBalance: $outstandingBalance, ')
+          ..write('isActive: $isActive, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('kisanCardNumber: $kisanCardNumber, ')
+          ..write('aadhaarNumber: $aadhaarNumber, ')
+          ..write('village: $village, ')
+          ..write('district: $district, ')
+          ..write('mandiLicenseNumber: $mandiLicenseNumber')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PaddyProcurementsTable extends PaddyProcurements
+    with TableInfo<$PaddyProcurementsTable, PaddyProcurementRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PaddyProcurementsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
+      'date', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _slipNoMeta = const VerificationMeta('slipNo');
+  @override
+  late final GeneratedColumn<String> slipNo = GeneratedColumn<String>(
+      'slip_no', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _voucherNoMeta =
+      const VerificationMeta('voucherNo');
+  @override
+  late final GeneratedColumn<String> voucherNo = GeneratedColumn<String>(
+      'voucher_no', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _rstManualMeta =
+      const VerificationMeta('rstManual');
+  @override
+  late final GeneratedColumn<String> rstManual = GeneratedColumn<String>(
+      'rst_manual', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _areaMeta = const VerificationMeta('area');
+  @override
+  late final GeneratedColumn<String> area = GeneratedColumn<String>(
+      'area', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _vTypeMeta = const VerificationMeta('vType');
+  @override
+  late final GeneratedColumn<String> vType = GeneratedColumn<String>(
+      'v_type', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('BILL'));
+  static const VerificationMeta _partyNameMeta =
+      const VerificationMeta('partyName');
+  @override
+  late final GeneratedColumn<String> partyName = GeneratedColumn<String>(
+      'party_name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _partyIdMeta =
+      const VerificationMeta('partyId');
+  @override
+  late final GeneratedColumn<int> partyId = GeneratedColumn<int>(
+      'party_id', aliasedName, true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES suppliers (id)'));
+  static const VerificationMeta _truckNoMeta =
+      const VerificationMeta('truckNo');
+  @override
+  late final GeneratedColumn<String> truckNo = GeneratedColumn<String>(
+      'truck_no', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _emptyWeightMeta =
+      const VerificationMeta('emptyWeight');
+  @override
+  late final GeneratedColumn<double> emptyWeight = GeneratedColumn<double>(
+      'empty_weight', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _marketTypeMeta =
+      const VerificationMeta('marketType');
+  @override
+  late final GeneratedColumn<String> marketType = GeneratedColumn<String>(
+      'market_type', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('FT'));
+  static const VerificationMeta _grossWeightMeta =
+      const VerificationMeta('grossWeight');
+  @override
+  late final GeneratedColumn<double> grossWeight = GeneratedColumn<double>(
+      'gross_weight', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _tareWeightMeta =
+      const VerificationMeta('tareWeight');
+  @override
+  late final GeneratedColumn<double> tareWeight = GeneratedColumn<double>(
+      'tare_weight', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _juteBagsMeta =
+      const VerificationMeta('juteBags');
+  @override
+  late final GeneratedColumn<int> juteBags = GeneratedColumn<int>(
+      'jute_bags', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _plasticBagsMeta =
+      const VerificationMeta('plasticBags');
+  @override
+  late final GeneratedColumn<int> plasticBags = GeneratedColumn<int>(
+      'plastic_bags', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _totalBagsMeta =
+      const VerificationMeta('totalBags');
+  @override
+  late final GeneratedColumn<int> totalBags = GeneratedColumn<int>(
+      'total_bags', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _gnyWtLessMeta =
+      const VerificationMeta('gnyWtLess');
+  @override
+  late final GeneratedColumn<bool> gnyWtLess = GeneratedColumn<bool>(
+      'gny_wt_less', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("gny_wt_less" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _bagReturnMeta =
+      const VerificationMeta('bagReturn');
+  @override
+  late final GeneratedColumn<bool> bagReturn = GeneratedColumn<bool>(
+      'bag_return', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("bag_return" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _otherCutMeta =
+      const VerificationMeta('otherCut');
+  @override
+  late final GeneratedColumn<double> otherCut = GeneratedColumn<double>(
+      'other_cut', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _dustCutMeta =
+      const VerificationMeta('dustCut');
+  @override
+  late final GeneratedColumn<double> dustCut = GeneratedColumn<double>(
+      'dust_cut', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _polCutMeta = const VerificationMeta('polCut');
+  @override
+  late final GeneratedColumn<double> polCut = GeneratedColumn<double>(
+      'pol_cut', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _qualityGradeMeta =
+      const VerificationMeta('qualityGrade');
+  @override
+  late final GeneratedColumn<String> qualityGrade = GeneratedColumn<String>(
+      'quality_grade', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _unloadTimeMeta =
+      const VerificationMeta('unloadTime');
+  @override
+  late final GeneratedColumn<double> unloadTime = GeneratedColumn<double>(
+      'unload_time', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _eBagMeta = const VerificationMeta('eBag');
+  @override
+  late final GeneratedColumn<double> eBag = GeneratedColumn<double>(
+      'e_bag', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _ePktMeta = const VerificationMeta('ePkt');
+  @override
+  late final GeneratedColumn<double> ePkt = GeneratedColumn<double>(
+      'e_pkt', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _netWeightMeta =
+      const VerificationMeta('netWeight');
+  @override
+  late final GeneratedColumn<double> netWeight = GeneratedColumn<double>(
+      'net_weight', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _avgBagWeightMeta =
+      const VerificationMeta('avgBagWeight');
+  @override
+  late final GeneratedColumn<double> avgBagWeight = GeneratedColumn<double>(
+      'avg_bag_weight', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _rateCalculationMeta =
+      const VerificationMeta('rateCalculation');
+  @override
+  late final GeneratedColumn<String> rateCalculation = GeneratedColumn<String>(
+      'rate_calculation', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('Qntl'));
+  static const VerificationMeta _kgPerBagMeta =
+      const VerificationMeta('kgPerBag');
+  @override
+  late final GeneratedColumn<double> kgPerBag = GeneratedColumn<double>(
+      'kg_per_bag', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(75));
+  static const VerificationMeta _productIdMeta =
+      const VerificationMeta('productId');
+  @override
+  late final GeneratedColumn<int> productId = GeneratedColumn<int>(
+      'product_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES products (id)'));
+  static const VerificationMeta _productNameMeta =
+      const VerificationMeta('productName');
+  @override
+  late final GeneratedColumn<String> productName = GeneratedColumn<String>(
+      'product_name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _quantityNewMeta =
+      const VerificationMeta('quantityNew');
+  @override
+  late final GeneratedColumn<String> quantityNew = GeneratedColumn<String>(
+      'quantity_new', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('N'));
+  static const VerificationMeta _quantityQntlMeta =
+      const VerificationMeta('quantityQntl');
+  @override
+  late final GeneratedColumn<double> quantityQntl = GeneratedColumn<double>(
+      'quantity_qntl', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _ratePerQntlMeta =
+      const VerificationMeta('ratePerQntl');
+  @override
+  late final GeneratedColumn<double> ratePerQntl = GeneratedColumn<double>(
+      'rate_per_qntl', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _totalAmountMeta =
+      const VerificationMeta('totalAmount');
+  @override
+  late final GeneratedColumn<double> totalAmount = GeneratedColumn<double>(
+      'total_amount', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _avgRateMeta =
+      const VerificationMeta('avgRate');
+  @override
+  late final GeneratedColumn<double> avgRate = GeneratedColumn<double>(
+      'avg_rate', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _avgAmountMeta =
+      const VerificationMeta('avgAmount');
+  @override
+  late final GeneratedColumn<double> avgAmount = GeneratedColumn<double>(
+      'avg_amount', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _qrtCutAmtMeta =
+      const VerificationMeta('qrtCutAmt');
+  @override
+  late final GeneratedColumn<double> qrtCutAmt = GeneratedColumn<double>(
+      'qrt_cut_amt', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _paddyAmtMeta =
+      const VerificationMeta('paddyAmt');
+  @override
+  late final GeneratedColumn<double> paddyAmt = GeneratedColumn<double>(
+      'paddy_amt', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _qualityCutsJsonMeta =
+      const VerificationMeta('qualityCutsJson');
+  @override
+  late final GeneratedColumn<String> qualityCutsJson = GeneratedColumn<String>(
+      'quality_cuts_json', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('[]'));
+  static const VerificationMeta _totalCutKgMeta =
+      const VerificationMeta('totalCutKg');
+  @override
+  late final GeneratedColumn<double> totalCutKg = GeneratedColumn<double>(
+      'total_cut_kg', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _finalWeightMeta =
+      const VerificationMeta('finalWeight');
+  @override
+  late final GeneratedColumn<double> finalWeight = GeneratedColumn<double>(
+      'final_weight', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _gunnyTransactionsJsonMeta =
+      const VerificationMeta('gunnyTransactionsJson');
+  @override
+  late final GeneratedColumn<String> gunnyTransactionsJson =
+      GeneratedColumn<String>('gunny_transactions_json', aliasedName, false,
+          type: DriftSqlType.string,
+          requiredDuringInsert: false,
+          defaultValue: const Constant('[]'));
+  static const VerificationMeta _deliveryTypeMeta =
+      const VerificationMeta('deliveryType');
+  @override
+  late final GeneratedColumn<String> deliveryType = GeneratedColumn<String>(
+      'delivery_type', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _truckRentTypeMeta =
+      const VerificationMeta('truckRentType');
+  @override
+  late final GeneratedColumn<String> truckRentType = GeneratedColumn<String>(
+      'truck_rent_type', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _truckRentMeta =
+      const VerificationMeta('truckRent');
+  @override
+  late final GeneratedColumn<double> truckRent = GeneratedColumn<double>(
+      'truck_rent', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _truckRentPaidMeta =
+      const VerificationMeta('truckRentPaid');
+  @override
+  late final GeneratedColumn<double> truckRentPaid = GeneratedColumn<double>(
+      'truck_rent_paid', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _otherAmountMeta =
+      const VerificationMeta('otherAmount');
+  @override
+  late final GeneratedColumn<double> otherAmount = GeneratedColumn<double>(
+      'other_amount', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _transportTypeMeta =
+      const VerificationMeta('transportType');
+  @override
+  late final GeneratedColumn<String> transportType = GeneratedColumn<String>(
+      'transport_type', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _truckAccountMeta =
+      const VerificationMeta('truckAccount');
+  @override
+  late final GeneratedColumn<String> truckAccount = GeneratedColumn<String>(
+      'truck_account', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _freightAmountMeta =
+      const VerificationMeta('freightAmount');
+  @override
+  late final GeneratedColumn<double> freightAmount = GeneratedColumn<double>(
+      'freight_amount', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _procurementTypeMeta =
+      const VerificationMeta('procurementType');
+  @override
+  late final GeneratedColumn<String> procurementType = GeneratedColumn<String>(
+      'procurement_type', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('local'));
+  static const VerificationMeta _mandiInvoiceNoMeta =
+      const VerificationMeta('mandiInvoiceNo');
+  @override
+  late final GeneratedColumn<String> mandiInvoiceNo = GeneratedColumn<String>(
+      'mandi_invoice_no', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _tenderNumberMeta =
+      const VerificationMeta('tenderNumber');
+  @override
+  late final GeneratedColumn<String> tenderNumber = GeneratedColumn<String>(
+      'tender_number', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _commissionAgentIdMeta =
+      const VerificationMeta('commissionAgentId');
+  @override
+  late final GeneratedColumn<int> commissionAgentId = GeneratedColumn<int>(
+      'commission_agent_id', aliasedName, true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES suppliers (id)'));
+  static const VerificationMeta _warehouseIdMeta =
+      const VerificationMeta('warehouseId');
+  @override
+  late final GeneratedColumn<int> warehouseId = GeneratedColumn<int>(
+      'warehouse_id', aliasedName, true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES warehouses (id)'));
+  static const VerificationMeta _vehicleEntryIdMeta =
+      const VerificationMeta('vehicleEntryId');
+  @override
+  late final GeneratedColumn<int> vehicleEntryId = GeneratedColumn<int>(
+      'vehicle_entry_id', aliasedName, true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES vehicle_entries (id)'));
+  static const VerificationMeta _remainingStockMeta =
+      const VerificationMeta('remainingStock');
+  @override
+  late final GeneratedColumn<double> remainingStock = GeneratedColumn<double>(
+      'remaining_stock', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('draft'));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        date,
+        slipNo,
+        voucherNo,
+        rstManual,
+        area,
+        vType,
+        partyName,
+        partyId,
+        truckNo,
+        emptyWeight,
+        marketType,
+        grossWeight,
+        tareWeight,
+        juteBags,
+        plasticBags,
+        totalBags,
+        gnyWtLess,
+        bagReturn,
+        otherCut,
+        dustCut,
+        polCut,
+        qualityGrade,
+        unloadTime,
+        eBag,
+        ePkt,
+        netWeight,
+        avgBagWeight,
+        rateCalculation,
+        kgPerBag,
+        productId,
+        productName,
+        quantityNew,
+        quantityQntl,
+        ratePerQntl,
+        totalAmount,
+        avgRate,
+        avgAmount,
+        qrtCutAmt,
+        paddyAmt,
+        qualityCutsJson,
+        totalCutKg,
+        finalWeight,
+        gunnyTransactionsJson,
+        deliveryType,
+        truckRentType,
+        truckRent,
+        truckRentPaid,
+        otherAmount,
+        transportType,
+        truckAccount,
+        freightAmount,
+        procurementType,
+        mandiInvoiceNo,
+        tenderNumber,
+        commissionAgentId,
+        warehouseId,
+        vehicleEntryId,
+        remainingStock,
+        status,
+        createdAt,
+        updatedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'paddy_procurements';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<PaddyProcurementRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+          _dateMeta, date.isAcceptableOrUnknown(data['date']!, _dateMeta));
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('slip_no')) {
+      context.handle(_slipNoMeta,
+          slipNo.isAcceptableOrUnknown(data['slip_no']!, _slipNoMeta));
+    } else if (isInserting) {
+      context.missing(_slipNoMeta);
+    }
+    if (data.containsKey('voucher_no')) {
+      context.handle(_voucherNoMeta,
+          voucherNo.isAcceptableOrUnknown(data['voucher_no']!, _voucherNoMeta));
+    }
+    if (data.containsKey('rst_manual')) {
+      context.handle(_rstManualMeta,
+          rstManual.isAcceptableOrUnknown(data['rst_manual']!, _rstManualMeta));
+    }
+    if (data.containsKey('area')) {
+      context.handle(
+          _areaMeta, area.isAcceptableOrUnknown(data['area']!, _areaMeta));
+    }
+    if (data.containsKey('v_type')) {
+      context.handle(
+          _vTypeMeta, vType.isAcceptableOrUnknown(data['v_type']!, _vTypeMeta));
+    }
+    if (data.containsKey('party_name')) {
+      context.handle(_partyNameMeta,
+          partyName.isAcceptableOrUnknown(data['party_name']!, _partyNameMeta));
+    } else if (isInserting) {
+      context.missing(_partyNameMeta);
+    }
+    if (data.containsKey('party_id')) {
+      context.handle(_partyIdMeta,
+          partyId.isAcceptableOrUnknown(data['party_id']!, _partyIdMeta));
+    }
+    if (data.containsKey('truck_no')) {
+      context.handle(_truckNoMeta,
+          truckNo.isAcceptableOrUnknown(data['truck_no']!, _truckNoMeta));
+    }
+    if (data.containsKey('empty_weight')) {
+      context.handle(
+          _emptyWeightMeta,
+          emptyWeight.isAcceptableOrUnknown(
+              data['empty_weight']!, _emptyWeightMeta));
+    }
+    if (data.containsKey('market_type')) {
+      context.handle(
+          _marketTypeMeta,
+          marketType.isAcceptableOrUnknown(
+              data['market_type']!, _marketTypeMeta));
+    }
+    if (data.containsKey('gross_weight')) {
+      context.handle(
+          _grossWeightMeta,
+          grossWeight.isAcceptableOrUnknown(
+              data['gross_weight']!, _grossWeightMeta));
+    }
+    if (data.containsKey('tare_weight')) {
+      context.handle(
+          _tareWeightMeta,
+          tareWeight.isAcceptableOrUnknown(
+              data['tare_weight']!, _tareWeightMeta));
+    }
+    if (data.containsKey('jute_bags')) {
+      context.handle(_juteBagsMeta,
+          juteBags.isAcceptableOrUnknown(data['jute_bags']!, _juteBagsMeta));
+    }
+    if (data.containsKey('plastic_bags')) {
+      context.handle(
+          _plasticBagsMeta,
+          plasticBags.isAcceptableOrUnknown(
+              data['plastic_bags']!, _plasticBagsMeta));
+    }
+    if (data.containsKey('total_bags')) {
+      context.handle(_totalBagsMeta,
+          totalBags.isAcceptableOrUnknown(data['total_bags']!, _totalBagsMeta));
+    }
+    if (data.containsKey('gny_wt_less')) {
+      context.handle(
+          _gnyWtLessMeta,
+          gnyWtLess.isAcceptableOrUnknown(
+              data['gny_wt_less']!, _gnyWtLessMeta));
+    }
+    if (data.containsKey('bag_return')) {
+      context.handle(_bagReturnMeta,
+          bagReturn.isAcceptableOrUnknown(data['bag_return']!, _bagReturnMeta));
+    }
+    if (data.containsKey('other_cut')) {
+      context.handle(_otherCutMeta,
+          otherCut.isAcceptableOrUnknown(data['other_cut']!, _otherCutMeta));
+    }
+    if (data.containsKey('dust_cut')) {
+      context.handle(_dustCutMeta,
+          dustCut.isAcceptableOrUnknown(data['dust_cut']!, _dustCutMeta));
+    }
+    if (data.containsKey('pol_cut')) {
+      context.handle(_polCutMeta,
+          polCut.isAcceptableOrUnknown(data['pol_cut']!, _polCutMeta));
+    }
+    if (data.containsKey('quality_grade')) {
+      context.handle(
+          _qualityGradeMeta,
+          qualityGrade.isAcceptableOrUnknown(
+              data['quality_grade']!, _qualityGradeMeta));
+    }
+    if (data.containsKey('unload_time')) {
+      context.handle(
+          _unloadTimeMeta,
+          unloadTime.isAcceptableOrUnknown(
+              data['unload_time']!, _unloadTimeMeta));
+    }
+    if (data.containsKey('e_bag')) {
+      context.handle(
+          _eBagMeta, eBag.isAcceptableOrUnknown(data['e_bag']!, _eBagMeta));
+    }
+    if (data.containsKey('e_pkt')) {
+      context.handle(
+          _ePktMeta, ePkt.isAcceptableOrUnknown(data['e_pkt']!, _ePktMeta));
+    }
+    if (data.containsKey('net_weight')) {
+      context.handle(_netWeightMeta,
+          netWeight.isAcceptableOrUnknown(data['net_weight']!, _netWeightMeta));
+    } else if (isInserting) {
+      context.missing(_netWeightMeta);
+    }
+    if (data.containsKey('avg_bag_weight')) {
+      context.handle(
+          _avgBagWeightMeta,
+          avgBagWeight.isAcceptableOrUnknown(
+              data['avg_bag_weight']!, _avgBagWeightMeta));
+    }
+    if (data.containsKey('rate_calculation')) {
+      context.handle(
+          _rateCalculationMeta,
+          rateCalculation.isAcceptableOrUnknown(
+              data['rate_calculation']!, _rateCalculationMeta));
+    }
+    if (data.containsKey('kg_per_bag')) {
+      context.handle(_kgPerBagMeta,
+          kgPerBag.isAcceptableOrUnknown(data['kg_per_bag']!, _kgPerBagMeta));
+    }
+    if (data.containsKey('product_id')) {
+      context.handle(_productIdMeta,
+          productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta));
+    } else if (isInserting) {
+      context.missing(_productIdMeta);
+    }
+    if (data.containsKey('product_name')) {
+      context.handle(
+          _productNameMeta,
+          productName.isAcceptableOrUnknown(
+              data['product_name']!, _productNameMeta));
+    } else if (isInserting) {
+      context.missing(_productNameMeta);
+    }
+    if (data.containsKey('quantity_new')) {
+      context.handle(
+          _quantityNewMeta,
+          quantityNew.isAcceptableOrUnknown(
+              data['quantity_new']!, _quantityNewMeta));
+    }
+    if (data.containsKey('quantity_qntl')) {
+      context.handle(
+          _quantityQntlMeta,
+          quantityQntl.isAcceptableOrUnknown(
+              data['quantity_qntl']!, _quantityQntlMeta));
+    }
+    if (data.containsKey('rate_per_qntl')) {
+      context.handle(
+          _ratePerQntlMeta,
+          ratePerQntl.isAcceptableOrUnknown(
+              data['rate_per_qntl']!, _ratePerQntlMeta));
+    }
+    if (data.containsKey('total_amount')) {
+      context.handle(
+          _totalAmountMeta,
+          totalAmount.isAcceptableOrUnknown(
+              data['total_amount']!, _totalAmountMeta));
+    }
+    if (data.containsKey('avg_rate')) {
+      context.handle(_avgRateMeta,
+          avgRate.isAcceptableOrUnknown(data['avg_rate']!, _avgRateMeta));
+    }
+    if (data.containsKey('avg_amount')) {
+      context.handle(_avgAmountMeta,
+          avgAmount.isAcceptableOrUnknown(data['avg_amount']!, _avgAmountMeta));
+    }
+    if (data.containsKey('qrt_cut_amt')) {
+      context.handle(
+          _qrtCutAmtMeta,
+          qrtCutAmt.isAcceptableOrUnknown(
+              data['qrt_cut_amt']!, _qrtCutAmtMeta));
+    }
+    if (data.containsKey('paddy_amt')) {
+      context.handle(_paddyAmtMeta,
+          paddyAmt.isAcceptableOrUnknown(data['paddy_amt']!, _paddyAmtMeta));
+    }
+    if (data.containsKey('quality_cuts_json')) {
+      context.handle(
+          _qualityCutsJsonMeta,
+          qualityCutsJson.isAcceptableOrUnknown(
+              data['quality_cuts_json']!, _qualityCutsJsonMeta));
+    }
+    if (data.containsKey('total_cut_kg')) {
+      context.handle(
+          _totalCutKgMeta,
+          totalCutKg.isAcceptableOrUnknown(
+              data['total_cut_kg']!, _totalCutKgMeta));
+    }
+    if (data.containsKey('final_weight')) {
+      context.handle(
+          _finalWeightMeta,
+          finalWeight.isAcceptableOrUnknown(
+              data['final_weight']!, _finalWeightMeta));
+    }
+    if (data.containsKey('gunny_transactions_json')) {
+      context.handle(
+          _gunnyTransactionsJsonMeta,
+          gunnyTransactionsJson.isAcceptableOrUnknown(
+              data['gunny_transactions_json']!, _gunnyTransactionsJsonMeta));
+    }
+    if (data.containsKey('delivery_type')) {
+      context.handle(
+          _deliveryTypeMeta,
+          deliveryType.isAcceptableOrUnknown(
+              data['delivery_type']!, _deliveryTypeMeta));
+    }
+    if (data.containsKey('truck_rent_type')) {
+      context.handle(
+          _truckRentTypeMeta,
+          truckRentType.isAcceptableOrUnknown(
+              data['truck_rent_type']!, _truckRentTypeMeta));
+    }
+    if (data.containsKey('truck_rent')) {
+      context.handle(_truckRentMeta,
+          truckRent.isAcceptableOrUnknown(data['truck_rent']!, _truckRentMeta));
+    }
+    if (data.containsKey('truck_rent_paid')) {
+      context.handle(
+          _truckRentPaidMeta,
+          truckRentPaid.isAcceptableOrUnknown(
+              data['truck_rent_paid']!, _truckRentPaidMeta));
+    }
+    if (data.containsKey('other_amount')) {
+      context.handle(
+          _otherAmountMeta,
+          otherAmount.isAcceptableOrUnknown(
+              data['other_amount']!, _otherAmountMeta));
+    }
+    if (data.containsKey('transport_type')) {
+      context.handle(
+          _transportTypeMeta,
+          transportType.isAcceptableOrUnknown(
+              data['transport_type']!, _transportTypeMeta));
+    }
+    if (data.containsKey('truck_account')) {
+      context.handle(
+          _truckAccountMeta,
+          truckAccount.isAcceptableOrUnknown(
+              data['truck_account']!, _truckAccountMeta));
+    }
+    if (data.containsKey('freight_amount')) {
+      context.handle(
+          _freightAmountMeta,
+          freightAmount.isAcceptableOrUnknown(
+              data['freight_amount']!, _freightAmountMeta));
+    }
+    if (data.containsKey('procurement_type')) {
+      context.handle(
+          _procurementTypeMeta,
+          procurementType.isAcceptableOrUnknown(
+              data['procurement_type']!, _procurementTypeMeta));
+    }
+    if (data.containsKey('mandi_invoice_no')) {
+      context.handle(
+          _mandiInvoiceNoMeta,
+          mandiInvoiceNo.isAcceptableOrUnknown(
+              data['mandi_invoice_no']!, _mandiInvoiceNoMeta));
+    }
+    if (data.containsKey('tender_number')) {
+      context.handle(
+          _tenderNumberMeta,
+          tenderNumber.isAcceptableOrUnknown(
+              data['tender_number']!, _tenderNumberMeta));
+    }
+    if (data.containsKey('commission_agent_id')) {
+      context.handle(
+          _commissionAgentIdMeta,
+          commissionAgentId.isAcceptableOrUnknown(
+              data['commission_agent_id']!, _commissionAgentIdMeta));
+    }
+    if (data.containsKey('warehouse_id')) {
+      context.handle(
+          _warehouseIdMeta,
+          warehouseId.isAcceptableOrUnknown(
+              data['warehouse_id']!, _warehouseIdMeta));
+    }
+    if (data.containsKey('vehicle_entry_id')) {
+      context.handle(
+          _vehicleEntryIdMeta,
+          vehicleEntryId.isAcceptableOrUnknown(
+              data['vehicle_entry_id']!, _vehicleEntryIdMeta));
+    }
+    if (data.containsKey('remaining_stock')) {
+      context.handle(
+          _remainingStockMeta,
+          remainingStock.isAcceptableOrUnknown(
+              data['remaining_stock']!, _remainingStockMeta));
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PaddyProcurementRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PaddyProcurementRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      date: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}date'])!,
+      slipNo: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}slip_no'])!,
+      voucherNo: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}voucher_no']),
+      rstManual: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}rst_manual']),
+      area: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}area']),
+      vType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}v_type'])!,
+      partyName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}party_name'])!,
+      partyId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}party_id']),
+      truckNo: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}truck_no']),
+      emptyWeight: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}empty_weight']),
+      marketType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}market_type'])!,
+      grossWeight: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}gross_weight']),
+      tareWeight: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}tare_weight']),
+      juteBags: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}jute_bags']),
+      plasticBags: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}plastic_bags']),
+      totalBags: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}total_bags']),
+      gnyWtLess: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}gny_wt_less'])!,
+      bagReturn: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}bag_return'])!,
+      otherCut: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}other_cut']),
+      dustCut: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}dust_cut']),
+      polCut: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}pol_cut']),
+      qualityGrade: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}quality_grade']),
+      unloadTime: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}unload_time']),
+      eBag: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}e_bag']),
+      ePkt: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}e_pkt']),
+      netWeight: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}net_weight'])!,
+      avgBagWeight: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}avg_bag_weight']),
+      rateCalculation: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}rate_calculation'])!,
+      kgPerBag: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}kg_per_bag'])!,
+      productId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}product_id'])!,
+      productName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}product_name'])!,
+      quantityNew: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}quantity_new'])!,
+      quantityQntl: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}quantity_qntl']),
+      ratePerQntl: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}rate_per_qntl']),
+      totalAmount: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}total_amount']),
+      avgRate: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}avg_rate']),
+      avgAmount: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}avg_amount']),
+      qrtCutAmt: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}qrt_cut_amt']),
+      paddyAmt: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}paddy_amt']),
+      qualityCutsJson: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}quality_cuts_json'])!,
+      totalCutKg: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}total_cut_kg']),
+      finalWeight: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}final_weight']),
+      gunnyTransactionsJson: attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}gunny_transactions_json'])!,
+      deliveryType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}delivery_type']),
+      truckRentType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}truck_rent_type']),
+      truckRent: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}truck_rent']),
+      truckRentPaid: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}truck_rent_paid']),
+      otherAmount: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}other_amount']),
+      transportType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}transport_type']),
+      truckAccount: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}truck_account']),
+      freightAmount: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}freight_amount']),
+      procurementType: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}procurement_type'])!,
+      mandiInvoiceNo: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}mandi_invoice_no']),
+      tenderNumber: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tender_number']),
+      commissionAgentId: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}commission_agent_id']),
+      warehouseId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}warehouse_id']),
+      vehicleEntryId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}vehicle_entry_id']),
+      remainingStock: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}remaining_stock'])!,
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $PaddyProcurementsTable createAlias(String alias) {
+    return $PaddyProcurementsTable(attachedDatabase, alias);
+  }
+}
+
+class PaddyProcurementRow extends DataClass
+    implements Insertable<PaddyProcurementRow> {
+  final int id;
+  final DateTime date;
+  final String slipNo;
+  final String? voucherNo;
+  final String? rstManual;
+  final String? area;
+  final String vType;
+  final String partyName;
+  final int? partyId;
+  final String? truckNo;
+  final double? emptyWeight;
+  final String marketType;
+  final double? grossWeight;
+  final double? tareWeight;
+  final int? juteBags;
+  final int? plasticBags;
+  final int? totalBags;
+  final bool gnyWtLess;
+  final bool bagReturn;
+  final double? otherCut;
+  final double? dustCut;
+  final double? polCut;
+  final String? qualityGrade;
+  final double? unloadTime;
+  final double? eBag;
+  final double? ePkt;
+  final double netWeight;
+  final double? avgBagWeight;
+  final String rateCalculation;
+  final double kgPerBag;
+  final int productId;
+  final String productName;
+  final String quantityNew;
+  final double? quantityQntl;
+  final double? ratePerQntl;
+  final double? totalAmount;
+  final double? avgRate;
+  final double? avgAmount;
+  final double? qrtCutAmt;
+  final double? paddyAmt;
+  final String qualityCutsJson;
+  final double? totalCutKg;
+  final double? finalWeight;
+  final String gunnyTransactionsJson;
+  final String? deliveryType;
+  final String? truckRentType;
+  final double? truckRent;
+  final double? truckRentPaid;
+  final double? otherAmount;
+  final String? transportType;
+  final String? truckAccount;
+  final double? freightAmount;
+  final String procurementType;
+  final String? mandiInvoiceNo;
+  final String? tenderNumber;
+  final int? commissionAgentId;
+  final int? warehouseId;
+  final int? vehicleEntryId;
+  final double remainingStock;
+  final String status;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const PaddyProcurementRow(
+      {required this.id,
+      required this.date,
+      required this.slipNo,
+      this.voucherNo,
+      this.rstManual,
+      this.area,
+      required this.vType,
+      required this.partyName,
+      this.partyId,
+      this.truckNo,
+      this.emptyWeight,
+      required this.marketType,
+      this.grossWeight,
+      this.tareWeight,
+      this.juteBags,
+      this.plasticBags,
+      this.totalBags,
+      required this.gnyWtLess,
+      required this.bagReturn,
+      this.otherCut,
+      this.dustCut,
+      this.polCut,
+      this.qualityGrade,
+      this.unloadTime,
+      this.eBag,
+      this.ePkt,
+      required this.netWeight,
+      this.avgBagWeight,
+      required this.rateCalculation,
+      required this.kgPerBag,
+      required this.productId,
+      required this.productName,
+      required this.quantityNew,
+      this.quantityQntl,
+      this.ratePerQntl,
+      this.totalAmount,
+      this.avgRate,
+      this.avgAmount,
+      this.qrtCutAmt,
+      this.paddyAmt,
+      required this.qualityCutsJson,
+      this.totalCutKg,
+      this.finalWeight,
+      required this.gunnyTransactionsJson,
+      this.deliveryType,
+      this.truckRentType,
+      this.truckRent,
+      this.truckRentPaid,
+      this.otherAmount,
+      this.transportType,
+      this.truckAccount,
+      this.freightAmount,
+      required this.procurementType,
+      this.mandiInvoiceNo,
+      this.tenderNumber,
+      this.commissionAgentId,
+      this.warehouseId,
+      this.vehicleEntryId,
+      required this.remainingStock,
+      required this.status,
+      required this.createdAt,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['date'] = Variable<DateTime>(date);
+    map['slip_no'] = Variable<String>(slipNo);
+    if (!nullToAbsent || voucherNo != null) {
+      map['voucher_no'] = Variable<String>(voucherNo);
+    }
+    if (!nullToAbsent || rstManual != null) {
+      map['rst_manual'] = Variable<String>(rstManual);
+    }
+    if (!nullToAbsent || area != null) {
+      map['area'] = Variable<String>(area);
+    }
+    map['v_type'] = Variable<String>(vType);
+    map['party_name'] = Variable<String>(partyName);
+    if (!nullToAbsent || partyId != null) {
+      map['party_id'] = Variable<int>(partyId);
+    }
+    if (!nullToAbsent || truckNo != null) {
+      map['truck_no'] = Variable<String>(truckNo);
+    }
+    if (!nullToAbsent || emptyWeight != null) {
+      map['empty_weight'] = Variable<double>(emptyWeight);
+    }
+    map['market_type'] = Variable<String>(marketType);
+    if (!nullToAbsent || grossWeight != null) {
+      map['gross_weight'] = Variable<double>(grossWeight);
+    }
+    if (!nullToAbsent || tareWeight != null) {
+      map['tare_weight'] = Variable<double>(tareWeight);
+    }
+    if (!nullToAbsent || juteBags != null) {
+      map['jute_bags'] = Variable<int>(juteBags);
+    }
+    if (!nullToAbsent || plasticBags != null) {
+      map['plastic_bags'] = Variable<int>(plasticBags);
+    }
+    if (!nullToAbsent || totalBags != null) {
+      map['total_bags'] = Variable<int>(totalBags);
+    }
+    map['gny_wt_less'] = Variable<bool>(gnyWtLess);
+    map['bag_return'] = Variable<bool>(bagReturn);
+    if (!nullToAbsent || otherCut != null) {
+      map['other_cut'] = Variable<double>(otherCut);
+    }
+    if (!nullToAbsent || dustCut != null) {
+      map['dust_cut'] = Variable<double>(dustCut);
+    }
+    if (!nullToAbsent || polCut != null) {
+      map['pol_cut'] = Variable<double>(polCut);
+    }
+    if (!nullToAbsent || qualityGrade != null) {
+      map['quality_grade'] = Variable<String>(qualityGrade);
+    }
+    if (!nullToAbsent || unloadTime != null) {
+      map['unload_time'] = Variable<double>(unloadTime);
+    }
+    if (!nullToAbsent || eBag != null) {
+      map['e_bag'] = Variable<double>(eBag);
+    }
+    if (!nullToAbsent || ePkt != null) {
+      map['e_pkt'] = Variable<double>(ePkt);
+    }
+    map['net_weight'] = Variable<double>(netWeight);
+    if (!nullToAbsent || avgBagWeight != null) {
+      map['avg_bag_weight'] = Variable<double>(avgBagWeight);
+    }
+    map['rate_calculation'] = Variable<String>(rateCalculation);
+    map['kg_per_bag'] = Variable<double>(kgPerBag);
+    map['product_id'] = Variable<int>(productId);
+    map['product_name'] = Variable<String>(productName);
+    map['quantity_new'] = Variable<String>(quantityNew);
+    if (!nullToAbsent || quantityQntl != null) {
+      map['quantity_qntl'] = Variable<double>(quantityQntl);
+    }
+    if (!nullToAbsent || ratePerQntl != null) {
+      map['rate_per_qntl'] = Variable<double>(ratePerQntl);
+    }
+    if (!nullToAbsent || totalAmount != null) {
+      map['total_amount'] = Variable<double>(totalAmount);
+    }
+    if (!nullToAbsent || avgRate != null) {
+      map['avg_rate'] = Variable<double>(avgRate);
+    }
+    if (!nullToAbsent || avgAmount != null) {
+      map['avg_amount'] = Variable<double>(avgAmount);
+    }
+    if (!nullToAbsent || qrtCutAmt != null) {
+      map['qrt_cut_amt'] = Variable<double>(qrtCutAmt);
+    }
+    if (!nullToAbsent || paddyAmt != null) {
+      map['paddy_amt'] = Variable<double>(paddyAmt);
+    }
+    map['quality_cuts_json'] = Variable<String>(qualityCutsJson);
+    if (!nullToAbsent || totalCutKg != null) {
+      map['total_cut_kg'] = Variable<double>(totalCutKg);
+    }
+    if (!nullToAbsent || finalWeight != null) {
+      map['final_weight'] = Variable<double>(finalWeight);
+    }
+    map['gunny_transactions_json'] = Variable<String>(gunnyTransactionsJson);
+    if (!nullToAbsent || deliveryType != null) {
+      map['delivery_type'] = Variable<String>(deliveryType);
+    }
+    if (!nullToAbsent || truckRentType != null) {
+      map['truck_rent_type'] = Variable<String>(truckRentType);
+    }
+    if (!nullToAbsent || truckRent != null) {
+      map['truck_rent'] = Variable<double>(truckRent);
+    }
+    if (!nullToAbsent || truckRentPaid != null) {
+      map['truck_rent_paid'] = Variable<double>(truckRentPaid);
+    }
+    if (!nullToAbsent || otherAmount != null) {
+      map['other_amount'] = Variable<double>(otherAmount);
+    }
+    if (!nullToAbsent || transportType != null) {
+      map['transport_type'] = Variable<String>(transportType);
+    }
+    if (!nullToAbsent || truckAccount != null) {
+      map['truck_account'] = Variable<String>(truckAccount);
+    }
+    if (!nullToAbsent || freightAmount != null) {
+      map['freight_amount'] = Variable<double>(freightAmount);
+    }
+    map['procurement_type'] = Variable<String>(procurementType);
+    if (!nullToAbsent || mandiInvoiceNo != null) {
+      map['mandi_invoice_no'] = Variable<String>(mandiInvoiceNo);
+    }
+    if (!nullToAbsent || tenderNumber != null) {
+      map['tender_number'] = Variable<String>(tenderNumber);
+    }
+    if (!nullToAbsent || commissionAgentId != null) {
+      map['commission_agent_id'] = Variable<int>(commissionAgentId);
+    }
+    if (!nullToAbsent || warehouseId != null) {
+      map['warehouse_id'] = Variable<int>(warehouseId);
+    }
+    if (!nullToAbsent || vehicleEntryId != null) {
+      map['vehicle_entry_id'] = Variable<int>(vehicleEntryId);
+    }
+    map['remaining_stock'] = Variable<double>(remainingStock);
+    map['status'] = Variable<String>(status);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  PaddyProcurementsCompanion toCompanion(bool nullToAbsent) {
+    return PaddyProcurementsCompanion(
+      id: Value(id),
+      date: Value(date),
+      slipNo: Value(slipNo),
+      voucherNo: voucherNo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(voucherNo),
+      rstManual: rstManual == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rstManual),
+      area: area == null && nullToAbsent ? const Value.absent() : Value(area),
+      vType: Value(vType),
+      partyName: Value(partyName),
+      partyId: partyId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(partyId),
+      truckNo: truckNo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(truckNo),
+      emptyWeight: emptyWeight == null && nullToAbsent
+          ? const Value.absent()
+          : Value(emptyWeight),
+      marketType: Value(marketType),
+      grossWeight: grossWeight == null && nullToAbsent
+          ? const Value.absent()
+          : Value(grossWeight),
+      tareWeight: tareWeight == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tareWeight),
+      juteBags: juteBags == null && nullToAbsent
+          ? const Value.absent()
+          : Value(juteBags),
+      plasticBags: plasticBags == null && nullToAbsent
+          ? const Value.absent()
+          : Value(plasticBags),
+      totalBags: totalBags == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalBags),
+      gnyWtLess: Value(gnyWtLess),
+      bagReturn: Value(bagReturn),
+      otherCut: otherCut == null && nullToAbsent
+          ? const Value.absent()
+          : Value(otherCut),
+      dustCut: dustCut == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dustCut),
+      polCut:
+          polCut == null && nullToAbsent ? const Value.absent() : Value(polCut),
+      qualityGrade: qualityGrade == null && nullToAbsent
+          ? const Value.absent()
+          : Value(qualityGrade),
+      unloadTime: unloadTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(unloadTime),
+      eBag: eBag == null && nullToAbsent ? const Value.absent() : Value(eBag),
+      ePkt: ePkt == null && nullToAbsent ? const Value.absent() : Value(ePkt),
+      netWeight: Value(netWeight),
+      avgBagWeight: avgBagWeight == null && nullToAbsent
+          ? const Value.absent()
+          : Value(avgBagWeight),
+      rateCalculation: Value(rateCalculation),
+      kgPerBag: Value(kgPerBag),
+      productId: Value(productId),
+      productName: Value(productName),
+      quantityNew: Value(quantityNew),
+      quantityQntl: quantityQntl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(quantityQntl),
+      ratePerQntl: ratePerQntl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ratePerQntl),
+      totalAmount: totalAmount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalAmount),
+      avgRate: avgRate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(avgRate),
+      avgAmount: avgAmount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(avgAmount),
+      qrtCutAmt: qrtCutAmt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(qrtCutAmt),
+      paddyAmt: paddyAmt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(paddyAmt),
+      qualityCutsJson: Value(qualityCutsJson),
+      totalCutKg: totalCutKg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalCutKg),
+      finalWeight: finalWeight == null && nullToAbsent
+          ? const Value.absent()
+          : Value(finalWeight),
+      gunnyTransactionsJson: Value(gunnyTransactionsJson),
+      deliveryType: deliveryType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deliveryType),
+      truckRentType: truckRentType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(truckRentType),
+      truckRent: truckRent == null && nullToAbsent
+          ? const Value.absent()
+          : Value(truckRent),
+      truckRentPaid: truckRentPaid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(truckRentPaid),
+      otherAmount: otherAmount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(otherAmount),
+      transportType: transportType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(transportType),
+      truckAccount: truckAccount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(truckAccount),
+      freightAmount: freightAmount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(freightAmount),
+      procurementType: Value(procurementType),
+      mandiInvoiceNo: mandiInvoiceNo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mandiInvoiceNo),
+      tenderNumber: tenderNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tenderNumber),
+      commissionAgentId: commissionAgentId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(commissionAgentId),
+      warehouseId: warehouseId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(warehouseId),
+      vehicleEntryId: vehicleEntryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(vehicleEntryId),
+      remainingStock: Value(remainingStock),
+      status: Value(status),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory PaddyProcurementRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PaddyProcurementRow(
+      id: serializer.fromJson<int>(json['id']),
+      date: serializer.fromJson<DateTime>(json['date']),
+      slipNo: serializer.fromJson<String>(json['slipNo']),
+      voucherNo: serializer.fromJson<String?>(json['voucherNo']),
+      rstManual: serializer.fromJson<String?>(json['rstManual']),
+      area: serializer.fromJson<String?>(json['area']),
+      vType: serializer.fromJson<String>(json['vType']),
+      partyName: serializer.fromJson<String>(json['partyName']),
+      partyId: serializer.fromJson<int?>(json['partyId']),
+      truckNo: serializer.fromJson<String?>(json['truckNo']),
+      emptyWeight: serializer.fromJson<double?>(json['emptyWeight']),
+      marketType: serializer.fromJson<String>(json['marketType']),
+      grossWeight: serializer.fromJson<double?>(json['grossWeight']),
+      tareWeight: serializer.fromJson<double?>(json['tareWeight']),
+      juteBags: serializer.fromJson<int?>(json['juteBags']),
+      plasticBags: serializer.fromJson<int?>(json['plasticBags']),
+      totalBags: serializer.fromJson<int?>(json['totalBags']),
+      gnyWtLess: serializer.fromJson<bool>(json['gnyWtLess']),
+      bagReturn: serializer.fromJson<bool>(json['bagReturn']),
+      otherCut: serializer.fromJson<double?>(json['otherCut']),
+      dustCut: serializer.fromJson<double?>(json['dustCut']),
+      polCut: serializer.fromJson<double?>(json['polCut']),
+      qualityGrade: serializer.fromJson<String?>(json['qualityGrade']),
+      unloadTime: serializer.fromJson<double?>(json['unloadTime']),
+      eBag: serializer.fromJson<double?>(json['eBag']),
+      ePkt: serializer.fromJson<double?>(json['ePkt']),
+      netWeight: serializer.fromJson<double>(json['netWeight']),
+      avgBagWeight: serializer.fromJson<double?>(json['avgBagWeight']),
+      rateCalculation: serializer.fromJson<String>(json['rateCalculation']),
+      kgPerBag: serializer.fromJson<double>(json['kgPerBag']),
+      productId: serializer.fromJson<int>(json['productId']),
+      productName: serializer.fromJson<String>(json['productName']),
+      quantityNew: serializer.fromJson<String>(json['quantityNew']),
+      quantityQntl: serializer.fromJson<double?>(json['quantityQntl']),
+      ratePerQntl: serializer.fromJson<double?>(json['ratePerQntl']),
+      totalAmount: serializer.fromJson<double?>(json['totalAmount']),
+      avgRate: serializer.fromJson<double?>(json['avgRate']),
+      avgAmount: serializer.fromJson<double?>(json['avgAmount']),
+      qrtCutAmt: serializer.fromJson<double?>(json['qrtCutAmt']),
+      paddyAmt: serializer.fromJson<double?>(json['paddyAmt']),
+      qualityCutsJson: serializer.fromJson<String>(json['qualityCutsJson']),
+      totalCutKg: serializer.fromJson<double?>(json['totalCutKg']),
+      finalWeight: serializer.fromJson<double?>(json['finalWeight']),
+      gunnyTransactionsJson:
+          serializer.fromJson<String>(json['gunnyTransactionsJson']),
+      deliveryType: serializer.fromJson<String?>(json['deliveryType']),
+      truckRentType: serializer.fromJson<String?>(json['truckRentType']),
+      truckRent: serializer.fromJson<double?>(json['truckRent']),
+      truckRentPaid: serializer.fromJson<double?>(json['truckRentPaid']),
+      otherAmount: serializer.fromJson<double?>(json['otherAmount']),
+      transportType: serializer.fromJson<String?>(json['transportType']),
+      truckAccount: serializer.fromJson<String?>(json['truckAccount']),
+      freightAmount: serializer.fromJson<double?>(json['freightAmount']),
+      procurementType: serializer.fromJson<String>(json['procurementType']),
+      mandiInvoiceNo: serializer.fromJson<String?>(json['mandiInvoiceNo']),
+      tenderNumber: serializer.fromJson<String?>(json['tenderNumber']),
+      commissionAgentId: serializer.fromJson<int?>(json['commissionAgentId']),
+      warehouseId: serializer.fromJson<int?>(json['warehouseId']),
+      vehicleEntryId: serializer.fromJson<int?>(json['vehicleEntryId']),
+      remainingStock: serializer.fromJson<double>(json['remainingStock']),
+      status: serializer.fromJson<String>(json['status']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'date': serializer.toJson<DateTime>(date),
+      'slipNo': serializer.toJson<String>(slipNo),
+      'voucherNo': serializer.toJson<String?>(voucherNo),
+      'rstManual': serializer.toJson<String?>(rstManual),
+      'area': serializer.toJson<String?>(area),
+      'vType': serializer.toJson<String>(vType),
+      'partyName': serializer.toJson<String>(partyName),
+      'partyId': serializer.toJson<int?>(partyId),
+      'truckNo': serializer.toJson<String?>(truckNo),
+      'emptyWeight': serializer.toJson<double?>(emptyWeight),
+      'marketType': serializer.toJson<String>(marketType),
+      'grossWeight': serializer.toJson<double?>(grossWeight),
+      'tareWeight': serializer.toJson<double?>(tareWeight),
+      'juteBags': serializer.toJson<int?>(juteBags),
+      'plasticBags': serializer.toJson<int?>(plasticBags),
+      'totalBags': serializer.toJson<int?>(totalBags),
+      'gnyWtLess': serializer.toJson<bool>(gnyWtLess),
+      'bagReturn': serializer.toJson<bool>(bagReturn),
+      'otherCut': serializer.toJson<double?>(otherCut),
+      'dustCut': serializer.toJson<double?>(dustCut),
+      'polCut': serializer.toJson<double?>(polCut),
+      'qualityGrade': serializer.toJson<String?>(qualityGrade),
+      'unloadTime': serializer.toJson<double?>(unloadTime),
+      'eBag': serializer.toJson<double?>(eBag),
+      'ePkt': serializer.toJson<double?>(ePkt),
+      'netWeight': serializer.toJson<double>(netWeight),
+      'avgBagWeight': serializer.toJson<double?>(avgBagWeight),
+      'rateCalculation': serializer.toJson<String>(rateCalculation),
+      'kgPerBag': serializer.toJson<double>(kgPerBag),
+      'productId': serializer.toJson<int>(productId),
+      'productName': serializer.toJson<String>(productName),
+      'quantityNew': serializer.toJson<String>(quantityNew),
+      'quantityQntl': serializer.toJson<double?>(quantityQntl),
+      'ratePerQntl': serializer.toJson<double?>(ratePerQntl),
+      'totalAmount': serializer.toJson<double?>(totalAmount),
+      'avgRate': serializer.toJson<double?>(avgRate),
+      'avgAmount': serializer.toJson<double?>(avgAmount),
+      'qrtCutAmt': serializer.toJson<double?>(qrtCutAmt),
+      'paddyAmt': serializer.toJson<double?>(paddyAmt),
+      'qualityCutsJson': serializer.toJson<String>(qualityCutsJson),
+      'totalCutKg': serializer.toJson<double?>(totalCutKg),
+      'finalWeight': serializer.toJson<double?>(finalWeight),
+      'gunnyTransactionsJson': serializer.toJson<String>(gunnyTransactionsJson),
+      'deliveryType': serializer.toJson<String?>(deliveryType),
+      'truckRentType': serializer.toJson<String?>(truckRentType),
+      'truckRent': serializer.toJson<double?>(truckRent),
+      'truckRentPaid': serializer.toJson<double?>(truckRentPaid),
+      'otherAmount': serializer.toJson<double?>(otherAmount),
+      'transportType': serializer.toJson<String?>(transportType),
+      'truckAccount': serializer.toJson<String?>(truckAccount),
+      'freightAmount': serializer.toJson<double?>(freightAmount),
+      'procurementType': serializer.toJson<String>(procurementType),
+      'mandiInvoiceNo': serializer.toJson<String?>(mandiInvoiceNo),
+      'tenderNumber': serializer.toJson<String?>(tenderNumber),
+      'commissionAgentId': serializer.toJson<int?>(commissionAgentId),
+      'warehouseId': serializer.toJson<int?>(warehouseId),
+      'vehicleEntryId': serializer.toJson<int?>(vehicleEntryId),
+      'remainingStock': serializer.toJson<double>(remainingStock),
+      'status': serializer.toJson<String>(status),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  PaddyProcurementRow copyWith(
+          {int? id,
+          DateTime? date,
+          String? slipNo,
+          Value<String?> voucherNo = const Value.absent(),
+          Value<String?> rstManual = const Value.absent(),
+          Value<String?> area = const Value.absent(),
+          String? vType,
+          String? partyName,
+          Value<int?> partyId = const Value.absent(),
+          Value<String?> truckNo = const Value.absent(),
+          Value<double?> emptyWeight = const Value.absent(),
+          String? marketType,
+          Value<double?> grossWeight = const Value.absent(),
+          Value<double?> tareWeight = const Value.absent(),
+          Value<int?> juteBags = const Value.absent(),
+          Value<int?> plasticBags = const Value.absent(),
+          Value<int?> totalBags = const Value.absent(),
+          bool? gnyWtLess,
+          bool? bagReturn,
+          Value<double?> otherCut = const Value.absent(),
+          Value<double?> dustCut = const Value.absent(),
+          Value<double?> polCut = const Value.absent(),
+          Value<String?> qualityGrade = const Value.absent(),
+          Value<double?> unloadTime = const Value.absent(),
+          Value<double?> eBag = const Value.absent(),
+          Value<double?> ePkt = const Value.absent(),
+          double? netWeight,
+          Value<double?> avgBagWeight = const Value.absent(),
+          String? rateCalculation,
+          double? kgPerBag,
+          int? productId,
+          String? productName,
+          String? quantityNew,
+          Value<double?> quantityQntl = const Value.absent(),
+          Value<double?> ratePerQntl = const Value.absent(),
+          Value<double?> totalAmount = const Value.absent(),
+          Value<double?> avgRate = const Value.absent(),
+          Value<double?> avgAmount = const Value.absent(),
+          Value<double?> qrtCutAmt = const Value.absent(),
+          Value<double?> paddyAmt = const Value.absent(),
+          String? qualityCutsJson,
+          Value<double?> totalCutKg = const Value.absent(),
+          Value<double?> finalWeight = const Value.absent(),
+          String? gunnyTransactionsJson,
+          Value<String?> deliveryType = const Value.absent(),
+          Value<String?> truckRentType = const Value.absent(),
+          Value<double?> truckRent = const Value.absent(),
+          Value<double?> truckRentPaid = const Value.absent(),
+          Value<double?> otherAmount = const Value.absent(),
+          Value<String?> transportType = const Value.absent(),
+          Value<String?> truckAccount = const Value.absent(),
+          Value<double?> freightAmount = const Value.absent(),
+          String? procurementType,
+          Value<String?> mandiInvoiceNo = const Value.absent(),
+          Value<String?> tenderNumber = const Value.absent(),
+          Value<int?> commissionAgentId = const Value.absent(),
+          Value<int?> warehouseId = const Value.absent(),
+          Value<int?> vehicleEntryId = const Value.absent(),
+          double? remainingStock,
+          String? status,
+          DateTime? createdAt,
+          DateTime? updatedAt}) =>
+      PaddyProcurementRow(
+        id: id ?? this.id,
+        date: date ?? this.date,
+        slipNo: slipNo ?? this.slipNo,
+        voucherNo: voucherNo.present ? voucherNo.value : this.voucherNo,
+        rstManual: rstManual.present ? rstManual.value : this.rstManual,
+        area: area.present ? area.value : this.area,
+        vType: vType ?? this.vType,
+        partyName: partyName ?? this.partyName,
+        partyId: partyId.present ? partyId.value : this.partyId,
+        truckNo: truckNo.present ? truckNo.value : this.truckNo,
+        emptyWeight: emptyWeight.present ? emptyWeight.value : this.emptyWeight,
+        marketType: marketType ?? this.marketType,
+        grossWeight: grossWeight.present ? grossWeight.value : this.grossWeight,
+        tareWeight: tareWeight.present ? tareWeight.value : this.tareWeight,
+        juteBags: juteBags.present ? juteBags.value : this.juteBags,
+        plasticBags: plasticBags.present ? plasticBags.value : this.plasticBags,
+        totalBags: totalBags.present ? totalBags.value : this.totalBags,
+        gnyWtLess: gnyWtLess ?? this.gnyWtLess,
+        bagReturn: bagReturn ?? this.bagReturn,
+        otherCut: otherCut.present ? otherCut.value : this.otherCut,
+        dustCut: dustCut.present ? dustCut.value : this.dustCut,
+        polCut: polCut.present ? polCut.value : this.polCut,
+        qualityGrade:
+            qualityGrade.present ? qualityGrade.value : this.qualityGrade,
+        unloadTime: unloadTime.present ? unloadTime.value : this.unloadTime,
+        eBag: eBag.present ? eBag.value : this.eBag,
+        ePkt: ePkt.present ? ePkt.value : this.ePkt,
+        netWeight: netWeight ?? this.netWeight,
+        avgBagWeight:
+            avgBagWeight.present ? avgBagWeight.value : this.avgBagWeight,
+        rateCalculation: rateCalculation ?? this.rateCalculation,
+        kgPerBag: kgPerBag ?? this.kgPerBag,
+        productId: productId ?? this.productId,
+        productName: productName ?? this.productName,
+        quantityNew: quantityNew ?? this.quantityNew,
+        quantityQntl:
+            quantityQntl.present ? quantityQntl.value : this.quantityQntl,
+        ratePerQntl: ratePerQntl.present ? ratePerQntl.value : this.ratePerQntl,
+        totalAmount: totalAmount.present ? totalAmount.value : this.totalAmount,
+        avgRate: avgRate.present ? avgRate.value : this.avgRate,
+        avgAmount: avgAmount.present ? avgAmount.value : this.avgAmount,
+        qrtCutAmt: qrtCutAmt.present ? qrtCutAmt.value : this.qrtCutAmt,
+        paddyAmt: paddyAmt.present ? paddyAmt.value : this.paddyAmt,
+        qualityCutsJson: qualityCutsJson ?? this.qualityCutsJson,
+        totalCutKg: totalCutKg.present ? totalCutKg.value : this.totalCutKg,
+        finalWeight: finalWeight.present ? finalWeight.value : this.finalWeight,
+        gunnyTransactionsJson:
+            gunnyTransactionsJson ?? this.gunnyTransactionsJson,
+        deliveryType:
+            deliveryType.present ? deliveryType.value : this.deliveryType,
+        truckRentType:
+            truckRentType.present ? truckRentType.value : this.truckRentType,
+        truckRent: truckRent.present ? truckRent.value : this.truckRent,
+        truckRentPaid:
+            truckRentPaid.present ? truckRentPaid.value : this.truckRentPaid,
+        otherAmount: otherAmount.present ? otherAmount.value : this.otherAmount,
+        transportType:
+            transportType.present ? transportType.value : this.transportType,
+        truckAccount:
+            truckAccount.present ? truckAccount.value : this.truckAccount,
+        freightAmount:
+            freightAmount.present ? freightAmount.value : this.freightAmount,
+        procurementType: procurementType ?? this.procurementType,
+        mandiInvoiceNo:
+            mandiInvoiceNo.present ? mandiInvoiceNo.value : this.mandiInvoiceNo,
+        tenderNumber:
+            tenderNumber.present ? tenderNumber.value : this.tenderNumber,
+        commissionAgentId: commissionAgentId.present
+            ? commissionAgentId.value
+            : this.commissionAgentId,
+        warehouseId: warehouseId.present ? warehouseId.value : this.warehouseId,
+        vehicleEntryId:
+            vehicleEntryId.present ? vehicleEntryId.value : this.vehicleEntryId,
+        remainingStock: remainingStock ?? this.remainingStock,
+        status: status ?? this.status,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  PaddyProcurementRow copyWithCompanion(PaddyProcurementsCompanion data) {
+    return PaddyProcurementRow(
+      id: data.id.present ? data.id.value : this.id,
+      date: data.date.present ? data.date.value : this.date,
+      slipNo: data.slipNo.present ? data.slipNo.value : this.slipNo,
+      voucherNo: data.voucherNo.present ? data.voucherNo.value : this.voucherNo,
+      rstManual: data.rstManual.present ? data.rstManual.value : this.rstManual,
+      area: data.area.present ? data.area.value : this.area,
+      vType: data.vType.present ? data.vType.value : this.vType,
+      partyName: data.partyName.present ? data.partyName.value : this.partyName,
+      partyId: data.partyId.present ? data.partyId.value : this.partyId,
+      truckNo: data.truckNo.present ? data.truckNo.value : this.truckNo,
+      emptyWeight:
+          data.emptyWeight.present ? data.emptyWeight.value : this.emptyWeight,
+      marketType:
+          data.marketType.present ? data.marketType.value : this.marketType,
+      grossWeight:
+          data.grossWeight.present ? data.grossWeight.value : this.grossWeight,
+      tareWeight:
+          data.tareWeight.present ? data.tareWeight.value : this.tareWeight,
+      juteBags: data.juteBags.present ? data.juteBags.value : this.juteBags,
+      plasticBags:
+          data.plasticBags.present ? data.plasticBags.value : this.plasticBags,
+      totalBags: data.totalBags.present ? data.totalBags.value : this.totalBags,
+      gnyWtLess: data.gnyWtLess.present ? data.gnyWtLess.value : this.gnyWtLess,
+      bagReturn: data.bagReturn.present ? data.bagReturn.value : this.bagReturn,
+      otherCut: data.otherCut.present ? data.otherCut.value : this.otherCut,
+      dustCut: data.dustCut.present ? data.dustCut.value : this.dustCut,
+      polCut: data.polCut.present ? data.polCut.value : this.polCut,
+      qualityGrade: data.qualityGrade.present
+          ? data.qualityGrade.value
+          : this.qualityGrade,
+      unloadTime:
+          data.unloadTime.present ? data.unloadTime.value : this.unloadTime,
+      eBag: data.eBag.present ? data.eBag.value : this.eBag,
+      ePkt: data.ePkt.present ? data.ePkt.value : this.ePkt,
+      netWeight: data.netWeight.present ? data.netWeight.value : this.netWeight,
+      avgBagWeight: data.avgBagWeight.present
+          ? data.avgBagWeight.value
+          : this.avgBagWeight,
+      rateCalculation: data.rateCalculation.present
+          ? data.rateCalculation.value
+          : this.rateCalculation,
+      kgPerBag: data.kgPerBag.present ? data.kgPerBag.value : this.kgPerBag,
+      productId: data.productId.present ? data.productId.value : this.productId,
+      productName:
+          data.productName.present ? data.productName.value : this.productName,
+      quantityNew:
+          data.quantityNew.present ? data.quantityNew.value : this.quantityNew,
+      quantityQntl: data.quantityQntl.present
+          ? data.quantityQntl.value
+          : this.quantityQntl,
+      ratePerQntl:
+          data.ratePerQntl.present ? data.ratePerQntl.value : this.ratePerQntl,
+      totalAmount:
+          data.totalAmount.present ? data.totalAmount.value : this.totalAmount,
+      avgRate: data.avgRate.present ? data.avgRate.value : this.avgRate,
+      avgAmount: data.avgAmount.present ? data.avgAmount.value : this.avgAmount,
+      qrtCutAmt: data.qrtCutAmt.present ? data.qrtCutAmt.value : this.qrtCutAmt,
+      paddyAmt: data.paddyAmt.present ? data.paddyAmt.value : this.paddyAmt,
+      qualityCutsJson: data.qualityCutsJson.present
+          ? data.qualityCutsJson.value
+          : this.qualityCutsJson,
+      totalCutKg:
+          data.totalCutKg.present ? data.totalCutKg.value : this.totalCutKg,
+      finalWeight:
+          data.finalWeight.present ? data.finalWeight.value : this.finalWeight,
+      gunnyTransactionsJson: data.gunnyTransactionsJson.present
+          ? data.gunnyTransactionsJson.value
+          : this.gunnyTransactionsJson,
+      deliveryType: data.deliveryType.present
+          ? data.deliveryType.value
+          : this.deliveryType,
+      truckRentType: data.truckRentType.present
+          ? data.truckRentType.value
+          : this.truckRentType,
+      truckRent: data.truckRent.present ? data.truckRent.value : this.truckRent,
+      truckRentPaid: data.truckRentPaid.present
+          ? data.truckRentPaid.value
+          : this.truckRentPaid,
+      otherAmount:
+          data.otherAmount.present ? data.otherAmount.value : this.otherAmount,
+      transportType: data.transportType.present
+          ? data.transportType.value
+          : this.transportType,
+      truckAccount: data.truckAccount.present
+          ? data.truckAccount.value
+          : this.truckAccount,
+      freightAmount: data.freightAmount.present
+          ? data.freightAmount.value
+          : this.freightAmount,
+      procurementType: data.procurementType.present
+          ? data.procurementType.value
+          : this.procurementType,
+      mandiInvoiceNo: data.mandiInvoiceNo.present
+          ? data.mandiInvoiceNo.value
+          : this.mandiInvoiceNo,
+      tenderNumber: data.tenderNumber.present
+          ? data.tenderNumber.value
+          : this.tenderNumber,
+      commissionAgentId: data.commissionAgentId.present
+          ? data.commissionAgentId.value
+          : this.commissionAgentId,
+      warehouseId:
+          data.warehouseId.present ? data.warehouseId.value : this.warehouseId,
+      vehicleEntryId: data.vehicleEntryId.present
+          ? data.vehicleEntryId.value
+          : this.vehicleEntryId,
+      remainingStock: data.remainingStock.present
+          ? data.remainingStock.value
+          : this.remainingStock,
+      status: data.status.present ? data.status.value : this.status,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PaddyProcurementRow(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('slipNo: $slipNo, ')
+          ..write('voucherNo: $voucherNo, ')
+          ..write('rstManual: $rstManual, ')
+          ..write('area: $area, ')
+          ..write('vType: $vType, ')
+          ..write('partyName: $partyName, ')
+          ..write('partyId: $partyId, ')
+          ..write('truckNo: $truckNo, ')
+          ..write('emptyWeight: $emptyWeight, ')
+          ..write('marketType: $marketType, ')
+          ..write('grossWeight: $grossWeight, ')
+          ..write('tareWeight: $tareWeight, ')
+          ..write('juteBags: $juteBags, ')
+          ..write('plasticBags: $plasticBags, ')
+          ..write('totalBags: $totalBags, ')
+          ..write('gnyWtLess: $gnyWtLess, ')
+          ..write('bagReturn: $bagReturn, ')
+          ..write('otherCut: $otherCut, ')
+          ..write('dustCut: $dustCut, ')
+          ..write('polCut: $polCut, ')
+          ..write('qualityGrade: $qualityGrade, ')
+          ..write('unloadTime: $unloadTime, ')
+          ..write('eBag: $eBag, ')
+          ..write('ePkt: $ePkt, ')
+          ..write('netWeight: $netWeight, ')
+          ..write('avgBagWeight: $avgBagWeight, ')
+          ..write('rateCalculation: $rateCalculation, ')
+          ..write('kgPerBag: $kgPerBag, ')
+          ..write('productId: $productId, ')
+          ..write('productName: $productName, ')
+          ..write('quantityNew: $quantityNew, ')
+          ..write('quantityQntl: $quantityQntl, ')
+          ..write('ratePerQntl: $ratePerQntl, ')
+          ..write('totalAmount: $totalAmount, ')
+          ..write('avgRate: $avgRate, ')
+          ..write('avgAmount: $avgAmount, ')
+          ..write('qrtCutAmt: $qrtCutAmt, ')
+          ..write('paddyAmt: $paddyAmt, ')
+          ..write('qualityCutsJson: $qualityCutsJson, ')
+          ..write('totalCutKg: $totalCutKg, ')
+          ..write('finalWeight: $finalWeight, ')
+          ..write('gunnyTransactionsJson: $gunnyTransactionsJson, ')
+          ..write('deliveryType: $deliveryType, ')
+          ..write('truckRentType: $truckRentType, ')
+          ..write('truckRent: $truckRent, ')
+          ..write('truckRentPaid: $truckRentPaid, ')
+          ..write('otherAmount: $otherAmount, ')
+          ..write('transportType: $transportType, ')
+          ..write('truckAccount: $truckAccount, ')
+          ..write('freightAmount: $freightAmount, ')
+          ..write('procurementType: $procurementType, ')
+          ..write('mandiInvoiceNo: $mandiInvoiceNo, ')
+          ..write('tenderNumber: $tenderNumber, ')
+          ..write('commissionAgentId: $commissionAgentId, ')
+          ..write('warehouseId: $warehouseId, ')
+          ..write('vehicleEntryId: $vehicleEntryId, ')
+          ..write('remainingStock: $remainingStock, ')
+          ..write('status: $status, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+        id,
+        date,
+        slipNo,
+        voucherNo,
+        rstManual,
+        area,
+        vType,
+        partyName,
+        partyId,
+        truckNo,
+        emptyWeight,
+        marketType,
+        grossWeight,
+        tareWeight,
+        juteBags,
+        plasticBags,
+        totalBags,
+        gnyWtLess,
+        bagReturn,
+        otherCut,
+        dustCut,
+        polCut,
+        qualityGrade,
+        unloadTime,
+        eBag,
+        ePkt,
+        netWeight,
+        avgBagWeight,
+        rateCalculation,
+        kgPerBag,
+        productId,
+        productName,
+        quantityNew,
+        quantityQntl,
+        ratePerQntl,
+        totalAmount,
+        avgRate,
+        avgAmount,
+        qrtCutAmt,
+        paddyAmt,
+        qualityCutsJson,
+        totalCutKg,
+        finalWeight,
+        gunnyTransactionsJson,
+        deliveryType,
+        truckRentType,
+        truckRent,
+        truckRentPaid,
+        otherAmount,
+        transportType,
+        truckAccount,
+        freightAmount,
+        procurementType,
+        mandiInvoiceNo,
+        tenderNumber,
+        commissionAgentId,
+        warehouseId,
+        vehicleEntryId,
+        remainingStock,
+        status,
+        createdAt,
+        updatedAt
+      ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PaddyProcurementRow &&
+          other.id == this.id &&
+          other.date == this.date &&
+          other.slipNo == this.slipNo &&
+          other.voucherNo == this.voucherNo &&
+          other.rstManual == this.rstManual &&
+          other.area == this.area &&
+          other.vType == this.vType &&
+          other.partyName == this.partyName &&
+          other.partyId == this.partyId &&
+          other.truckNo == this.truckNo &&
+          other.emptyWeight == this.emptyWeight &&
+          other.marketType == this.marketType &&
+          other.grossWeight == this.grossWeight &&
+          other.tareWeight == this.tareWeight &&
+          other.juteBags == this.juteBags &&
+          other.plasticBags == this.plasticBags &&
+          other.totalBags == this.totalBags &&
+          other.gnyWtLess == this.gnyWtLess &&
+          other.bagReturn == this.bagReturn &&
+          other.otherCut == this.otherCut &&
+          other.dustCut == this.dustCut &&
+          other.polCut == this.polCut &&
+          other.qualityGrade == this.qualityGrade &&
+          other.unloadTime == this.unloadTime &&
+          other.eBag == this.eBag &&
+          other.ePkt == this.ePkt &&
+          other.netWeight == this.netWeight &&
+          other.avgBagWeight == this.avgBagWeight &&
+          other.rateCalculation == this.rateCalculation &&
+          other.kgPerBag == this.kgPerBag &&
+          other.productId == this.productId &&
+          other.productName == this.productName &&
+          other.quantityNew == this.quantityNew &&
+          other.quantityQntl == this.quantityQntl &&
+          other.ratePerQntl == this.ratePerQntl &&
+          other.totalAmount == this.totalAmount &&
+          other.avgRate == this.avgRate &&
+          other.avgAmount == this.avgAmount &&
+          other.qrtCutAmt == this.qrtCutAmt &&
+          other.paddyAmt == this.paddyAmt &&
+          other.qualityCutsJson == this.qualityCutsJson &&
+          other.totalCutKg == this.totalCutKg &&
+          other.finalWeight == this.finalWeight &&
+          other.gunnyTransactionsJson == this.gunnyTransactionsJson &&
+          other.deliveryType == this.deliveryType &&
+          other.truckRentType == this.truckRentType &&
+          other.truckRent == this.truckRent &&
+          other.truckRentPaid == this.truckRentPaid &&
+          other.otherAmount == this.otherAmount &&
+          other.transportType == this.transportType &&
+          other.truckAccount == this.truckAccount &&
+          other.freightAmount == this.freightAmount &&
+          other.procurementType == this.procurementType &&
+          other.mandiInvoiceNo == this.mandiInvoiceNo &&
+          other.tenderNumber == this.tenderNumber &&
+          other.commissionAgentId == this.commissionAgentId &&
+          other.warehouseId == this.warehouseId &&
+          other.vehicleEntryId == this.vehicleEntryId &&
+          other.remainingStock == this.remainingStock &&
+          other.status == this.status &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class PaddyProcurementsCompanion extends UpdateCompanion<PaddyProcurementRow> {
+  final Value<int> id;
+  final Value<DateTime> date;
+  final Value<String> slipNo;
+  final Value<String?> voucherNo;
+  final Value<String?> rstManual;
+  final Value<String?> area;
+  final Value<String> vType;
+  final Value<String> partyName;
+  final Value<int?> partyId;
+  final Value<String?> truckNo;
+  final Value<double?> emptyWeight;
+  final Value<String> marketType;
+  final Value<double?> grossWeight;
+  final Value<double?> tareWeight;
+  final Value<int?> juteBags;
+  final Value<int?> plasticBags;
+  final Value<int?> totalBags;
+  final Value<bool> gnyWtLess;
+  final Value<bool> bagReturn;
+  final Value<double?> otherCut;
+  final Value<double?> dustCut;
+  final Value<double?> polCut;
+  final Value<String?> qualityGrade;
+  final Value<double?> unloadTime;
+  final Value<double?> eBag;
+  final Value<double?> ePkt;
+  final Value<double> netWeight;
+  final Value<double?> avgBagWeight;
+  final Value<String> rateCalculation;
+  final Value<double> kgPerBag;
+  final Value<int> productId;
+  final Value<String> productName;
+  final Value<String> quantityNew;
+  final Value<double?> quantityQntl;
+  final Value<double?> ratePerQntl;
+  final Value<double?> totalAmount;
+  final Value<double?> avgRate;
+  final Value<double?> avgAmount;
+  final Value<double?> qrtCutAmt;
+  final Value<double?> paddyAmt;
+  final Value<String> qualityCutsJson;
+  final Value<double?> totalCutKg;
+  final Value<double?> finalWeight;
+  final Value<String> gunnyTransactionsJson;
+  final Value<String?> deliveryType;
+  final Value<String?> truckRentType;
+  final Value<double?> truckRent;
+  final Value<double?> truckRentPaid;
+  final Value<double?> otherAmount;
+  final Value<String?> transportType;
+  final Value<String?> truckAccount;
+  final Value<double?> freightAmount;
+  final Value<String> procurementType;
+  final Value<String?> mandiInvoiceNo;
+  final Value<String?> tenderNumber;
+  final Value<int?> commissionAgentId;
+  final Value<int?> warehouseId;
+  final Value<int?> vehicleEntryId;
+  final Value<double> remainingStock;
+  final Value<String> status;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const PaddyProcurementsCompanion({
+    this.id = const Value.absent(),
+    this.date = const Value.absent(),
+    this.slipNo = const Value.absent(),
+    this.voucherNo = const Value.absent(),
+    this.rstManual = const Value.absent(),
+    this.area = const Value.absent(),
+    this.vType = const Value.absent(),
+    this.partyName = const Value.absent(),
+    this.partyId = const Value.absent(),
+    this.truckNo = const Value.absent(),
+    this.emptyWeight = const Value.absent(),
+    this.marketType = const Value.absent(),
+    this.grossWeight = const Value.absent(),
+    this.tareWeight = const Value.absent(),
+    this.juteBags = const Value.absent(),
+    this.plasticBags = const Value.absent(),
+    this.totalBags = const Value.absent(),
+    this.gnyWtLess = const Value.absent(),
+    this.bagReturn = const Value.absent(),
+    this.otherCut = const Value.absent(),
+    this.dustCut = const Value.absent(),
+    this.polCut = const Value.absent(),
+    this.qualityGrade = const Value.absent(),
+    this.unloadTime = const Value.absent(),
+    this.eBag = const Value.absent(),
+    this.ePkt = const Value.absent(),
+    this.netWeight = const Value.absent(),
+    this.avgBagWeight = const Value.absent(),
+    this.rateCalculation = const Value.absent(),
+    this.kgPerBag = const Value.absent(),
+    this.productId = const Value.absent(),
+    this.productName = const Value.absent(),
+    this.quantityNew = const Value.absent(),
+    this.quantityQntl = const Value.absent(),
+    this.ratePerQntl = const Value.absent(),
+    this.totalAmount = const Value.absent(),
+    this.avgRate = const Value.absent(),
+    this.avgAmount = const Value.absent(),
+    this.qrtCutAmt = const Value.absent(),
+    this.paddyAmt = const Value.absent(),
+    this.qualityCutsJson = const Value.absent(),
+    this.totalCutKg = const Value.absent(),
+    this.finalWeight = const Value.absent(),
+    this.gunnyTransactionsJson = const Value.absent(),
+    this.deliveryType = const Value.absent(),
+    this.truckRentType = const Value.absent(),
+    this.truckRent = const Value.absent(),
+    this.truckRentPaid = const Value.absent(),
+    this.otherAmount = const Value.absent(),
+    this.transportType = const Value.absent(),
+    this.truckAccount = const Value.absent(),
+    this.freightAmount = const Value.absent(),
+    this.procurementType = const Value.absent(),
+    this.mandiInvoiceNo = const Value.absent(),
+    this.tenderNumber = const Value.absent(),
+    this.commissionAgentId = const Value.absent(),
+    this.warehouseId = const Value.absent(),
+    this.vehicleEntryId = const Value.absent(),
+    this.remainingStock = const Value.absent(),
+    this.status = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  PaddyProcurementsCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime date,
+    required String slipNo,
+    this.voucherNo = const Value.absent(),
+    this.rstManual = const Value.absent(),
+    this.area = const Value.absent(),
+    this.vType = const Value.absent(),
+    required String partyName,
+    this.partyId = const Value.absent(),
+    this.truckNo = const Value.absent(),
+    this.emptyWeight = const Value.absent(),
+    this.marketType = const Value.absent(),
+    this.grossWeight = const Value.absent(),
+    this.tareWeight = const Value.absent(),
+    this.juteBags = const Value.absent(),
+    this.plasticBags = const Value.absent(),
+    this.totalBags = const Value.absent(),
+    this.gnyWtLess = const Value.absent(),
+    this.bagReturn = const Value.absent(),
+    this.otherCut = const Value.absent(),
+    this.dustCut = const Value.absent(),
+    this.polCut = const Value.absent(),
+    this.qualityGrade = const Value.absent(),
+    this.unloadTime = const Value.absent(),
+    this.eBag = const Value.absent(),
+    this.ePkt = const Value.absent(),
+    required double netWeight,
+    this.avgBagWeight = const Value.absent(),
+    this.rateCalculation = const Value.absent(),
+    this.kgPerBag = const Value.absent(),
+    required int productId,
+    required String productName,
+    this.quantityNew = const Value.absent(),
+    this.quantityQntl = const Value.absent(),
+    this.ratePerQntl = const Value.absent(),
+    this.totalAmount = const Value.absent(),
+    this.avgRate = const Value.absent(),
+    this.avgAmount = const Value.absent(),
+    this.qrtCutAmt = const Value.absent(),
+    this.paddyAmt = const Value.absent(),
+    this.qualityCutsJson = const Value.absent(),
+    this.totalCutKg = const Value.absent(),
+    this.finalWeight = const Value.absent(),
+    this.gunnyTransactionsJson = const Value.absent(),
+    this.deliveryType = const Value.absent(),
+    this.truckRentType = const Value.absent(),
+    this.truckRent = const Value.absent(),
+    this.truckRentPaid = const Value.absent(),
+    this.otherAmount = const Value.absent(),
+    this.transportType = const Value.absent(),
+    this.truckAccount = const Value.absent(),
+    this.freightAmount = const Value.absent(),
+    this.procurementType = const Value.absent(),
+    this.mandiInvoiceNo = const Value.absent(),
+    this.tenderNumber = const Value.absent(),
+    this.commissionAgentId = const Value.absent(),
+    this.warehouseId = const Value.absent(),
+    this.vehicleEntryId = const Value.absent(),
+    this.remainingStock = const Value.absent(),
+    this.status = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  })  : date = Value(date),
+        slipNo = Value(slipNo),
+        partyName = Value(partyName),
+        netWeight = Value(netWeight),
+        productId = Value(productId),
+        productName = Value(productName);
+  static Insertable<PaddyProcurementRow> custom({
+    Expression<int>? id,
+    Expression<DateTime>? date,
+    Expression<String>? slipNo,
+    Expression<String>? voucherNo,
+    Expression<String>? rstManual,
+    Expression<String>? area,
+    Expression<String>? vType,
+    Expression<String>? partyName,
+    Expression<int>? partyId,
+    Expression<String>? truckNo,
+    Expression<double>? emptyWeight,
+    Expression<String>? marketType,
+    Expression<double>? grossWeight,
+    Expression<double>? tareWeight,
+    Expression<int>? juteBags,
+    Expression<int>? plasticBags,
+    Expression<int>? totalBags,
+    Expression<bool>? gnyWtLess,
+    Expression<bool>? bagReturn,
+    Expression<double>? otherCut,
+    Expression<double>? dustCut,
+    Expression<double>? polCut,
+    Expression<String>? qualityGrade,
+    Expression<double>? unloadTime,
+    Expression<double>? eBag,
+    Expression<double>? ePkt,
+    Expression<double>? netWeight,
+    Expression<double>? avgBagWeight,
+    Expression<String>? rateCalculation,
+    Expression<double>? kgPerBag,
+    Expression<int>? productId,
+    Expression<String>? productName,
+    Expression<String>? quantityNew,
+    Expression<double>? quantityQntl,
+    Expression<double>? ratePerQntl,
+    Expression<double>? totalAmount,
+    Expression<double>? avgRate,
+    Expression<double>? avgAmount,
+    Expression<double>? qrtCutAmt,
+    Expression<double>? paddyAmt,
+    Expression<String>? qualityCutsJson,
+    Expression<double>? totalCutKg,
+    Expression<double>? finalWeight,
+    Expression<String>? gunnyTransactionsJson,
+    Expression<String>? deliveryType,
+    Expression<String>? truckRentType,
+    Expression<double>? truckRent,
+    Expression<double>? truckRentPaid,
+    Expression<double>? otherAmount,
+    Expression<String>? transportType,
+    Expression<String>? truckAccount,
+    Expression<double>? freightAmount,
+    Expression<String>? procurementType,
+    Expression<String>? mandiInvoiceNo,
+    Expression<String>? tenderNumber,
+    Expression<int>? commissionAgentId,
+    Expression<int>? warehouseId,
+    Expression<int>? vehicleEntryId,
+    Expression<double>? remainingStock,
+    Expression<String>? status,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (date != null) 'date': date,
+      if (slipNo != null) 'slip_no': slipNo,
+      if (voucherNo != null) 'voucher_no': voucherNo,
+      if (rstManual != null) 'rst_manual': rstManual,
+      if (area != null) 'area': area,
+      if (vType != null) 'v_type': vType,
+      if (partyName != null) 'party_name': partyName,
+      if (partyId != null) 'party_id': partyId,
+      if (truckNo != null) 'truck_no': truckNo,
+      if (emptyWeight != null) 'empty_weight': emptyWeight,
+      if (marketType != null) 'market_type': marketType,
+      if (grossWeight != null) 'gross_weight': grossWeight,
+      if (tareWeight != null) 'tare_weight': tareWeight,
+      if (juteBags != null) 'jute_bags': juteBags,
+      if (plasticBags != null) 'plastic_bags': plasticBags,
+      if (totalBags != null) 'total_bags': totalBags,
+      if (gnyWtLess != null) 'gny_wt_less': gnyWtLess,
+      if (bagReturn != null) 'bag_return': bagReturn,
+      if (otherCut != null) 'other_cut': otherCut,
+      if (dustCut != null) 'dust_cut': dustCut,
+      if (polCut != null) 'pol_cut': polCut,
+      if (qualityGrade != null) 'quality_grade': qualityGrade,
+      if (unloadTime != null) 'unload_time': unloadTime,
+      if (eBag != null) 'e_bag': eBag,
+      if (ePkt != null) 'e_pkt': ePkt,
+      if (netWeight != null) 'net_weight': netWeight,
+      if (avgBagWeight != null) 'avg_bag_weight': avgBagWeight,
+      if (rateCalculation != null) 'rate_calculation': rateCalculation,
+      if (kgPerBag != null) 'kg_per_bag': kgPerBag,
+      if (productId != null) 'product_id': productId,
+      if (productName != null) 'product_name': productName,
+      if (quantityNew != null) 'quantity_new': quantityNew,
+      if (quantityQntl != null) 'quantity_qntl': quantityQntl,
+      if (ratePerQntl != null) 'rate_per_qntl': ratePerQntl,
+      if (totalAmount != null) 'total_amount': totalAmount,
+      if (avgRate != null) 'avg_rate': avgRate,
+      if (avgAmount != null) 'avg_amount': avgAmount,
+      if (qrtCutAmt != null) 'qrt_cut_amt': qrtCutAmt,
+      if (paddyAmt != null) 'paddy_amt': paddyAmt,
+      if (qualityCutsJson != null) 'quality_cuts_json': qualityCutsJson,
+      if (totalCutKg != null) 'total_cut_kg': totalCutKg,
+      if (finalWeight != null) 'final_weight': finalWeight,
+      if (gunnyTransactionsJson != null)
+        'gunny_transactions_json': gunnyTransactionsJson,
+      if (deliveryType != null) 'delivery_type': deliveryType,
+      if (truckRentType != null) 'truck_rent_type': truckRentType,
+      if (truckRent != null) 'truck_rent': truckRent,
+      if (truckRentPaid != null) 'truck_rent_paid': truckRentPaid,
+      if (otherAmount != null) 'other_amount': otherAmount,
+      if (transportType != null) 'transport_type': transportType,
+      if (truckAccount != null) 'truck_account': truckAccount,
+      if (freightAmount != null) 'freight_amount': freightAmount,
+      if (procurementType != null) 'procurement_type': procurementType,
+      if (mandiInvoiceNo != null) 'mandi_invoice_no': mandiInvoiceNo,
+      if (tenderNumber != null) 'tender_number': tenderNumber,
+      if (commissionAgentId != null) 'commission_agent_id': commissionAgentId,
+      if (warehouseId != null) 'warehouse_id': warehouseId,
+      if (vehicleEntryId != null) 'vehicle_entry_id': vehicleEntryId,
+      if (remainingStock != null) 'remaining_stock': remainingStock,
+      if (status != null) 'status': status,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  PaddyProcurementsCompanion copyWith(
+      {Value<int>? id,
+      Value<DateTime>? date,
+      Value<String>? slipNo,
+      Value<String?>? voucherNo,
+      Value<String?>? rstManual,
+      Value<String?>? area,
+      Value<String>? vType,
+      Value<String>? partyName,
+      Value<int?>? partyId,
+      Value<String?>? truckNo,
+      Value<double?>? emptyWeight,
+      Value<String>? marketType,
+      Value<double?>? grossWeight,
+      Value<double?>? tareWeight,
+      Value<int?>? juteBags,
+      Value<int?>? plasticBags,
+      Value<int?>? totalBags,
+      Value<bool>? gnyWtLess,
+      Value<bool>? bagReturn,
+      Value<double?>? otherCut,
+      Value<double?>? dustCut,
+      Value<double?>? polCut,
+      Value<String?>? qualityGrade,
+      Value<double?>? unloadTime,
+      Value<double?>? eBag,
+      Value<double?>? ePkt,
+      Value<double>? netWeight,
+      Value<double?>? avgBagWeight,
+      Value<String>? rateCalculation,
+      Value<double>? kgPerBag,
+      Value<int>? productId,
+      Value<String>? productName,
+      Value<String>? quantityNew,
+      Value<double?>? quantityQntl,
+      Value<double?>? ratePerQntl,
+      Value<double?>? totalAmount,
+      Value<double?>? avgRate,
+      Value<double?>? avgAmount,
+      Value<double?>? qrtCutAmt,
+      Value<double?>? paddyAmt,
+      Value<String>? qualityCutsJson,
+      Value<double?>? totalCutKg,
+      Value<double?>? finalWeight,
+      Value<String>? gunnyTransactionsJson,
+      Value<String?>? deliveryType,
+      Value<String?>? truckRentType,
+      Value<double?>? truckRent,
+      Value<double?>? truckRentPaid,
+      Value<double?>? otherAmount,
+      Value<String?>? transportType,
+      Value<String?>? truckAccount,
+      Value<double?>? freightAmount,
+      Value<String>? procurementType,
+      Value<String?>? mandiInvoiceNo,
+      Value<String?>? tenderNumber,
+      Value<int?>? commissionAgentId,
+      Value<int?>? warehouseId,
+      Value<int?>? vehicleEntryId,
+      Value<double>? remainingStock,
+      Value<String>? status,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt}) {
+    return PaddyProcurementsCompanion(
+      id: id ?? this.id,
+      date: date ?? this.date,
+      slipNo: slipNo ?? this.slipNo,
+      voucherNo: voucherNo ?? this.voucherNo,
+      rstManual: rstManual ?? this.rstManual,
+      area: area ?? this.area,
+      vType: vType ?? this.vType,
+      partyName: partyName ?? this.partyName,
+      partyId: partyId ?? this.partyId,
+      truckNo: truckNo ?? this.truckNo,
+      emptyWeight: emptyWeight ?? this.emptyWeight,
+      marketType: marketType ?? this.marketType,
+      grossWeight: grossWeight ?? this.grossWeight,
+      tareWeight: tareWeight ?? this.tareWeight,
+      juteBags: juteBags ?? this.juteBags,
+      plasticBags: plasticBags ?? this.plasticBags,
+      totalBags: totalBags ?? this.totalBags,
+      gnyWtLess: gnyWtLess ?? this.gnyWtLess,
+      bagReturn: bagReturn ?? this.bagReturn,
+      otherCut: otherCut ?? this.otherCut,
+      dustCut: dustCut ?? this.dustCut,
+      polCut: polCut ?? this.polCut,
+      qualityGrade: qualityGrade ?? this.qualityGrade,
+      unloadTime: unloadTime ?? this.unloadTime,
+      eBag: eBag ?? this.eBag,
+      ePkt: ePkt ?? this.ePkt,
+      netWeight: netWeight ?? this.netWeight,
+      avgBagWeight: avgBagWeight ?? this.avgBagWeight,
+      rateCalculation: rateCalculation ?? this.rateCalculation,
+      kgPerBag: kgPerBag ?? this.kgPerBag,
+      productId: productId ?? this.productId,
+      productName: productName ?? this.productName,
+      quantityNew: quantityNew ?? this.quantityNew,
+      quantityQntl: quantityQntl ?? this.quantityQntl,
+      ratePerQntl: ratePerQntl ?? this.ratePerQntl,
+      totalAmount: totalAmount ?? this.totalAmount,
+      avgRate: avgRate ?? this.avgRate,
+      avgAmount: avgAmount ?? this.avgAmount,
+      qrtCutAmt: qrtCutAmt ?? this.qrtCutAmt,
+      paddyAmt: paddyAmt ?? this.paddyAmt,
+      qualityCutsJson: qualityCutsJson ?? this.qualityCutsJson,
+      totalCutKg: totalCutKg ?? this.totalCutKg,
+      finalWeight: finalWeight ?? this.finalWeight,
+      gunnyTransactionsJson:
+          gunnyTransactionsJson ?? this.gunnyTransactionsJson,
+      deliveryType: deliveryType ?? this.deliveryType,
+      truckRentType: truckRentType ?? this.truckRentType,
+      truckRent: truckRent ?? this.truckRent,
+      truckRentPaid: truckRentPaid ?? this.truckRentPaid,
+      otherAmount: otherAmount ?? this.otherAmount,
+      transportType: transportType ?? this.transportType,
+      truckAccount: truckAccount ?? this.truckAccount,
+      freightAmount: freightAmount ?? this.freightAmount,
+      procurementType: procurementType ?? this.procurementType,
+      mandiInvoiceNo: mandiInvoiceNo ?? this.mandiInvoiceNo,
+      tenderNumber: tenderNumber ?? this.tenderNumber,
+      commissionAgentId: commissionAgentId ?? this.commissionAgentId,
+      warehouseId: warehouseId ?? this.warehouseId,
+      vehicleEntryId: vehicleEntryId ?? this.vehicleEntryId,
+      remainingStock: remainingStock ?? this.remainingStock,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<DateTime>(date.value);
+    }
+    if (slipNo.present) {
+      map['slip_no'] = Variable<String>(slipNo.value);
+    }
+    if (voucherNo.present) {
+      map['voucher_no'] = Variable<String>(voucherNo.value);
+    }
+    if (rstManual.present) {
+      map['rst_manual'] = Variable<String>(rstManual.value);
+    }
+    if (area.present) {
+      map['area'] = Variable<String>(area.value);
+    }
+    if (vType.present) {
+      map['v_type'] = Variable<String>(vType.value);
+    }
+    if (partyName.present) {
+      map['party_name'] = Variable<String>(partyName.value);
+    }
+    if (partyId.present) {
+      map['party_id'] = Variable<int>(partyId.value);
+    }
+    if (truckNo.present) {
+      map['truck_no'] = Variable<String>(truckNo.value);
+    }
+    if (emptyWeight.present) {
+      map['empty_weight'] = Variable<double>(emptyWeight.value);
+    }
+    if (marketType.present) {
+      map['market_type'] = Variable<String>(marketType.value);
+    }
+    if (grossWeight.present) {
+      map['gross_weight'] = Variable<double>(grossWeight.value);
+    }
+    if (tareWeight.present) {
+      map['tare_weight'] = Variable<double>(tareWeight.value);
+    }
+    if (juteBags.present) {
+      map['jute_bags'] = Variable<int>(juteBags.value);
+    }
+    if (plasticBags.present) {
+      map['plastic_bags'] = Variable<int>(plasticBags.value);
+    }
+    if (totalBags.present) {
+      map['total_bags'] = Variable<int>(totalBags.value);
+    }
+    if (gnyWtLess.present) {
+      map['gny_wt_less'] = Variable<bool>(gnyWtLess.value);
+    }
+    if (bagReturn.present) {
+      map['bag_return'] = Variable<bool>(bagReturn.value);
+    }
+    if (otherCut.present) {
+      map['other_cut'] = Variable<double>(otherCut.value);
+    }
+    if (dustCut.present) {
+      map['dust_cut'] = Variable<double>(dustCut.value);
+    }
+    if (polCut.present) {
+      map['pol_cut'] = Variable<double>(polCut.value);
+    }
+    if (qualityGrade.present) {
+      map['quality_grade'] = Variable<String>(qualityGrade.value);
+    }
+    if (unloadTime.present) {
+      map['unload_time'] = Variable<double>(unloadTime.value);
+    }
+    if (eBag.present) {
+      map['e_bag'] = Variable<double>(eBag.value);
+    }
+    if (ePkt.present) {
+      map['e_pkt'] = Variable<double>(ePkt.value);
+    }
+    if (netWeight.present) {
+      map['net_weight'] = Variable<double>(netWeight.value);
+    }
+    if (avgBagWeight.present) {
+      map['avg_bag_weight'] = Variable<double>(avgBagWeight.value);
+    }
+    if (rateCalculation.present) {
+      map['rate_calculation'] = Variable<String>(rateCalculation.value);
+    }
+    if (kgPerBag.present) {
+      map['kg_per_bag'] = Variable<double>(kgPerBag.value);
+    }
+    if (productId.present) {
+      map['product_id'] = Variable<int>(productId.value);
+    }
+    if (productName.present) {
+      map['product_name'] = Variable<String>(productName.value);
+    }
+    if (quantityNew.present) {
+      map['quantity_new'] = Variable<String>(quantityNew.value);
+    }
+    if (quantityQntl.present) {
+      map['quantity_qntl'] = Variable<double>(quantityQntl.value);
+    }
+    if (ratePerQntl.present) {
+      map['rate_per_qntl'] = Variable<double>(ratePerQntl.value);
+    }
+    if (totalAmount.present) {
+      map['total_amount'] = Variable<double>(totalAmount.value);
+    }
+    if (avgRate.present) {
+      map['avg_rate'] = Variable<double>(avgRate.value);
+    }
+    if (avgAmount.present) {
+      map['avg_amount'] = Variable<double>(avgAmount.value);
+    }
+    if (qrtCutAmt.present) {
+      map['qrt_cut_amt'] = Variable<double>(qrtCutAmt.value);
+    }
+    if (paddyAmt.present) {
+      map['paddy_amt'] = Variable<double>(paddyAmt.value);
+    }
+    if (qualityCutsJson.present) {
+      map['quality_cuts_json'] = Variable<String>(qualityCutsJson.value);
+    }
+    if (totalCutKg.present) {
+      map['total_cut_kg'] = Variable<double>(totalCutKg.value);
+    }
+    if (finalWeight.present) {
+      map['final_weight'] = Variable<double>(finalWeight.value);
+    }
+    if (gunnyTransactionsJson.present) {
+      map['gunny_transactions_json'] =
+          Variable<String>(gunnyTransactionsJson.value);
+    }
+    if (deliveryType.present) {
+      map['delivery_type'] = Variable<String>(deliveryType.value);
+    }
+    if (truckRentType.present) {
+      map['truck_rent_type'] = Variable<String>(truckRentType.value);
+    }
+    if (truckRent.present) {
+      map['truck_rent'] = Variable<double>(truckRent.value);
+    }
+    if (truckRentPaid.present) {
+      map['truck_rent_paid'] = Variable<double>(truckRentPaid.value);
+    }
+    if (otherAmount.present) {
+      map['other_amount'] = Variable<double>(otherAmount.value);
+    }
+    if (transportType.present) {
+      map['transport_type'] = Variable<String>(transportType.value);
+    }
+    if (truckAccount.present) {
+      map['truck_account'] = Variable<String>(truckAccount.value);
+    }
+    if (freightAmount.present) {
+      map['freight_amount'] = Variable<double>(freightAmount.value);
+    }
+    if (procurementType.present) {
+      map['procurement_type'] = Variable<String>(procurementType.value);
+    }
+    if (mandiInvoiceNo.present) {
+      map['mandi_invoice_no'] = Variable<String>(mandiInvoiceNo.value);
+    }
+    if (tenderNumber.present) {
+      map['tender_number'] = Variable<String>(tenderNumber.value);
+    }
+    if (commissionAgentId.present) {
+      map['commission_agent_id'] = Variable<int>(commissionAgentId.value);
+    }
+    if (warehouseId.present) {
+      map['warehouse_id'] = Variable<int>(warehouseId.value);
+    }
+    if (vehicleEntryId.present) {
+      map['vehicle_entry_id'] = Variable<int>(vehicleEntryId.value);
+    }
+    if (remainingStock.present) {
+      map['remaining_stock'] = Variable<double>(remainingStock.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PaddyProcurementsCompanion(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('slipNo: $slipNo, ')
+          ..write('voucherNo: $voucherNo, ')
+          ..write('rstManual: $rstManual, ')
+          ..write('area: $area, ')
+          ..write('vType: $vType, ')
+          ..write('partyName: $partyName, ')
+          ..write('partyId: $partyId, ')
+          ..write('truckNo: $truckNo, ')
+          ..write('emptyWeight: $emptyWeight, ')
+          ..write('marketType: $marketType, ')
+          ..write('grossWeight: $grossWeight, ')
+          ..write('tareWeight: $tareWeight, ')
+          ..write('juteBags: $juteBags, ')
+          ..write('plasticBags: $plasticBags, ')
+          ..write('totalBags: $totalBags, ')
+          ..write('gnyWtLess: $gnyWtLess, ')
+          ..write('bagReturn: $bagReturn, ')
+          ..write('otherCut: $otherCut, ')
+          ..write('dustCut: $dustCut, ')
+          ..write('polCut: $polCut, ')
+          ..write('qualityGrade: $qualityGrade, ')
+          ..write('unloadTime: $unloadTime, ')
+          ..write('eBag: $eBag, ')
+          ..write('ePkt: $ePkt, ')
+          ..write('netWeight: $netWeight, ')
+          ..write('avgBagWeight: $avgBagWeight, ')
+          ..write('rateCalculation: $rateCalculation, ')
+          ..write('kgPerBag: $kgPerBag, ')
+          ..write('productId: $productId, ')
+          ..write('productName: $productName, ')
+          ..write('quantityNew: $quantityNew, ')
+          ..write('quantityQntl: $quantityQntl, ')
+          ..write('ratePerQntl: $ratePerQntl, ')
+          ..write('totalAmount: $totalAmount, ')
+          ..write('avgRate: $avgRate, ')
+          ..write('avgAmount: $avgAmount, ')
+          ..write('qrtCutAmt: $qrtCutAmt, ')
+          ..write('paddyAmt: $paddyAmt, ')
+          ..write('qualityCutsJson: $qualityCutsJson, ')
+          ..write('totalCutKg: $totalCutKg, ')
+          ..write('finalWeight: $finalWeight, ')
+          ..write('gunnyTransactionsJson: $gunnyTransactionsJson, ')
+          ..write('deliveryType: $deliveryType, ')
+          ..write('truckRentType: $truckRentType, ')
+          ..write('truckRent: $truckRent, ')
+          ..write('truckRentPaid: $truckRentPaid, ')
+          ..write('otherAmount: $otherAmount, ')
+          ..write('transportType: $transportType, ')
+          ..write('truckAccount: $truckAccount, ')
+          ..write('freightAmount: $freightAmount, ')
+          ..write('procurementType: $procurementType, ')
+          ..write('mandiInvoiceNo: $mandiInvoiceNo, ')
+          ..write('tenderNumber: $tenderNumber, ')
+          ..write('commissionAgentId: $commissionAgentId, ')
+          ..write('warehouseId: $warehouseId, ')
+          ..write('vehicleEntryId: $vehicleEntryId, ')
+          ..write('remainingStock: $remainingStock, ')
+          ..write('status: $status, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -11222,6 +16172,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $StaffSalaryPaymentsTable(this);
   late final $NotificationsTable notifications = $NotificationsTable(this);
   late final $AuditLogsTable auditLogs = $AuditLogsTable(this);
+  late final $VehicleEntriesTable vehicleEntries = $VehicleEntriesTable(this);
+  late final $FarmersTable farmers = $FarmersTable(this);
+  late final $PaddyProcurementsTable paddyProcurements =
+      $PaddyProcurementsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -11253,7 +16207,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         staffPayrolls,
         staffSalaryPayments,
         notifications,
-        auditLogs
+        auditLogs,
+        vehicleEntries,
+        farmers,
+        paddyProcurements
       ];
 }
 
@@ -12384,6 +17341,23 @@ final class $$WarehousesTableReferences
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
+
+  static MultiTypedResultKey<$PaddyProcurementsTable, List<PaddyProcurementRow>>
+      _paddyProcurementsRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.paddyProcurements,
+              aliasName: $_aliasNameGenerator(
+                  db.warehouses.id, db.paddyProcurements.warehouseId));
+
+  $$PaddyProcurementsTableProcessedTableManager get paddyProcurementsRefs {
+    final manager = $$PaddyProcurementsTableTableManager(
+            $_db, $_db.paddyProcurements)
+        .filter((f) => f.warehouseId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache =
+        $_typedResult.readTableOrNull(_paddyProcurementsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
 }
 
 class $$WarehousesTableFilterComposer
@@ -12509,6 +17483,27 @@ class $$WarehousesTableFilterComposer
             $$SalesTableFilterComposer(
               $db: $db,
               $table: $db.sales,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> paddyProcurementsRefs(
+      Expression<bool> Function($$PaddyProcurementsTableFilterComposer f) f) {
+    final $$PaddyProcurementsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.paddyProcurements,
+        getReferencedColumn: (t) => t.warehouseId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$PaddyProcurementsTableFilterComposer(
+              $db: $db,
+              $table: $db.paddyProcurements,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -12673,6 +17668,28 @@ class $$WarehousesTableAnnotationComposer
             ));
     return f(composer);
   }
+
+  Expression<T> paddyProcurementsRefs<T extends Object>(
+      Expression<T> Function($$PaddyProcurementsTableAnnotationComposer a) f) {
+    final $$PaddyProcurementsTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.paddyProcurements,
+            getReferencedColumn: (t) => t.warehouseId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$PaddyProcurementsTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.paddyProcurements,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
 }
 
 class $$WarehousesTableTableManager extends RootTableManager<
@@ -12691,7 +17708,8 @@ class $$WarehousesTableTableManager extends RootTableManager<
         bool inventoryTransactionsRefs,
         bool purchasesRefs,
         bool cartsRefs,
-        bool salesRefs})> {
+        bool salesRefs,
+        bool paddyProcurementsRefs})> {
   $$WarehousesTableTableManager(_$AppDatabase db, $WarehousesTable table)
       : super(TableManagerState(
           db: db,
@@ -12741,7 +17759,8 @@ class $$WarehousesTableTableManager extends RootTableManager<
               inventoryTransactionsRefs = false,
               purchasesRefs = false,
               cartsRefs = false,
-              salesRefs = false}) {
+              salesRefs = false,
+              paddyProcurementsRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
@@ -12749,7 +17768,8 @@ class $$WarehousesTableTableManager extends RootTableManager<
                 if (inventoryTransactionsRefs) db.inventoryTransactions,
                 if (purchasesRefs) db.purchases,
                 if (cartsRefs) db.carts,
-                if (salesRefs) db.sales
+                if (salesRefs) db.sales,
+                if (paddyProcurementsRefs) db.paddyProcurements
               ],
               addJoins: null,
               getPrefetchedDataCallback: (items) async {
@@ -12817,6 +17837,19 @@ class $$WarehousesTableTableManager extends RootTableManager<
                         referencedItemsForCurrentItem:
                             (item, referencedItems) => referencedItems
                                 .where((e) => e.warehouseId == item.id),
+                        typedResults: items),
+                  if (paddyProcurementsRefs)
+                    await $_getPrefetchedData<Warehouse, $WarehousesTable,
+                            PaddyProcurementRow>(
+                        currentTable: table,
+                        referencedTable: $$WarehousesTableReferences
+                            ._paddyProcurementsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$WarehousesTableReferences(db, table, p0)
+                                .paddyProcurementsRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.warehouseId == item.id),
                         typedResults: items)
                 ];
               },
@@ -12841,7 +17874,8 @@ typedef $$WarehousesTableProcessedTableManager = ProcessedTableManager<
         bool inventoryTransactionsRefs,
         bool purchasesRefs,
         bool cartsRefs,
-        bool salesRefs})>;
+        bool salesRefs,
+        bool paddyProcurementsRefs})>;
 typedef $$AppSettingsTableCreateCompanionBuilder = AppSettingsCompanion
     Function({
   required String key,
@@ -13659,6 +18693,38 @@ final class $$ProductsTableReferences
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
+
+  static MultiTypedResultKey<$VehicleEntriesTable, List<VehicleEntry>>
+      _vehicleEntriesRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.vehicleEntries,
+              aliasName: $_aliasNameGenerator(
+                  db.products.id, db.vehicleEntries.productId));
+
+  $$VehicleEntriesTableProcessedTableManager get vehicleEntriesRefs {
+    final manager = $$VehicleEntriesTableTableManager($_db, $_db.vehicleEntries)
+        .filter((f) => f.productId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_vehicleEntriesRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$PaddyProcurementsTable, List<PaddyProcurementRow>>
+      _paddyProcurementsRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.paddyProcurements,
+              aliasName: $_aliasNameGenerator(
+                  db.products.id, db.paddyProcurements.productId));
+
+  $$PaddyProcurementsTableProcessedTableManager get paddyProcurementsRefs {
+    final manager =
+        $$PaddyProcurementsTableTableManager($_db, $_db.paddyProcurements)
+            .filter((f) => f.productId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache =
+        $_typedResult.readTableOrNull(_paddyProcurementsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
 }
 
 class $$ProductsTableFilterComposer
@@ -13855,6 +18921,48 @@ class $$ProductsTableFilterComposer
             $$SaleItemsTableFilterComposer(
               $db: $db,
               $table: $db.saleItems,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> vehicleEntriesRefs(
+      Expression<bool> Function($$VehicleEntriesTableFilterComposer f) f) {
+    final $$VehicleEntriesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.vehicleEntries,
+        getReferencedColumn: (t) => t.productId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$VehicleEntriesTableFilterComposer(
+              $db: $db,
+              $table: $db.vehicleEntries,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> paddyProcurementsRefs(
+      Expression<bool> Function($$PaddyProcurementsTableFilterComposer f) f) {
+    final $$PaddyProcurementsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.paddyProcurements,
+        getReferencedColumn: (t) => t.productId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$PaddyProcurementsTableFilterComposer(
+              $db: $db,
+              $table: $db.paddyProcurements,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -14142,6 +19250,49 @@ class $$ProductsTableAnnotationComposer
             ));
     return f(composer);
   }
+
+  Expression<T> vehicleEntriesRefs<T extends Object>(
+      Expression<T> Function($$VehicleEntriesTableAnnotationComposer a) f) {
+    final $$VehicleEntriesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.vehicleEntries,
+        getReferencedColumn: (t) => t.productId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$VehicleEntriesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.vehicleEntries,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<T> paddyProcurementsRefs<T extends Object>(
+      Expression<T> Function($$PaddyProcurementsTableAnnotationComposer a) f) {
+    final $$PaddyProcurementsTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.paddyProcurements,
+            getReferencedColumn: (t) => t.productId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$PaddyProcurementsTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.paddyProcurements,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
 }
 
 class $$ProductsTableTableManager extends RootTableManager<
@@ -14162,7 +19313,9 @@ class $$ProductsTableTableManager extends RootTableManager<
         bool inventoryTransactionsRefs,
         bool purchaseItemsRefs,
         bool cartItemsRefs,
-        bool saleItemsRefs})> {
+        bool saleItemsRefs,
+        bool vehicleEntriesRefs,
+        bool paddyProcurementsRefs})> {
   $$ProductsTableTableManager(_$AppDatabase db, $ProductsTable table)
       : super(TableManagerState(
           db: db,
@@ -14256,7 +19409,9 @@ class $$ProductsTableTableManager extends RootTableManager<
               inventoryTransactionsRefs = false,
               purchaseItemsRefs = false,
               cartItemsRefs = false,
-              saleItemsRefs = false}) {
+              saleItemsRefs = false,
+              vehicleEntriesRefs = false,
+              paddyProcurementsRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
@@ -14265,7 +19420,9 @@ class $$ProductsTableTableManager extends RootTableManager<
                 if (inventoryTransactionsRefs) db.inventoryTransactions,
                 if (purchaseItemsRefs) db.purchaseItems,
                 if (cartItemsRefs) db.cartItems,
-                if (saleItemsRefs) db.saleItems
+                if (saleItemsRefs) db.saleItems,
+                if (vehicleEntriesRefs) db.vehicleEntries,
+                if (paddyProcurementsRefs) db.paddyProcurements
               ],
               addJoins: <
                   T extends TableManagerState<
@@ -14372,6 +19529,32 @@ class $$ProductsTableTableManager extends RootTableManager<
                         referencedItemsForCurrentItem:
                             (item, referencedItems) => referencedItems
                                 .where((e) => e.productId == item.id),
+                        typedResults: items),
+                  if (vehicleEntriesRefs)
+                    await $_getPrefetchedData<Product, $ProductsTable,
+                            VehicleEntry>(
+                        currentTable: table,
+                        referencedTable: $$ProductsTableReferences
+                            ._vehicleEntriesRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$ProductsTableReferences(db, table, p0)
+                                .vehicleEntriesRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.productId == item.id),
+                        typedResults: items),
+                  if (paddyProcurementsRefs)
+                    await $_getPrefetchedData<Product, $ProductsTable,
+                            PaddyProcurementRow>(
+                        currentTable: table,
+                        referencedTable: $$ProductsTableReferences
+                            ._paddyProcurementsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$ProductsTableReferences(db, table, p0)
+                                .paddyProcurementsRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.productId == item.id),
                         typedResults: items)
                 ];
               },
@@ -14398,7 +19581,9 @@ typedef $$ProductsTableProcessedTableManager = ProcessedTableManager<
         bool inventoryTransactionsRefs,
         bool purchaseItemsRefs,
         bool cartItemsRefs,
-        bool saleItemsRefs})>;
+        bool saleItemsRefs,
+        bool vehicleEntriesRefs,
+        bool paddyProcurementsRefs})>;
 typedef $$ProductVariantsTableCreateCompanionBuilder = ProductVariantsCompanion
     Function({
   Value<int> id,
@@ -16139,6 +21324,21 @@ final class $$SuppliersTableReferences
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
+
+  static MultiTypedResultKey<$VehicleEntriesTable, List<VehicleEntry>>
+      _vehicleEntriesRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.vehicleEntries,
+              aliasName: $_aliasNameGenerator(
+                  db.suppliers.id, db.vehicleEntries.partyId));
+
+  $$VehicleEntriesTableProcessedTableManager get vehicleEntriesRefs {
+    final manager = $$VehicleEntriesTableTableManager($_db, $_db.vehicleEntries)
+        .filter((f) => f.partyId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_vehicleEntriesRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
 }
 
 class $$SuppliersTableFilterComposer
@@ -16194,6 +21394,27 @@ class $$SuppliersTableFilterComposer
             $$PurchasesTableFilterComposer(
               $db: $db,
               $table: $db.purchases,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> vehicleEntriesRefs(
+      Expression<bool> Function($$VehicleEntriesTableFilterComposer f) f) {
+    final $$VehicleEntriesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.vehicleEntries,
+        getReferencedColumn: (t) => t.partyId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$VehicleEntriesTableFilterComposer(
+              $db: $db,
+              $table: $db.vehicleEntries,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -16304,6 +21525,27 @@ class $$SuppliersTableAnnotationComposer
             ));
     return f(composer);
   }
+
+  Expression<T> vehicleEntriesRefs<T extends Object>(
+      Expression<T> Function($$VehicleEntriesTableAnnotationComposer a) f) {
+    final $$VehicleEntriesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.vehicleEntries,
+        getReferencedColumn: (t) => t.partyId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$VehicleEntriesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.vehicleEntries,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$SuppliersTableTableManager extends RootTableManager<
@@ -16317,7 +21559,7 @@ class $$SuppliersTableTableManager extends RootTableManager<
     $$SuppliersTableUpdateCompanionBuilder,
     (Supplier, $$SuppliersTableReferences),
     Supplier,
-    PrefetchHooks Function({bool purchasesRefs})> {
+    PrefetchHooks Function({bool purchasesRefs, bool vehicleEntriesRefs})> {
   $$SuppliersTableTableManager(_$AppDatabase db, $SuppliersTable table)
       : super(TableManagerState(
           db: db,
@@ -16382,10 +21624,14 @@ class $$SuppliersTableTableManager extends RootTableManager<
                     $$SuppliersTableReferences(db, table, e)
                   ))
               .toList(),
-          prefetchHooksCallback: ({purchasesRefs = false}) {
+          prefetchHooksCallback: (
+              {purchasesRefs = false, vehicleEntriesRefs = false}) {
             return PrefetchHooks(
               db: db,
-              explicitlyWatchedTables: [if (purchasesRefs) db.purchases],
+              explicitlyWatchedTables: [
+                if (purchasesRefs) db.purchases,
+                if (vehicleEntriesRefs) db.vehicleEntries
+              ],
               addJoins: null,
               getPrefetchedDataCallback: (items) async {
                 return [
@@ -16401,6 +21647,19 @@ class $$SuppliersTableTableManager extends RootTableManager<
                         referencedItemsForCurrentItem:
                             (item, referencedItems) => referencedItems
                                 .where((e) => e.supplierId == item.id),
+                        typedResults: items),
+                  if (vehicleEntriesRefs)
+                    await $_getPrefetchedData<Supplier, $SuppliersTable,
+                            VehicleEntry>(
+                        currentTable: table,
+                        referencedTable: $$SuppliersTableReferences
+                            ._vehicleEntriesRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$SuppliersTableReferences(db, table, p0)
+                                .vehicleEntriesRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.partyId == item.id),
                         typedResults: items)
                 ];
               },
@@ -16420,7 +21679,7 @@ typedef $$SuppliersTableProcessedTableManager = ProcessedTableManager<
     $$SuppliersTableUpdateCompanionBuilder,
     (Supplier, $$SuppliersTableReferences),
     Supplier,
-    PrefetchHooks Function({bool purchasesRefs})>;
+    PrefetchHooks Function({bool purchasesRefs, bool vehicleEntriesRefs})>;
 typedef $$PurchasesTableCreateCompanionBuilder = PurchasesCompanion Function({
   Value<int> id,
   Value<int?> supplierId,
@@ -22552,6 +27811,2673 @@ typedef $$AuditLogsTableProcessedTableManager = ProcessedTableManager<
     (AuditLog, $$AuditLogsTableReferences),
     AuditLog,
     PrefetchHooks Function({bool userId})>;
+typedef $$VehicleEntriesTableCreateCompanionBuilder = VehicleEntriesCompanion
+    Function({
+  Value<int> id,
+  required DateTime date,
+  required String slipNo,
+  Value<String?> voucherNo,
+  required String vehicleNo,
+  Value<String?> rstManual,
+  required String partyName,
+  Value<int?> partyId,
+  required int productId,
+  Value<String> entryType,
+  required double firstWeight,
+  Value<DateTime?> firstWeightTime,
+  required double secondWeight,
+  Value<DateTime?> secondWeightTime,
+  required double netWeight,
+  Value<int?> bags,
+  Value<String?> lotNumber,
+  Value<bool> complete,
+  Value<String?> completeCode,
+  Value<DateTime?> completeDate,
+  Value<String?> remark,
+  Value<String> weighMode,
+  Value<String> manualWeightsJson,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String> status,
+  Value<String?> createdByUid,
+  Value<String?> createdByName,
+  Value<String?> approverUid,
+  Value<String?> approverName,
+  Value<String?> approvedByUid,
+  Value<DateTime?> approvedAt,
+  Value<String?> rejectionReason,
+});
+typedef $$VehicleEntriesTableUpdateCompanionBuilder = VehicleEntriesCompanion
+    Function({
+  Value<int> id,
+  Value<DateTime> date,
+  Value<String> slipNo,
+  Value<String?> voucherNo,
+  Value<String> vehicleNo,
+  Value<String?> rstManual,
+  Value<String> partyName,
+  Value<int?> partyId,
+  Value<int> productId,
+  Value<String> entryType,
+  Value<double> firstWeight,
+  Value<DateTime?> firstWeightTime,
+  Value<double> secondWeight,
+  Value<DateTime?> secondWeightTime,
+  Value<double> netWeight,
+  Value<int?> bags,
+  Value<String?> lotNumber,
+  Value<bool> complete,
+  Value<String?> completeCode,
+  Value<DateTime?> completeDate,
+  Value<String?> remark,
+  Value<String> weighMode,
+  Value<String> manualWeightsJson,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String> status,
+  Value<String?> createdByUid,
+  Value<String?> createdByName,
+  Value<String?> approverUid,
+  Value<String?> approverName,
+  Value<String?> approvedByUid,
+  Value<DateTime?> approvedAt,
+  Value<String?> rejectionReason,
+});
+
+final class $$VehicleEntriesTableReferences
+    extends BaseReferences<_$AppDatabase, $VehicleEntriesTable, VehicleEntry> {
+  $$VehicleEntriesTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $SuppliersTable _partyIdTable(_$AppDatabase db) =>
+      db.suppliers.createAlias(
+          $_aliasNameGenerator(db.vehicleEntries.partyId, db.suppliers.id));
+
+  $$SuppliersTableProcessedTableManager? get partyId {
+    final $_column = $_itemColumn<int>('party_id');
+    if ($_column == null) return null;
+    final manager = $$SuppliersTableTableManager($_db, $_db.suppliers)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_partyIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $ProductsTable _productIdTable(_$AppDatabase db) =>
+      db.products.createAlias(
+          $_aliasNameGenerator(db.vehicleEntries.productId, db.products.id));
+
+  $$ProductsTableProcessedTableManager get productId {
+    final $_column = $_itemColumn<int>('product_id')!;
+
+    final manager = $$ProductsTableTableManager($_db, $_db.products)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_productIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static MultiTypedResultKey<$PaddyProcurementsTable, List<PaddyProcurementRow>>
+      _paddyProcurementsRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.paddyProcurements,
+              aliasName: $_aliasNameGenerator(
+                  db.vehicleEntries.id, db.paddyProcurements.vehicleEntryId));
+
+  $$PaddyProcurementsTableProcessedTableManager get paddyProcurementsRefs {
+    final manager = $$PaddyProcurementsTableTableManager(
+            $_db, $_db.paddyProcurements)
+        .filter((f) => f.vehicleEntryId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache =
+        $_typedResult.readTableOrNull(_paddyProcurementsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+}
+
+class $$VehicleEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $VehicleEntriesTable> {
+  $$VehicleEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get date => $composableBuilder(
+      column: $table.date, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get slipNo => $composableBuilder(
+      column: $table.slipNo, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get voucherNo => $composableBuilder(
+      column: $table.voucherNo, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get vehicleNo => $composableBuilder(
+      column: $table.vehicleNo, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get rstManual => $composableBuilder(
+      column: $table.rstManual, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get partyName => $composableBuilder(
+      column: $table.partyName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get entryType => $composableBuilder(
+      column: $table.entryType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get firstWeight => $composableBuilder(
+      column: $table.firstWeight, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get firstWeightTime => $composableBuilder(
+      column: $table.firstWeightTime,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get secondWeight => $composableBuilder(
+      column: $table.secondWeight, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get secondWeightTime => $composableBuilder(
+      column: $table.secondWeightTime,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get netWeight => $composableBuilder(
+      column: $table.netWeight, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get bags => $composableBuilder(
+      column: $table.bags, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get lotNumber => $composableBuilder(
+      column: $table.lotNumber, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get complete => $composableBuilder(
+      column: $table.complete, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get completeCode => $composableBuilder(
+      column: $table.completeCode, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get completeDate => $composableBuilder(
+      column: $table.completeDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get remark => $composableBuilder(
+      column: $table.remark, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get weighMode => $composableBuilder(
+      column: $table.weighMode, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get manualWeightsJson => $composableBuilder(
+      column: $table.manualWeightsJson,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get createdByUid => $composableBuilder(
+      column: $table.createdByUid, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get createdByName => $composableBuilder(
+      column: $table.createdByName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get approverUid => $composableBuilder(
+      column: $table.approverUid, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get approverName => $composableBuilder(
+      column: $table.approverName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get approvedByUid => $composableBuilder(
+      column: $table.approvedByUid, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get approvedAt => $composableBuilder(
+      column: $table.approvedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get rejectionReason => $composableBuilder(
+      column: $table.rejectionReason,
+      builder: (column) => ColumnFilters(column));
+
+  $$SuppliersTableFilterComposer get partyId {
+    final $$SuppliersTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.partyId,
+        referencedTable: $db.suppliers,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SuppliersTableFilterComposer(
+              $db: $db,
+              $table: $db.suppliers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$ProductsTableFilterComposer get productId {
+    final $$ProductsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.productId,
+        referencedTable: $db.products,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ProductsTableFilterComposer(
+              $db: $db,
+              $table: $db.products,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  Expression<bool> paddyProcurementsRefs(
+      Expression<bool> Function($$PaddyProcurementsTableFilterComposer f) f) {
+    final $$PaddyProcurementsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.paddyProcurements,
+        getReferencedColumn: (t) => t.vehicleEntryId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$PaddyProcurementsTableFilterComposer(
+              $db: $db,
+              $table: $db.paddyProcurements,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+}
+
+class $$VehicleEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $VehicleEntriesTable> {
+  $$VehicleEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get date => $composableBuilder(
+      column: $table.date, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get slipNo => $composableBuilder(
+      column: $table.slipNo, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get voucherNo => $composableBuilder(
+      column: $table.voucherNo, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get vehicleNo => $composableBuilder(
+      column: $table.vehicleNo, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get rstManual => $composableBuilder(
+      column: $table.rstManual, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get partyName => $composableBuilder(
+      column: $table.partyName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get entryType => $composableBuilder(
+      column: $table.entryType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get firstWeight => $composableBuilder(
+      column: $table.firstWeight, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get firstWeightTime => $composableBuilder(
+      column: $table.firstWeightTime,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get secondWeight => $composableBuilder(
+      column: $table.secondWeight,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get secondWeightTime => $composableBuilder(
+      column: $table.secondWeightTime,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get netWeight => $composableBuilder(
+      column: $table.netWeight, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get bags => $composableBuilder(
+      column: $table.bags, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get lotNumber => $composableBuilder(
+      column: $table.lotNumber, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get complete => $composableBuilder(
+      column: $table.complete, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get completeCode => $composableBuilder(
+      column: $table.completeCode,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get completeDate => $composableBuilder(
+      column: $table.completeDate,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get remark => $composableBuilder(
+      column: $table.remark, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get weighMode => $composableBuilder(
+      column: $table.weighMode, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get manualWeightsJson => $composableBuilder(
+      column: $table.manualWeightsJson,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get createdByUid => $composableBuilder(
+      column: $table.createdByUid,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get createdByName => $composableBuilder(
+      column: $table.createdByName,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get approverUid => $composableBuilder(
+      column: $table.approverUid, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get approverName => $composableBuilder(
+      column: $table.approverName,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get approvedByUid => $composableBuilder(
+      column: $table.approvedByUid,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get approvedAt => $composableBuilder(
+      column: $table.approvedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get rejectionReason => $composableBuilder(
+      column: $table.rejectionReason,
+      builder: (column) => ColumnOrderings(column));
+
+  $$SuppliersTableOrderingComposer get partyId {
+    final $$SuppliersTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.partyId,
+        referencedTable: $db.suppliers,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SuppliersTableOrderingComposer(
+              $db: $db,
+              $table: $db.suppliers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$ProductsTableOrderingComposer get productId {
+    final $$ProductsTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.productId,
+        referencedTable: $db.products,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ProductsTableOrderingComposer(
+              $db: $db,
+              $table: $db.products,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$VehicleEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $VehicleEntriesTable> {
+  $$VehicleEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<String> get slipNo =>
+      $composableBuilder(column: $table.slipNo, builder: (column) => column);
+
+  GeneratedColumn<String> get voucherNo =>
+      $composableBuilder(column: $table.voucherNo, builder: (column) => column);
+
+  GeneratedColumn<String> get vehicleNo =>
+      $composableBuilder(column: $table.vehicleNo, builder: (column) => column);
+
+  GeneratedColumn<String> get rstManual =>
+      $composableBuilder(column: $table.rstManual, builder: (column) => column);
+
+  GeneratedColumn<String> get partyName =>
+      $composableBuilder(column: $table.partyName, builder: (column) => column);
+
+  GeneratedColumn<String> get entryType =>
+      $composableBuilder(column: $table.entryType, builder: (column) => column);
+
+  GeneratedColumn<double> get firstWeight => $composableBuilder(
+      column: $table.firstWeight, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get firstWeightTime => $composableBuilder(
+      column: $table.firstWeightTime, builder: (column) => column);
+
+  GeneratedColumn<double> get secondWeight => $composableBuilder(
+      column: $table.secondWeight, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get secondWeightTime => $composableBuilder(
+      column: $table.secondWeightTime, builder: (column) => column);
+
+  GeneratedColumn<double> get netWeight =>
+      $composableBuilder(column: $table.netWeight, builder: (column) => column);
+
+  GeneratedColumn<int> get bags =>
+      $composableBuilder(column: $table.bags, builder: (column) => column);
+
+  GeneratedColumn<String> get lotNumber =>
+      $composableBuilder(column: $table.lotNumber, builder: (column) => column);
+
+  GeneratedColumn<bool> get complete =>
+      $composableBuilder(column: $table.complete, builder: (column) => column);
+
+  GeneratedColumn<String> get completeCode => $composableBuilder(
+      column: $table.completeCode, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get completeDate => $composableBuilder(
+      column: $table.completeDate, builder: (column) => column);
+
+  GeneratedColumn<String> get remark =>
+      $composableBuilder(column: $table.remark, builder: (column) => column);
+
+  GeneratedColumn<String> get weighMode =>
+      $composableBuilder(column: $table.weighMode, builder: (column) => column);
+
+  GeneratedColumn<String> get manualWeightsJson => $composableBuilder(
+      column: $table.manualWeightsJson, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get createdByUid => $composableBuilder(
+      column: $table.createdByUid, builder: (column) => column);
+
+  GeneratedColumn<String> get createdByName => $composableBuilder(
+      column: $table.createdByName, builder: (column) => column);
+
+  GeneratedColumn<String> get approverUid => $composableBuilder(
+      column: $table.approverUid, builder: (column) => column);
+
+  GeneratedColumn<String> get approverName => $composableBuilder(
+      column: $table.approverName, builder: (column) => column);
+
+  GeneratedColumn<String> get approvedByUid => $composableBuilder(
+      column: $table.approvedByUid, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get approvedAt => $composableBuilder(
+      column: $table.approvedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get rejectionReason => $composableBuilder(
+      column: $table.rejectionReason, builder: (column) => column);
+
+  $$SuppliersTableAnnotationComposer get partyId {
+    final $$SuppliersTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.partyId,
+        referencedTable: $db.suppliers,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SuppliersTableAnnotationComposer(
+              $db: $db,
+              $table: $db.suppliers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$ProductsTableAnnotationComposer get productId {
+    final $$ProductsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.productId,
+        referencedTable: $db.products,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ProductsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.products,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  Expression<T> paddyProcurementsRefs<T extends Object>(
+      Expression<T> Function($$PaddyProcurementsTableAnnotationComposer a) f) {
+    final $$PaddyProcurementsTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.paddyProcurements,
+            getReferencedColumn: (t) => t.vehicleEntryId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$PaddyProcurementsTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.paddyProcurements,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
+}
+
+class $$VehicleEntriesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $VehicleEntriesTable,
+    VehicleEntry,
+    $$VehicleEntriesTableFilterComposer,
+    $$VehicleEntriesTableOrderingComposer,
+    $$VehicleEntriesTableAnnotationComposer,
+    $$VehicleEntriesTableCreateCompanionBuilder,
+    $$VehicleEntriesTableUpdateCompanionBuilder,
+    (VehicleEntry, $$VehicleEntriesTableReferences),
+    VehicleEntry,
+    PrefetchHooks Function(
+        {bool partyId, bool productId, bool paddyProcurementsRefs})> {
+  $$VehicleEntriesTableTableManager(
+      _$AppDatabase db, $VehicleEntriesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VehicleEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VehicleEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VehicleEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<DateTime> date = const Value.absent(),
+            Value<String> slipNo = const Value.absent(),
+            Value<String?> voucherNo = const Value.absent(),
+            Value<String> vehicleNo = const Value.absent(),
+            Value<String?> rstManual = const Value.absent(),
+            Value<String> partyName = const Value.absent(),
+            Value<int?> partyId = const Value.absent(),
+            Value<int> productId = const Value.absent(),
+            Value<String> entryType = const Value.absent(),
+            Value<double> firstWeight = const Value.absent(),
+            Value<DateTime?> firstWeightTime = const Value.absent(),
+            Value<double> secondWeight = const Value.absent(),
+            Value<DateTime?> secondWeightTime = const Value.absent(),
+            Value<double> netWeight = const Value.absent(),
+            Value<int?> bags = const Value.absent(),
+            Value<String?> lotNumber = const Value.absent(),
+            Value<bool> complete = const Value.absent(),
+            Value<String?> completeCode = const Value.absent(),
+            Value<DateTime?> completeDate = const Value.absent(),
+            Value<String?> remark = const Value.absent(),
+            Value<String> weighMode = const Value.absent(),
+            Value<String> manualWeightsJson = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<String?> createdByUid = const Value.absent(),
+            Value<String?> createdByName = const Value.absent(),
+            Value<String?> approverUid = const Value.absent(),
+            Value<String?> approverName = const Value.absent(),
+            Value<String?> approvedByUid = const Value.absent(),
+            Value<DateTime?> approvedAt = const Value.absent(),
+            Value<String?> rejectionReason = const Value.absent(),
+          }) =>
+              VehicleEntriesCompanion(
+            id: id,
+            date: date,
+            slipNo: slipNo,
+            voucherNo: voucherNo,
+            vehicleNo: vehicleNo,
+            rstManual: rstManual,
+            partyName: partyName,
+            partyId: partyId,
+            productId: productId,
+            entryType: entryType,
+            firstWeight: firstWeight,
+            firstWeightTime: firstWeightTime,
+            secondWeight: secondWeight,
+            secondWeightTime: secondWeightTime,
+            netWeight: netWeight,
+            bags: bags,
+            lotNumber: lotNumber,
+            complete: complete,
+            completeCode: completeCode,
+            completeDate: completeDate,
+            remark: remark,
+            weighMode: weighMode,
+            manualWeightsJson: manualWeightsJson,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            status: status,
+            createdByUid: createdByUid,
+            createdByName: createdByName,
+            approverUid: approverUid,
+            approverName: approverName,
+            approvedByUid: approvedByUid,
+            approvedAt: approvedAt,
+            rejectionReason: rejectionReason,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required DateTime date,
+            required String slipNo,
+            Value<String?> voucherNo = const Value.absent(),
+            required String vehicleNo,
+            Value<String?> rstManual = const Value.absent(),
+            required String partyName,
+            Value<int?> partyId = const Value.absent(),
+            required int productId,
+            Value<String> entryType = const Value.absent(),
+            required double firstWeight,
+            Value<DateTime?> firstWeightTime = const Value.absent(),
+            required double secondWeight,
+            Value<DateTime?> secondWeightTime = const Value.absent(),
+            required double netWeight,
+            Value<int?> bags = const Value.absent(),
+            Value<String?> lotNumber = const Value.absent(),
+            Value<bool> complete = const Value.absent(),
+            Value<String?> completeCode = const Value.absent(),
+            Value<DateTime?> completeDate = const Value.absent(),
+            Value<String?> remark = const Value.absent(),
+            Value<String> weighMode = const Value.absent(),
+            Value<String> manualWeightsJson = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<String?> createdByUid = const Value.absent(),
+            Value<String?> createdByName = const Value.absent(),
+            Value<String?> approverUid = const Value.absent(),
+            Value<String?> approverName = const Value.absent(),
+            Value<String?> approvedByUid = const Value.absent(),
+            Value<DateTime?> approvedAt = const Value.absent(),
+            Value<String?> rejectionReason = const Value.absent(),
+          }) =>
+              VehicleEntriesCompanion.insert(
+            id: id,
+            date: date,
+            slipNo: slipNo,
+            voucherNo: voucherNo,
+            vehicleNo: vehicleNo,
+            rstManual: rstManual,
+            partyName: partyName,
+            partyId: partyId,
+            productId: productId,
+            entryType: entryType,
+            firstWeight: firstWeight,
+            firstWeightTime: firstWeightTime,
+            secondWeight: secondWeight,
+            secondWeightTime: secondWeightTime,
+            netWeight: netWeight,
+            bags: bags,
+            lotNumber: lotNumber,
+            complete: complete,
+            completeCode: completeCode,
+            completeDate: completeDate,
+            remark: remark,
+            weighMode: weighMode,
+            manualWeightsJson: manualWeightsJson,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            status: status,
+            createdByUid: createdByUid,
+            createdByName: createdByName,
+            approverUid: approverUid,
+            approverName: approverName,
+            approvedByUid: approvedByUid,
+            approvedAt: approvedAt,
+            rejectionReason: rejectionReason,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$VehicleEntriesTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: (
+              {partyId = false,
+              productId = false,
+              paddyProcurementsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (paddyProcurementsRefs) db.paddyProcurements
+              ],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (partyId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.partyId,
+                    referencedTable:
+                        $$VehicleEntriesTableReferences._partyIdTable(db),
+                    referencedColumn:
+                        $$VehicleEntriesTableReferences._partyIdTable(db).id,
+                  ) as T;
+                }
+                if (productId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.productId,
+                    referencedTable:
+                        $$VehicleEntriesTableReferences._productIdTable(db),
+                    referencedColumn:
+                        $$VehicleEntriesTableReferences._productIdTable(db).id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (paddyProcurementsRefs)
+                    await $_getPrefetchedData<VehicleEntry,
+                            $VehicleEntriesTable, PaddyProcurementRow>(
+                        currentTable: table,
+                        referencedTable: $$VehicleEntriesTableReferences
+                            ._paddyProcurementsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$VehicleEntriesTableReferences(db, table, p0)
+                                .paddyProcurementsRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.vehicleEntryId == item.id),
+                        typedResults: items)
+                ];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$VehicleEntriesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $VehicleEntriesTable,
+    VehicleEntry,
+    $$VehicleEntriesTableFilterComposer,
+    $$VehicleEntriesTableOrderingComposer,
+    $$VehicleEntriesTableAnnotationComposer,
+    $$VehicleEntriesTableCreateCompanionBuilder,
+    $$VehicleEntriesTableUpdateCompanionBuilder,
+    (VehicleEntry, $$VehicleEntriesTableReferences),
+    VehicleEntry,
+    PrefetchHooks Function(
+        {bool partyId, bool productId, bool paddyProcurementsRefs})>;
+typedef $$FarmersTableCreateCompanionBuilder = FarmersCompanion Function({
+  Value<int> id,
+  required String name,
+  Value<String> type,
+  Value<String?> mobile,
+  Value<String?> gstNumber,
+  Value<String?> email,
+  Value<String?> address,
+  Value<String?> contactPerson,
+  Value<double> outstandingBalance,
+  Value<bool> isActive,
+  Value<DateTime> createdAt,
+  Value<String?> kisanCardNumber,
+  Value<String?> aadhaarNumber,
+  Value<String?> village,
+  Value<String?> district,
+  Value<String?> mandiLicenseNumber,
+});
+typedef $$FarmersTableUpdateCompanionBuilder = FarmersCompanion Function({
+  Value<int> id,
+  Value<String> name,
+  Value<String> type,
+  Value<String?> mobile,
+  Value<String?> gstNumber,
+  Value<String?> email,
+  Value<String?> address,
+  Value<String?> contactPerson,
+  Value<double> outstandingBalance,
+  Value<bool> isActive,
+  Value<DateTime> createdAt,
+  Value<String?> kisanCardNumber,
+  Value<String?> aadhaarNumber,
+  Value<String?> village,
+  Value<String?> district,
+  Value<String?> mandiLicenseNumber,
+});
+
+class $$FarmersTableFilterComposer
+    extends Composer<_$AppDatabase, $FarmersTable> {
+  $$FarmersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get type => $composableBuilder(
+      column: $table.type, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get mobile => $composableBuilder(
+      column: $table.mobile, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get gstNumber => $composableBuilder(
+      column: $table.gstNumber, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get email => $composableBuilder(
+      column: $table.email, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get address => $composableBuilder(
+      column: $table.address, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get contactPerson => $composableBuilder(
+      column: $table.contactPerson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get outstandingBalance => $composableBuilder(
+      column: $table.outstandingBalance,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get kisanCardNumber => $composableBuilder(
+      column: $table.kisanCardNumber,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get aadhaarNumber => $composableBuilder(
+      column: $table.aadhaarNumber, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get village => $composableBuilder(
+      column: $table.village, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get district => $composableBuilder(
+      column: $table.district, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get mandiLicenseNumber => $composableBuilder(
+      column: $table.mandiLicenseNumber,
+      builder: (column) => ColumnFilters(column));
+}
+
+class $$FarmersTableOrderingComposer
+    extends Composer<_$AppDatabase, $FarmersTable> {
+  $$FarmersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get type => $composableBuilder(
+      column: $table.type, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get mobile => $composableBuilder(
+      column: $table.mobile, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get gstNumber => $composableBuilder(
+      column: $table.gstNumber, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get email => $composableBuilder(
+      column: $table.email, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get address => $composableBuilder(
+      column: $table.address, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get contactPerson => $composableBuilder(
+      column: $table.contactPerson,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get outstandingBalance => $composableBuilder(
+      column: $table.outstandingBalance,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get kisanCardNumber => $composableBuilder(
+      column: $table.kisanCardNumber,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get aadhaarNumber => $composableBuilder(
+      column: $table.aadhaarNumber,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get village => $composableBuilder(
+      column: $table.village, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get district => $composableBuilder(
+      column: $table.district, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get mandiLicenseNumber => $composableBuilder(
+      column: $table.mandiLicenseNumber,
+      builder: (column) => ColumnOrderings(column));
+}
+
+class $$FarmersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FarmersTable> {
+  $$FarmersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get mobile =>
+      $composableBuilder(column: $table.mobile, builder: (column) => column);
+
+  GeneratedColumn<String> get gstNumber =>
+      $composableBuilder(column: $table.gstNumber, builder: (column) => column);
+
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<String> get address =>
+      $composableBuilder(column: $table.address, builder: (column) => column);
+
+  GeneratedColumn<String> get contactPerson => $composableBuilder(
+      column: $table.contactPerson, builder: (column) => column);
+
+  GeneratedColumn<double> get outstandingBalance => $composableBuilder(
+      column: $table.outstandingBalance, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get kisanCardNumber => $composableBuilder(
+      column: $table.kisanCardNumber, builder: (column) => column);
+
+  GeneratedColumn<String> get aadhaarNumber => $composableBuilder(
+      column: $table.aadhaarNumber, builder: (column) => column);
+
+  GeneratedColumn<String> get village =>
+      $composableBuilder(column: $table.village, builder: (column) => column);
+
+  GeneratedColumn<String> get district =>
+      $composableBuilder(column: $table.district, builder: (column) => column);
+
+  GeneratedColumn<String> get mandiLicenseNumber => $composableBuilder(
+      column: $table.mandiLicenseNumber, builder: (column) => column);
+}
+
+class $$FarmersTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $FarmersTable,
+    FarmerRow,
+    $$FarmersTableFilterComposer,
+    $$FarmersTableOrderingComposer,
+    $$FarmersTableAnnotationComposer,
+    $$FarmersTableCreateCompanionBuilder,
+    $$FarmersTableUpdateCompanionBuilder,
+    (FarmerRow, BaseReferences<_$AppDatabase, $FarmersTable, FarmerRow>),
+    FarmerRow,
+    PrefetchHooks Function()> {
+  $$FarmersTableTableManager(_$AppDatabase db, $FarmersTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FarmersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FarmersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FarmersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String> type = const Value.absent(),
+            Value<String?> mobile = const Value.absent(),
+            Value<String?> gstNumber = const Value.absent(),
+            Value<String?> email = const Value.absent(),
+            Value<String?> address = const Value.absent(),
+            Value<String?> contactPerson = const Value.absent(),
+            Value<double> outstandingBalance = const Value.absent(),
+            Value<bool> isActive = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<String?> kisanCardNumber = const Value.absent(),
+            Value<String?> aadhaarNumber = const Value.absent(),
+            Value<String?> village = const Value.absent(),
+            Value<String?> district = const Value.absent(),
+            Value<String?> mandiLicenseNumber = const Value.absent(),
+          }) =>
+              FarmersCompanion(
+            id: id,
+            name: name,
+            type: type,
+            mobile: mobile,
+            gstNumber: gstNumber,
+            email: email,
+            address: address,
+            contactPerson: contactPerson,
+            outstandingBalance: outstandingBalance,
+            isActive: isActive,
+            createdAt: createdAt,
+            kisanCardNumber: kisanCardNumber,
+            aadhaarNumber: aadhaarNumber,
+            village: village,
+            district: district,
+            mandiLicenseNumber: mandiLicenseNumber,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String name,
+            Value<String> type = const Value.absent(),
+            Value<String?> mobile = const Value.absent(),
+            Value<String?> gstNumber = const Value.absent(),
+            Value<String?> email = const Value.absent(),
+            Value<String?> address = const Value.absent(),
+            Value<String?> contactPerson = const Value.absent(),
+            Value<double> outstandingBalance = const Value.absent(),
+            Value<bool> isActive = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<String?> kisanCardNumber = const Value.absent(),
+            Value<String?> aadhaarNumber = const Value.absent(),
+            Value<String?> village = const Value.absent(),
+            Value<String?> district = const Value.absent(),
+            Value<String?> mandiLicenseNumber = const Value.absent(),
+          }) =>
+              FarmersCompanion.insert(
+            id: id,
+            name: name,
+            type: type,
+            mobile: mobile,
+            gstNumber: gstNumber,
+            email: email,
+            address: address,
+            contactPerson: contactPerson,
+            outstandingBalance: outstandingBalance,
+            isActive: isActive,
+            createdAt: createdAt,
+            kisanCardNumber: kisanCardNumber,
+            aadhaarNumber: aadhaarNumber,
+            village: village,
+            district: district,
+            mandiLicenseNumber: mandiLicenseNumber,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$FarmersTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $FarmersTable,
+    FarmerRow,
+    $$FarmersTableFilterComposer,
+    $$FarmersTableOrderingComposer,
+    $$FarmersTableAnnotationComposer,
+    $$FarmersTableCreateCompanionBuilder,
+    $$FarmersTableUpdateCompanionBuilder,
+    (FarmerRow, BaseReferences<_$AppDatabase, $FarmersTable, FarmerRow>),
+    FarmerRow,
+    PrefetchHooks Function()>;
+typedef $$PaddyProcurementsTableCreateCompanionBuilder
+    = PaddyProcurementsCompanion Function({
+  Value<int> id,
+  required DateTime date,
+  required String slipNo,
+  Value<String?> voucherNo,
+  Value<String?> rstManual,
+  Value<String?> area,
+  Value<String> vType,
+  required String partyName,
+  Value<int?> partyId,
+  Value<String?> truckNo,
+  Value<double?> emptyWeight,
+  Value<String> marketType,
+  Value<double?> grossWeight,
+  Value<double?> tareWeight,
+  Value<int?> juteBags,
+  Value<int?> plasticBags,
+  Value<int?> totalBags,
+  Value<bool> gnyWtLess,
+  Value<bool> bagReturn,
+  Value<double?> otherCut,
+  Value<double?> dustCut,
+  Value<double?> polCut,
+  Value<String?> qualityGrade,
+  Value<double?> unloadTime,
+  Value<double?> eBag,
+  Value<double?> ePkt,
+  required double netWeight,
+  Value<double?> avgBagWeight,
+  Value<String> rateCalculation,
+  Value<double> kgPerBag,
+  required int productId,
+  required String productName,
+  Value<String> quantityNew,
+  Value<double?> quantityQntl,
+  Value<double?> ratePerQntl,
+  Value<double?> totalAmount,
+  Value<double?> avgRate,
+  Value<double?> avgAmount,
+  Value<double?> qrtCutAmt,
+  Value<double?> paddyAmt,
+  Value<String> qualityCutsJson,
+  Value<double?> totalCutKg,
+  Value<double?> finalWeight,
+  Value<String> gunnyTransactionsJson,
+  Value<String?> deliveryType,
+  Value<String?> truckRentType,
+  Value<double?> truckRent,
+  Value<double?> truckRentPaid,
+  Value<double?> otherAmount,
+  Value<String?> transportType,
+  Value<String?> truckAccount,
+  Value<double?> freightAmount,
+  Value<String> procurementType,
+  Value<String?> mandiInvoiceNo,
+  Value<String?> tenderNumber,
+  Value<int?> commissionAgentId,
+  Value<int?> warehouseId,
+  Value<int?> vehicleEntryId,
+  Value<double> remainingStock,
+  Value<String> status,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+});
+typedef $$PaddyProcurementsTableUpdateCompanionBuilder
+    = PaddyProcurementsCompanion Function({
+  Value<int> id,
+  Value<DateTime> date,
+  Value<String> slipNo,
+  Value<String?> voucherNo,
+  Value<String?> rstManual,
+  Value<String?> area,
+  Value<String> vType,
+  Value<String> partyName,
+  Value<int?> partyId,
+  Value<String?> truckNo,
+  Value<double?> emptyWeight,
+  Value<String> marketType,
+  Value<double?> grossWeight,
+  Value<double?> tareWeight,
+  Value<int?> juteBags,
+  Value<int?> plasticBags,
+  Value<int?> totalBags,
+  Value<bool> gnyWtLess,
+  Value<bool> bagReturn,
+  Value<double?> otherCut,
+  Value<double?> dustCut,
+  Value<double?> polCut,
+  Value<String?> qualityGrade,
+  Value<double?> unloadTime,
+  Value<double?> eBag,
+  Value<double?> ePkt,
+  Value<double> netWeight,
+  Value<double?> avgBagWeight,
+  Value<String> rateCalculation,
+  Value<double> kgPerBag,
+  Value<int> productId,
+  Value<String> productName,
+  Value<String> quantityNew,
+  Value<double?> quantityQntl,
+  Value<double?> ratePerQntl,
+  Value<double?> totalAmount,
+  Value<double?> avgRate,
+  Value<double?> avgAmount,
+  Value<double?> qrtCutAmt,
+  Value<double?> paddyAmt,
+  Value<String> qualityCutsJson,
+  Value<double?> totalCutKg,
+  Value<double?> finalWeight,
+  Value<String> gunnyTransactionsJson,
+  Value<String?> deliveryType,
+  Value<String?> truckRentType,
+  Value<double?> truckRent,
+  Value<double?> truckRentPaid,
+  Value<double?> otherAmount,
+  Value<String?> transportType,
+  Value<String?> truckAccount,
+  Value<double?> freightAmount,
+  Value<String> procurementType,
+  Value<String?> mandiInvoiceNo,
+  Value<String?> tenderNumber,
+  Value<int?> commissionAgentId,
+  Value<int?> warehouseId,
+  Value<int?> vehicleEntryId,
+  Value<double> remainingStock,
+  Value<String> status,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+});
+
+final class $$PaddyProcurementsTableReferences extends BaseReferences<
+    _$AppDatabase, $PaddyProcurementsTable, PaddyProcurementRow> {
+  $$PaddyProcurementsTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $SuppliersTable _partyIdTable(_$AppDatabase db) =>
+      db.suppliers.createAlias(
+          $_aliasNameGenerator(db.paddyProcurements.partyId, db.suppliers.id));
+
+  $$SuppliersTableProcessedTableManager? get partyId {
+    final $_column = $_itemColumn<int>('party_id');
+    if ($_column == null) return null;
+    final manager = $$SuppliersTableTableManager($_db, $_db.suppliers)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_partyIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $ProductsTable _productIdTable(_$AppDatabase db) =>
+      db.products.createAlias(
+          $_aliasNameGenerator(db.paddyProcurements.productId, db.products.id));
+
+  $$ProductsTableProcessedTableManager get productId {
+    final $_column = $_itemColumn<int>('product_id')!;
+
+    final manager = $$ProductsTableTableManager($_db, $_db.products)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_productIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $SuppliersTable _commissionAgentIdTable(_$AppDatabase db) =>
+      db.suppliers.createAlias($_aliasNameGenerator(
+          db.paddyProcurements.commissionAgentId, db.suppliers.id));
+
+  $$SuppliersTableProcessedTableManager? get commissionAgentId {
+    final $_column = $_itemColumn<int>('commission_agent_id');
+    if ($_column == null) return null;
+    final manager = $$SuppliersTableTableManager($_db, $_db.suppliers)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_commissionAgentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $WarehousesTable _warehouseIdTable(_$AppDatabase db) =>
+      db.warehouses.createAlias($_aliasNameGenerator(
+          db.paddyProcurements.warehouseId, db.warehouses.id));
+
+  $$WarehousesTableProcessedTableManager? get warehouseId {
+    final $_column = $_itemColumn<int>('warehouse_id');
+    if ($_column == null) return null;
+    final manager = $$WarehousesTableTableManager($_db, $_db.warehouses)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_warehouseIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $VehicleEntriesTable _vehicleEntryIdTable(_$AppDatabase db) =>
+      db.vehicleEntries.createAlias($_aliasNameGenerator(
+          db.paddyProcurements.vehicleEntryId, db.vehicleEntries.id));
+
+  $$VehicleEntriesTableProcessedTableManager? get vehicleEntryId {
+    final $_column = $_itemColumn<int>('vehicle_entry_id');
+    if ($_column == null) return null;
+    final manager = $$VehicleEntriesTableTableManager($_db, $_db.vehicleEntries)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_vehicleEntryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$PaddyProcurementsTableFilterComposer
+    extends Composer<_$AppDatabase, $PaddyProcurementsTable> {
+  $$PaddyProcurementsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get date => $composableBuilder(
+      column: $table.date, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get slipNo => $composableBuilder(
+      column: $table.slipNo, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get voucherNo => $composableBuilder(
+      column: $table.voucherNo, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get rstManual => $composableBuilder(
+      column: $table.rstManual, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get area => $composableBuilder(
+      column: $table.area, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get vType => $composableBuilder(
+      column: $table.vType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get partyName => $composableBuilder(
+      column: $table.partyName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get truckNo => $composableBuilder(
+      column: $table.truckNo, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get emptyWeight => $composableBuilder(
+      column: $table.emptyWeight, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get marketType => $composableBuilder(
+      column: $table.marketType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get grossWeight => $composableBuilder(
+      column: $table.grossWeight, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get tareWeight => $composableBuilder(
+      column: $table.tareWeight, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get juteBags => $composableBuilder(
+      column: $table.juteBags, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get plasticBags => $composableBuilder(
+      column: $table.plasticBags, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get totalBags => $composableBuilder(
+      column: $table.totalBags, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get gnyWtLess => $composableBuilder(
+      column: $table.gnyWtLess, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get bagReturn => $composableBuilder(
+      column: $table.bagReturn, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get otherCut => $composableBuilder(
+      column: $table.otherCut, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get dustCut => $composableBuilder(
+      column: $table.dustCut, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get polCut => $composableBuilder(
+      column: $table.polCut, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get qualityGrade => $composableBuilder(
+      column: $table.qualityGrade, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get unloadTime => $composableBuilder(
+      column: $table.unloadTime, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get eBag => $composableBuilder(
+      column: $table.eBag, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get ePkt => $composableBuilder(
+      column: $table.ePkt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get netWeight => $composableBuilder(
+      column: $table.netWeight, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get avgBagWeight => $composableBuilder(
+      column: $table.avgBagWeight, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get rateCalculation => $composableBuilder(
+      column: $table.rateCalculation,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get kgPerBag => $composableBuilder(
+      column: $table.kgPerBag, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get productName => $composableBuilder(
+      column: $table.productName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get quantityNew => $composableBuilder(
+      column: $table.quantityNew, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get quantityQntl => $composableBuilder(
+      column: $table.quantityQntl, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get ratePerQntl => $composableBuilder(
+      column: $table.ratePerQntl, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get totalAmount => $composableBuilder(
+      column: $table.totalAmount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get avgRate => $composableBuilder(
+      column: $table.avgRate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get avgAmount => $composableBuilder(
+      column: $table.avgAmount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get qrtCutAmt => $composableBuilder(
+      column: $table.qrtCutAmt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get paddyAmt => $composableBuilder(
+      column: $table.paddyAmt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get qualityCutsJson => $composableBuilder(
+      column: $table.qualityCutsJson,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get totalCutKg => $composableBuilder(
+      column: $table.totalCutKg, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get finalWeight => $composableBuilder(
+      column: $table.finalWeight, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get gunnyTransactionsJson => $composableBuilder(
+      column: $table.gunnyTransactionsJson,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deliveryType => $composableBuilder(
+      column: $table.deliveryType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get truckRentType => $composableBuilder(
+      column: $table.truckRentType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get truckRent => $composableBuilder(
+      column: $table.truckRent, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get truckRentPaid => $composableBuilder(
+      column: $table.truckRentPaid, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get otherAmount => $composableBuilder(
+      column: $table.otherAmount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get transportType => $composableBuilder(
+      column: $table.transportType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get truckAccount => $composableBuilder(
+      column: $table.truckAccount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get freightAmount => $composableBuilder(
+      column: $table.freightAmount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get procurementType => $composableBuilder(
+      column: $table.procurementType,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get mandiInvoiceNo => $composableBuilder(
+      column: $table.mandiInvoiceNo,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get tenderNumber => $composableBuilder(
+      column: $table.tenderNumber, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get remainingStock => $composableBuilder(
+      column: $table.remainingStock,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  $$SuppliersTableFilterComposer get partyId {
+    final $$SuppliersTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.partyId,
+        referencedTable: $db.suppliers,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SuppliersTableFilterComposer(
+              $db: $db,
+              $table: $db.suppliers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$ProductsTableFilterComposer get productId {
+    final $$ProductsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.productId,
+        referencedTable: $db.products,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ProductsTableFilterComposer(
+              $db: $db,
+              $table: $db.products,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$SuppliersTableFilterComposer get commissionAgentId {
+    final $$SuppliersTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.commissionAgentId,
+        referencedTable: $db.suppliers,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SuppliersTableFilterComposer(
+              $db: $db,
+              $table: $db.suppliers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$WarehousesTableFilterComposer get warehouseId {
+    final $$WarehousesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.warehouseId,
+        referencedTable: $db.warehouses,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$WarehousesTableFilterComposer(
+              $db: $db,
+              $table: $db.warehouses,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$VehicleEntriesTableFilterComposer get vehicleEntryId {
+    final $$VehicleEntriesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.vehicleEntryId,
+        referencedTable: $db.vehicleEntries,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$VehicleEntriesTableFilterComposer(
+              $db: $db,
+              $table: $db.vehicleEntries,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$PaddyProcurementsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PaddyProcurementsTable> {
+  $$PaddyProcurementsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get date => $composableBuilder(
+      column: $table.date, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get slipNo => $composableBuilder(
+      column: $table.slipNo, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get voucherNo => $composableBuilder(
+      column: $table.voucherNo, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get rstManual => $composableBuilder(
+      column: $table.rstManual, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get area => $composableBuilder(
+      column: $table.area, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get vType => $composableBuilder(
+      column: $table.vType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get partyName => $composableBuilder(
+      column: $table.partyName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get truckNo => $composableBuilder(
+      column: $table.truckNo, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get emptyWeight => $composableBuilder(
+      column: $table.emptyWeight, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get marketType => $composableBuilder(
+      column: $table.marketType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get grossWeight => $composableBuilder(
+      column: $table.grossWeight, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get tareWeight => $composableBuilder(
+      column: $table.tareWeight, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get juteBags => $composableBuilder(
+      column: $table.juteBags, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get plasticBags => $composableBuilder(
+      column: $table.plasticBags, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get totalBags => $composableBuilder(
+      column: $table.totalBags, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get gnyWtLess => $composableBuilder(
+      column: $table.gnyWtLess, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get bagReturn => $composableBuilder(
+      column: $table.bagReturn, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get otherCut => $composableBuilder(
+      column: $table.otherCut, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get dustCut => $composableBuilder(
+      column: $table.dustCut, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get polCut => $composableBuilder(
+      column: $table.polCut, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get qualityGrade => $composableBuilder(
+      column: $table.qualityGrade,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get unloadTime => $composableBuilder(
+      column: $table.unloadTime, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get eBag => $composableBuilder(
+      column: $table.eBag, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get ePkt => $composableBuilder(
+      column: $table.ePkt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get netWeight => $composableBuilder(
+      column: $table.netWeight, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get avgBagWeight => $composableBuilder(
+      column: $table.avgBagWeight,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get rateCalculation => $composableBuilder(
+      column: $table.rateCalculation,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get kgPerBag => $composableBuilder(
+      column: $table.kgPerBag, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get productName => $composableBuilder(
+      column: $table.productName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get quantityNew => $composableBuilder(
+      column: $table.quantityNew, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get quantityQntl => $composableBuilder(
+      column: $table.quantityQntl,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get ratePerQntl => $composableBuilder(
+      column: $table.ratePerQntl, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get totalAmount => $composableBuilder(
+      column: $table.totalAmount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get avgRate => $composableBuilder(
+      column: $table.avgRate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get avgAmount => $composableBuilder(
+      column: $table.avgAmount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get qrtCutAmt => $composableBuilder(
+      column: $table.qrtCutAmt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get paddyAmt => $composableBuilder(
+      column: $table.paddyAmt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get qualityCutsJson => $composableBuilder(
+      column: $table.qualityCutsJson,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get totalCutKg => $composableBuilder(
+      column: $table.totalCutKg, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get finalWeight => $composableBuilder(
+      column: $table.finalWeight, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get gunnyTransactionsJson => $composableBuilder(
+      column: $table.gunnyTransactionsJson,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deliveryType => $composableBuilder(
+      column: $table.deliveryType,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get truckRentType => $composableBuilder(
+      column: $table.truckRentType,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get truckRent => $composableBuilder(
+      column: $table.truckRent, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get truckRentPaid => $composableBuilder(
+      column: $table.truckRentPaid,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get otherAmount => $composableBuilder(
+      column: $table.otherAmount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get transportType => $composableBuilder(
+      column: $table.transportType,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get truckAccount => $composableBuilder(
+      column: $table.truckAccount,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get freightAmount => $composableBuilder(
+      column: $table.freightAmount,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get procurementType => $composableBuilder(
+      column: $table.procurementType,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get mandiInvoiceNo => $composableBuilder(
+      column: $table.mandiInvoiceNo,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get tenderNumber => $composableBuilder(
+      column: $table.tenderNumber,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get remainingStock => $composableBuilder(
+      column: $table.remainingStock,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  $$SuppliersTableOrderingComposer get partyId {
+    final $$SuppliersTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.partyId,
+        referencedTable: $db.suppliers,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SuppliersTableOrderingComposer(
+              $db: $db,
+              $table: $db.suppliers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$ProductsTableOrderingComposer get productId {
+    final $$ProductsTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.productId,
+        referencedTable: $db.products,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ProductsTableOrderingComposer(
+              $db: $db,
+              $table: $db.products,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$SuppliersTableOrderingComposer get commissionAgentId {
+    final $$SuppliersTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.commissionAgentId,
+        referencedTable: $db.suppliers,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SuppliersTableOrderingComposer(
+              $db: $db,
+              $table: $db.suppliers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$WarehousesTableOrderingComposer get warehouseId {
+    final $$WarehousesTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.warehouseId,
+        referencedTable: $db.warehouses,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$WarehousesTableOrderingComposer(
+              $db: $db,
+              $table: $db.warehouses,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$VehicleEntriesTableOrderingComposer get vehicleEntryId {
+    final $$VehicleEntriesTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.vehicleEntryId,
+        referencedTable: $db.vehicleEntries,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$VehicleEntriesTableOrderingComposer(
+              $db: $db,
+              $table: $db.vehicleEntries,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$PaddyProcurementsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PaddyProcurementsTable> {
+  $$PaddyProcurementsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<String> get slipNo =>
+      $composableBuilder(column: $table.slipNo, builder: (column) => column);
+
+  GeneratedColumn<String> get voucherNo =>
+      $composableBuilder(column: $table.voucherNo, builder: (column) => column);
+
+  GeneratedColumn<String> get rstManual =>
+      $composableBuilder(column: $table.rstManual, builder: (column) => column);
+
+  GeneratedColumn<String> get area =>
+      $composableBuilder(column: $table.area, builder: (column) => column);
+
+  GeneratedColumn<String> get vType =>
+      $composableBuilder(column: $table.vType, builder: (column) => column);
+
+  GeneratedColumn<String> get partyName =>
+      $composableBuilder(column: $table.partyName, builder: (column) => column);
+
+  GeneratedColumn<String> get truckNo =>
+      $composableBuilder(column: $table.truckNo, builder: (column) => column);
+
+  GeneratedColumn<double> get emptyWeight => $composableBuilder(
+      column: $table.emptyWeight, builder: (column) => column);
+
+  GeneratedColumn<String> get marketType => $composableBuilder(
+      column: $table.marketType, builder: (column) => column);
+
+  GeneratedColumn<double> get grossWeight => $composableBuilder(
+      column: $table.grossWeight, builder: (column) => column);
+
+  GeneratedColumn<double> get tareWeight => $composableBuilder(
+      column: $table.tareWeight, builder: (column) => column);
+
+  GeneratedColumn<int> get juteBags =>
+      $composableBuilder(column: $table.juteBags, builder: (column) => column);
+
+  GeneratedColumn<int> get plasticBags => $composableBuilder(
+      column: $table.plasticBags, builder: (column) => column);
+
+  GeneratedColumn<int> get totalBags =>
+      $composableBuilder(column: $table.totalBags, builder: (column) => column);
+
+  GeneratedColumn<bool> get gnyWtLess =>
+      $composableBuilder(column: $table.gnyWtLess, builder: (column) => column);
+
+  GeneratedColumn<bool> get bagReturn =>
+      $composableBuilder(column: $table.bagReturn, builder: (column) => column);
+
+  GeneratedColumn<double> get otherCut =>
+      $composableBuilder(column: $table.otherCut, builder: (column) => column);
+
+  GeneratedColumn<double> get dustCut =>
+      $composableBuilder(column: $table.dustCut, builder: (column) => column);
+
+  GeneratedColumn<double> get polCut =>
+      $composableBuilder(column: $table.polCut, builder: (column) => column);
+
+  GeneratedColumn<String> get qualityGrade => $composableBuilder(
+      column: $table.qualityGrade, builder: (column) => column);
+
+  GeneratedColumn<double> get unloadTime => $composableBuilder(
+      column: $table.unloadTime, builder: (column) => column);
+
+  GeneratedColumn<double> get eBag =>
+      $composableBuilder(column: $table.eBag, builder: (column) => column);
+
+  GeneratedColumn<double> get ePkt =>
+      $composableBuilder(column: $table.ePkt, builder: (column) => column);
+
+  GeneratedColumn<double> get netWeight =>
+      $composableBuilder(column: $table.netWeight, builder: (column) => column);
+
+  GeneratedColumn<double> get avgBagWeight => $composableBuilder(
+      column: $table.avgBagWeight, builder: (column) => column);
+
+  GeneratedColumn<String> get rateCalculation => $composableBuilder(
+      column: $table.rateCalculation, builder: (column) => column);
+
+  GeneratedColumn<double> get kgPerBag =>
+      $composableBuilder(column: $table.kgPerBag, builder: (column) => column);
+
+  GeneratedColumn<String> get productName => $composableBuilder(
+      column: $table.productName, builder: (column) => column);
+
+  GeneratedColumn<String> get quantityNew => $composableBuilder(
+      column: $table.quantityNew, builder: (column) => column);
+
+  GeneratedColumn<double> get quantityQntl => $composableBuilder(
+      column: $table.quantityQntl, builder: (column) => column);
+
+  GeneratedColumn<double> get ratePerQntl => $composableBuilder(
+      column: $table.ratePerQntl, builder: (column) => column);
+
+  GeneratedColumn<double> get totalAmount => $composableBuilder(
+      column: $table.totalAmount, builder: (column) => column);
+
+  GeneratedColumn<double> get avgRate =>
+      $composableBuilder(column: $table.avgRate, builder: (column) => column);
+
+  GeneratedColumn<double> get avgAmount =>
+      $composableBuilder(column: $table.avgAmount, builder: (column) => column);
+
+  GeneratedColumn<double> get qrtCutAmt =>
+      $composableBuilder(column: $table.qrtCutAmt, builder: (column) => column);
+
+  GeneratedColumn<double> get paddyAmt =>
+      $composableBuilder(column: $table.paddyAmt, builder: (column) => column);
+
+  GeneratedColumn<String> get qualityCutsJson => $composableBuilder(
+      column: $table.qualityCutsJson, builder: (column) => column);
+
+  GeneratedColumn<double> get totalCutKg => $composableBuilder(
+      column: $table.totalCutKg, builder: (column) => column);
+
+  GeneratedColumn<double> get finalWeight => $composableBuilder(
+      column: $table.finalWeight, builder: (column) => column);
+
+  GeneratedColumn<String> get gunnyTransactionsJson => $composableBuilder(
+      column: $table.gunnyTransactionsJson, builder: (column) => column);
+
+  GeneratedColumn<String> get deliveryType => $composableBuilder(
+      column: $table.deliveryType, builder: (column) => column);
+
+  GeneratedColumn<String> get truckRentType => $composableBuilder(
+      column: $table.truckRentType, builder: (column) => column);
+
+  GeneratedColumn<double> get truckRent =>
+      $composableBuilder(column: $table.truckRent, builder: (column) => column);
+
+  GeneratedColumn<double> get truckRentPaid => $composableBuilder(
+      column: $table.truckRentPaid, builder: (column) => column);
+
+  GeneratedColumn<double> get otherAmount => $composableBuilder(
+      column: $table.otherAmount, builder: (column) => column);
+
+  GeneratedColumn<String> get transportType => $composableBuilder(
+      column: $table.transportType, builder: (column) => column);
+
+  GeneratedColumn<String> get truckAccount => $composableBuilder(
+      column: $table.truckAccount, builder: (column) => column);
+
+  GeneratedColumn<double> get freightAmount => $composableBuilder(
+      column: $table.freightAmount, builder: (column) => column);
+
+  GeneratedColumn<String> get procurementType => $composableBuilder(
+      column: $table.procurementType, builder: (column) => column);
+
+  GeneratedColumn<String> get mandiInvoiceNo => $composableBuilder(
+      column: $table.mandiInvoiceNo, builder: (column) => column);
+
+  GeneratedColumn<String> get tenderNumber => $composableBuilder(
+      column: $table.tenderNumber, builder: (column) => column);
+
+  GeneratedColumn<double> get remainingStock => $composableBuilder(
+      column: $table.remainingStock, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$SuppliersTableAnnotationComposer get partyId {
+    final $$SuppliersTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.partyId,
+        referencedTable: $db.suppliers,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SuppliersTableAnnotationComposer(
+              $db: $db,
+              $table: $db.suppliers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$ProductsTableAnnotationComposer get productId {
+    final $$ProductsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.productId,
+        referencedTable: $db.products,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ProductsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.products,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$SuppliersTableAnnotationComposer get commissionAgentId {
+    final $$SuppliersTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.commissionAgentId,
+        referencedTable: $db.suppliers,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SuppliersTableAnnotationComposer(
+              $db: $db,
+              $table: $db.suppliers,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$WarehousesTableAnnotationComposer get warehouseId {
+    final $$WarehousesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.warehouseId,
+        referencedTable: $db.warehouses,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$WarehousesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.warehouses,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$VehicleEntriesTableAnnotationComposer get vehicleEntryId {
+    final $$VehicleEntriesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.vehicleEntryId,
+        referencedTable: $db.vehicleEntries,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$VehicleEntriesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.vehicleEntries,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$PaddyProcurementsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $PaddyProcurementsTable,
+    PaddyProcurementRow,
+    $$PaddyProcurementsTableFilterComposer,
+    $$PaddyProcurementsTableOrderingComposer,
+    $$PaddyProcurementsTableAnnotationComposer,
+    $$PaddyProcurementsTableCreateCompanionBuilder,
+    $$PaddyProcurementsTableUpdateCompanionBuilder,
+    (PaddyProcurementRow, $$PaddyProcurementsTableReferences),
+    PaddyProcurementRow,
+    PrefetchHooks Function(
+        {bool partyId,
+        bool productId,
+        bool commissionAgentId,
+        bool warehouseId,
+        bool vehicleEntryId})> {
+  $$PaddyProcurementsTableTableManager(
+      _$AppDatabase db, $PaddyProcurementsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PaddyProcurementsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PaddyProcurementsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PaddyProcurementsTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<DateTime> date = const Value.absent(),
+            Value<String> slipNo = const Value.absent(),
+            Value<String?> voucherNo = const Value.absent(),
+            Value<String?> rstManual = const Value.absent(),
+            Value<String?> area = const Value.absent(),
+            Value<String> vType = const Value.absent(),
+            Value<String> partyName = const Value.absent(),
+            Value<int?> partyId = const Value.absent(),
+            Value<String?> truckNo = const Value.absent(),
+            Value<double?> emptyWeight = const Value.absent(),
+            Value<String> marketType = const Value.absent(),
+            Value<double?> grossWeight = const Value.absent(),
+            Value<double?> tareWeight = const Value.absent(),
+            Value<int?> juteBags = const Value.absent(),
+            Value<int?> plasticBags = const Value.absent(),
+            Value<int?> totalBags = const Value.absent(),
+            Value<bool> gnyWtLess = const Value.absent(),
+            Value<bool> bagReturn = const Value.absent(),
+            Value<double?> otherCut = const Value.absent(),
+            Value<double?> dustCut = const Value.absent(),
+            Value<double?> polCut = const Value.absent(),
+            Value<String?> qualityGrade = const Value.absent(),
+            Value<double?> unloadTime = const Value.absent(),
+            Value<double?> eBag = const Value.absent(),
+            Value<double?> ePkt = const Value.absent(),
+            Value<double> netWeight = const Value.absent(),
+            Value<double?> avgBagWeight = const Value.absent(),
+            Value<String> rateCalculation = const Value.absent(),
+            Value<double> kgPerBag = const Value.absent(),
+            Value<int> productId = const Value.absent(),
+            Value<String> productName = const Value.absent(),
+            Value<String> quantityNew = const Value.absent(),
+            Value<double?> quantityQntl = const Value.absent(),
+            Value<double?> ratePerQntl = const Value.absent(),
+            Value<double?> totalAmount = const Value.absent(),
+            Value<double?> avgRate = const Value.absent(),
+            Value<double?> avgAmount = const Value.absent(),
+            Value<double?> qrtCutAmt = const Value.absent(),
+            Value<double?> paddyAmt = const Value.absent(),
+            Value<String> qualityCutsJson = const Value.absent(),
+            Value<double?> totalCutKg = const Value.absent(),
+            Value<double?> finalWeight = const Value.absent(),
+            Value<String> gunnyTransactionsJson = const Value.absent(),
+            Value<String?> deliveryType = const Value.absent(),
+            Value<String?> truckRentType = const Value.absent(),
+            Value<double?> truckRent = const Value.absent(),
+            Value<double?> truckRentPaid = const Value.absent(),
+            Value<double?> otherAmount = const Value.absent(),
+            Value<String?> transportType = const Value.absent(),
+            Value<String?> truckAccount = const Value.absent(),
+            Value<double?> freightAmount = const Value.absent(),
+            Value<String> procurementType = const Value.absent(),
+            Value<String?> mandiInvoiceNo = const Value.absent(),
+            Value<String?> tenderNumber = const Value.absent(),
+            Value<int?> commissionAgentId = const Value.absent(),
+            Value<int?> warehouseId = const Value.absent(),
+            Value<int?> vehicleEntryId = const Value.absent(),
+            Value<double> remainingStock = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+          }) =>
+              PaddyProcurementsCompanion(
+            id: id,
+            date: date,
+            slipNo: slipNo,
+            voucherNo: voucherNo,
+            rstManual: rstManual,
+            area: area,
+            vType: vType,
+            partyName: partyName,
+            partyId: partyId,
+            truckNo: truckNo,
+            emptyWeight: emptyWeight,
+            marketType: marketType,
+            grossWeight: grossWeight,
+            tareWeight: tareWeight,
+            juteBags: juteBags,
+            plasticBags: plasticBags,
+            totalBags: totalBags,
+            gnyWtLess: gnyWtLess,
+            bagReturn: bagReturn,
+            otherCut: otherCut,
+            dustCut: dustCut,
+            polCut: polCut,
+            qualityGrade: qualityGrade,
+            unloadTime: unloadTime,
+            eBag: eBag,
+            ePkt: ePkt,
+            netWeight: netWeight,
+            avgBagWeight: avgBagWeight,
+            rateCalculation: rateCalculation,
+            kgPerBag: kgPerBag,
+            productId: productId,
+            productName: productName,
+            quantityNew: quantityNew,
+            quantityQntl: quantityQntl,
+            ratePerQntl: ratePerQntl,
+            totalAmount: totalAmount,
+            avgRate: avgRate,
+            avgAmount: avgAmount,
+            qrtCutAmt: qrtCutAmt,
+            paddyAmt: paddyAmt,
+            qualityCutsJson: qualityCutsJson,
+            totalCutKg: totalCutKg,
+            finalWeight: finalWeight,
+            gunnyTransactionsJson: gunnyTransactionsJson,
+            deliveryType: deliveryType,
+            truckRentType: truckRentType,
+            truckRent: truckRent,
+            truckRentPaid: truckRentPaid,
+            otherAmount: otherAmount,
+            transportType: transportType,
+            truckAccount: truckAccount,
+            freightAmount: freightAmount,
+            procurementType: procurementType,
+            mandiInvoiceNo: mandiInvoiceNo,
+            tenderNumber: tenderNumber,
+            commissionAgentId: commissionAgentId,
+            warehouseId: warehouseId,
+            vehicleEntryId: vehicleEntryId,
+            remainingStock: remainingStock,
+            status: status,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required DateTime date,
+            required String slipNo,
+            Value<String?> voucherNo = const Value.absent(),
+            Value<String?> rstManual = const Value.absent(),
+            Value<String?> area = const Value.absent(),
+            Value<String> vType = const Value.absent(),
+            required String partyName,
+            Value<int?> partyId = const Value.absent(),
+            Value<String?> truckNo = const Value.absent(),
+            Value<double?> emptyWeight = const Value.absent(),
+            Value<String> marketType = const Value.absent(),
+            Value<double?> grossWeight = const Value.absent(),
+            Value<double?> tareWeight = const Value.absent(),
+            Value<int?> juteBags = const Value.absent(),
+            Value<int?> plasticBags = const Value.absent(),
+            Value<int?> totalBags = const Value.absent(),
+            Value<bool> gnyWtLess = const Value.absent(),
+            Value<bool> bagReturn = const Value.absent(),
+            Value<double?> otherCut = const Value.absent(),
+            Value<double?> dustCut = const Value.absent(),
+            Value<double?> polCut = const Value.absent(),
+            Value<String?> qualityGrade = const Value.absent(),
+            Value<double?> unloadTime = const Value.absent(),
+            Value<double?> eBag = const Value.absent(),
+            Value<double?> ePkt = const Value.absent(),
+            required double netWeight,
+            Value<double?> avgBagWeight = const Value.absent(),
+            Value<String> rateCalculation = const Value.absent(),
+            Value<double> kgPerBag = const Value.absent(),
+            required int productId,
+            required String productName,
+            Value<String> quantityNew = const Value.absent(),
+            Value<double?> quantityQntl = const Value.absent(),
+            Value<double?> ratePerQntl = const Value.absent(),
+            Value<double?> totalAmount = const Value.absent(),
+            Value<double?> avgRate = const Value.absent(),
+            Value<double?> avgAmount = const Value.absent(),
+            Value<double?> qrtCutAmt = const Value.absent(),
+            Value<double?> paddyAmt = const Value.absent(),
+            Value<String> qualityCutsJson = const Value.absent(),
+            Value<double?> totalCutKg = const Value.absent(),
+            Value<double?> finalWeight = const Value.absent(),
+            Value<String> gunnyTransactionsJson = const Value.absent(),
+            Value<String?> deliveryType = const Value.absent(),
+            Value<String?> truckRentType = const Value.absent(),
+            Value<double?> truckRent = const Value.absent(),
+            Value<double?> truckRentPaid = const Value.absent(),
+            Value<double?> otherAmount = const Value.absent(),
+            Value<String?> transportType = const Value.absent(),
+            Value<String?> truckAccount = const Value.absent(),
+            Value<double?> freightAmount = const Value.absent(),
+            Value<String> procurementType = const Value.absent(),
+            Value<String?> mandiInvoiceNo = const Value.absent(),
+            Value<String?> tenderNumber = const Value.absent(),
+            Value<int?> commissionAgentId = const Value.absent(),
+            Value<int?> warehouseId = const Value.absent(),
+            Value<int?> vehicleEntryId = const Value.absent(),
+            Value<double> remainingStock = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+          }) =>
+              PaddyProcurementsCompanion.insert(
+            id: id,
+            date: date,
+            slipNo: slipNo,
+            voucherNo: voucherNo,
+            rstManual: rstManual,
+            area: area,
+            vType: vType,
+            partyName: partyName,
+            partyId: partyId,
+            truckNo: truckNo,
+            emptyWeight: emptyWeight,
+            marketType: marketType,
+            grossWeight: grossWeight,
+            tareWeight: tareWeight,
+            juteBags: juteBags,
+            plasticBags: plasticBags,
+            totalBags: totalBags,
+            gnyWtLess: gnyWtLess,
+            bagReturn: bagReturn,
+            otherCut: otherCut,
+            dustCut: dustCut,
+            polCut: polCut,
+            qualityGrade: qualityGrade,
+            unloadTime: unloadTime,
+            eBag: eBag,
+            ePkt: ePkt,
+            netWeight: netWeight,
+            avgBagWeight: avgBagWeight,
+            rateCalculation: rateCalculation,
+            kgPerBag: kgPerBag,
+            productId: productId,
+            productName: productName,
+            quantityNew: quantityNew,
+            quantityQntl: quantityQntl,
+            ratePerQntl: ratePerQntl,
+            totalAmount: totalAmount,
+            avgRate: avgRate,
+            avgAmount: avgAmount,
+            qrtCutAmt: qrtCutAmt,
+            paddyAmt: paddyAmt,
+            qualityCutsJson: qualityCutsJson,
+            totalCutKg: totalCutKg,
+            finalWeight: finalWeight,
+            gunnyTransactionsJson: gunnyTransactionsJson,
+            deliveryType: deliveryType,
+            truckRentType: truckRentType,
+            truckRent: truckRent,
+            truckRentPaid: truckRentPaid,
+            otherAmount: otherAmount,
+            transportType: transportType,
+            truckAccount: truckAccount,
+            freightAmount: freightAmount,
+            procurementType: procurementType,
+            mandiInvoiceNo: mandiInvoiceNo,
+            tenderNumber: tenderNumber,
+            commissionAgentId: commissionAgentId,
+            warehouseId: warehouseId,
+            vehicleEntryId: vehicleEntryId,
+            remainingStock: remainingStock,
+            status: status,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$PaddyProcurementsTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: (
+              {partyId = false,
+              productId = false,
+              commissionAgentId = false,
+              warehouseId = false,
+              vehicleEntryId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (partyId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.partyId,
+                    referencedTable:
+                        $$PaddyProcurementsTableReferences._partyIdTable(db),
+                    referencedColumn:
+                        $$PaddyProcurementsTableReferences._partyIdTable(db).id,
+                  ) as T;
+                }
+                if (productId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.productId,
+                    referencedTable:
+                        $$PaddyProcurementsTableReferences._productIdTable(db),
+                    referencedColumn: $$PaddyProcurementsTableReferences
+                        ._productIdTable(db)
+                        .id,
+                  ) as T;
+                }
+                if (commissionAgentId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.commissionAgentId,
+                    referencedTable: $$PaddyProcurementsTableReferences
+                        ._commissionAgentIdTable(db),
+                    referencedColumn: $$PaddyProcurementsTableReferences
+                        ._commissionAgentIdTable(db)
+                        .id,
+                  ) as T;
+                }
+                if (warehouseId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.warehouseId,
+                    referencedTable: $$PaddyProcurementsTableReferences
+                        ._warehouseIdTable(db),
+                    referencedColumn: $$PaddyProcurementsTableReferences
+                        ._warehouseIdTable(db)
+                        .id,
+                  ) as T;
+                }
+                if (vehicleEntryId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.vehicleEntryId,
+                    referencedTable: $$PaddyProcurementsTableReferences
+                        ._vehicleEntryIdTable(db),
+                    referencedColumn: $$PaddyProcurementsTableReferences
+                        ._vehicleEntryIdTable(db)
+                        .id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$PaddyProcurementsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $PaddyProcurementsTable,
+    PaddyProcurementRow,
+    $$PaddyProcurementsTableFilterComposer,
+    $$PaddyProcurementsTableOrderingComposer,
+    $$PaddyProcurementsTableAnnotationComposer,
+    $$PaddyProcurementsTableCreateCompanionBuilder,
+    $$PaddyProcurementsTableUpdateCompanionBuilder,
+    (PaddyProcurementRow, $$PaddyProcurementsTableReferences),
+    PaddyProcurementRow,
+    PrefetchHooks Function(
+        {bool partyId,
+        bool productId,
+        bool commissionAgentId,
+        bool warehouseId,
+        bool vehicleEntryId})>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -22610,4 +30536,10 @@ class $AppDatabaseManager {
       $$NotificationsTableTableManager(_db, _db.notifications);
   $$AuditLogsTableTableManager get auditLogs =>
       $$AuditLogsTableTableManager(_db, _db.auditLogs);
+  $$VehicleEntriesTableTableManager get vehicleEntries =>
+      $$VehicleEntriesTableTableManager(_db, _db.vehicleEntries);
+  $$FarmersTableTableManager get farmers =>
+      $$FarmersTableTableManager(_db, _db.farmers);
+  $$PaddyProcurementsTableTableManager get paddyProcurements =>
+      $$PaddyProcurementsTableTableManager(_db, _db.paddyProcurements);
 }

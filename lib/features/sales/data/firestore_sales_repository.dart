@@ -38,6 +38,10 @@ class FirestoreSalesRepository implements SalesRepository {
       storeCollection(_db, _storeId, 'sales');
   CollectionReference<Map<String, dynamic>> get _saleItems =>
       storeCollection(_db, _storeId, 'sale_items');
+  CollectionReference<Map<String, dynamic>> get _referrals =>
+      storeCollection(_db, _storeId, 'referrals');
+  CollectionReference<Map<String, dynamic>> get _users =>
+      storeCollection(_db, _storeId, 'users');
   CollectionReference<Map<String, dynamic>> get _payments =>
       storeCollection(_db, _storeId, 'payments');
   CollectionReference<Map<String, dynamic>> get _customers =>
@@ -507,6 +511,7 @@ class FirestoreSalesRepository implements SalesRepository {
     }
     final cart = cartFromDoc(cartDoc);
     final cartData = cartDoc.data();
+    final createdByUid = (cartData?['createdByUid'] as String?)?.trim();
 
     final itemsSnap = await _cartItems.where('cartId', isEqualTo: cartId).get();
     if (itemsSnap.docs.isEmpty) throw Exception('Cart is empty');
@@ -614,6 +619,8 @@ class FirestoreSalesRepository implements SalesRepository {
       'cartId': cartId,
       'invoiceNo': invoiceNo,
       'customerId': customerId,
+      if (createdByUid != null && createdByUid.isNotEmpty)
+        'createdByUid': createdByUid,
       'posCounterId': cart.posCounterId,
       'warehouseId': stock.track ? stock.warehouseId : null,
       'subTotal': subTotal,
@@ -665,6 +672,19 @@ class FirestoreSalesRepository implements SalesRepository {
     // checkout until the network returns.
     _write(batch.commit());
 
+    // Trigger referral completion/reward for the first successful checkout
+    // by a referred user. Runs best-effort and never blocks checkout.
+    if (createdByUid != null && createdByUid.isNotEmpty) {
+      unawaited(
+        _processReferralRewardOnCheckout(createdByUid).catchError((Object e) {
+          if (kDebugMode) {
+            // ignore: avoid_print
+            print('Referral reward processing skipped/failed: $e');
+          }
+        }),
+      );
+    }
+
     // Decrement stock (each is a read-modify-write applied locally too).
     if (stock.track) {
       for (final item in items) {
@@ -678,6 +698,41 @@ class FirestoreSalesRepository implements SalesRepository {
     }
 
     return saleId;
+  }
+
+  Future<void> _processReferralRewardOnCheckout(String referredUid) async {
+    final pendingSnap = await _referrals
+        .where('referredUid', isEqualTo: referredUid)
+        .where('status', isEqualTo: 'pending')
+        .limit(1)
+        .get();
+    if (pendingSnap.docs.isEmpty) return;
+
+    final referralDoc = pendingSnap.docs.first;
+    final referralData = referralDoc.data();
+    final referrerUid = (referralData['referrerUid'] as String?)?.trim();
+    final rewardAmount = fsNum(referralData['rewardAmount']);
+
+    if (referrerUid == null || referrerUid.isEmpty || rewardAmount <= 0) {
+      return;
+    }
+
+    final batch = _db.batch();
+    batch.set(
+        referralDoc.reference,
+        {
+          'status': 'rewarded',
+          'completedAt': FieldValue.serverTimestamp(),
+          'rewardedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true));
+    batch.set(
+        _users.doc(referrerUid),
+        {
+          'referralRewards': FieldValue.increment(rewardAmount),
+        },
+        SetOptions(merge: true));
+    _write(batch.commit());
   }
 
   // ── helpers ────────────────────────────────────────────────────────────────

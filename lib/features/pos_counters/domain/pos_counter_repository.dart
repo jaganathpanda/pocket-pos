@@ -31,5 +31,10 @@ abstract class PosCounterRepository {
     required String pin,
     required int counterId,
   });
+
+  /// Millers (owner/super_admin/manager users) who can approve weighbridge
+  /// entries — used to populate the operator's "Select Miller" dropdown.
+  Stream<List<PosUserRow>> watchMillers();
+
   Future<void> setUserActive(String uid, bool active);
 }

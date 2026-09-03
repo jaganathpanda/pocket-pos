@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/database/seed/demo_business_type.dart';
 import '../../../core/models/storefront_shopping_config.dart';
 import '../../notifications/domain/domain.dart';
+import '../../referral/domain/referral.dart';
 import '../../../core/firestore/store_catalog_seeder.dart';
 import '../domain/store_models.dart';
 
@@ -24,6 +25,7 @@ class StoreAuthService {
 
   static const _prefsStoreId = 'active_store_id';
   static const _prefsAdmin = 'is_platform_admin';
+  static const _prefsOperator = 'is_weighbridge_operator';
 
   // Firebase Auth / Firestore calls occasionally never complete on Android (a
   // stalled reCAPTCHA / Play-Integrity handshake, or an unreachable backend),
@@ -57,11 +59,17 @@ class StoreAuthService {
   DocumentReference<Map<String, dynamic>> _storeDoc(String storeId) =>
       _db.collection('stores').doc(storeId);
 
+  DocumentReference<Map<String, dynamic>> _operatorDoc(String uid) =>
+      _db.collection('weighbridge_operators').doc(uid);
+
   DocumentReference<Map<String, dynamic>> _notificationConfigDoc() =>
       _db.collection('platform_config').doc('notifications');
 
   DocumentReference<Map<String, dynamic>> _publicFeaturesDoc() =>
       _db.collection('platform_config').doc('public_features');
+
+  DocumentReference<Map<String, dynamic>> _referralSettingsDoc() =>
+      _db.collection('platform_config').doc('referral_settings');
 
   /// Registers a new store (status = pending) and its owner login.
   /// Returns the generated store id.
@@ -73,6 +81,7 @@ class StoreAuthService {
     required DemoBusinessType businessType,
     String? mobile,
     String? email,
+    String? referralCode,
   }) async {
     // One email = one store: the contact email must be unique across the
     // platform. We reserve it atomically in `email_index` right after creating
@@ -84,6 +93,7 @@ class StoreAuthService {
 
     // Generated locally (no pre-read: the caller isn't signed in yet, and the
     // id space is large). Firestore's create rule guards against a real clash.
+    final normalizedReferralCode = referralCode?.trim().toUpperCase();
     final storeId = _generateStoreId();
     final cred = await _auth
         .createUserWithEmailAndPassword(
@@ -129,6 +139,12 @@ class StoreAuthService {
         'ownerUsername': ownerUsername.trim(),
         'mobile': mobile?.trim(),
         'email': emailKey,
+        if (normalizedReferralCode != null && normalizedReferralCode.isNotEmpty)
+          'appliedReferralCode': normalizedReferralCode,
+        if (normalizedReferralCode != null && normalizedReferralCode.isNotEmpty)
+          'referralRewardStatus': 'pending',
+        if (normalizedReferralCode != null && normalizedReferralCode.isNotEmpty)
+          'referralAppliedAt': FieldValue.serverTimestamp(),
         'businessType': businessType.name,
         'status': 'pending',
         'createdAt': FieldValue.serverTimestamp(),
@@ -239,6 +255,115 @@ class StoreAuthService {
     await _persist(storeId: null, isAdmin: true);
   }
 
+  // ── Weighbridge operators (platform-level, not tied to a store) ────────────
+
+  /// Registers a platform weighbridge operator (status = pending) with a real
+  /// email + password. A platform admin must approve before they can log in.
+  Future<void> registerOperator({
+    required String name,
+    required String email,
+    required String password,
+    String? mobile,
+  }) async {
+    final cred = await _auth
+        .createUserWithEmailAndPassword(
+            email: email.trim().toLowerCase(), password: password)
+        .timeout(_netTimeout,
+            onTimeout: () => _timedOut('Creating your account'));
+    final uid = cred.user!.uid;
+    try {
+      await _operatorDoc(uid).set({
+        'name': name.trim(),
+        'email': email.trim().toLowerCase(),
+        'mobile': mobile?.trim(),
+        'status': 'pending',
+        'role': 'weighbridgeOperator',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      await _safeDeleteUser(cred.user);
+      rethrow;
+    }
+    await _persist(storeId: null, isAdmin: false, isOperator: true);
+  }
+
+  /// Operator login (email + password). Returns the operator's profile; the
+  /// caller routes to pending or operator stage based on [OperatorProfile].
+  Future<OperatorProfile> operatorLogin({
+    required String email,
+    required String password,
+  }) async {
+    final cred = await _auth
+        .signInWithEmailAndPassword(
+            email: email.trim().toLowerCase(), password: password)
+        .timeout(_netTimeout, onTimeout: () => _timedOut('Sign-in'));
+    final uid = cred.user!.uid;
+    final doc = await _operatorDoc(uid).get();
+    if (!doc.exists) {
+      await _auth.signOut();
+      throw Exception('This account is not a weighbridge operator.');
+    }
+    await _persist(storeId: null, isAdmin: false, isOperator: true);
+    return _operatorFromDoc(uid, doc.data()!);
+  }
+
+  OperatorProfile _operatorFromDoc(String uid, Map<String, dynamic> d) {
+    return OperatorProfile(
+      uid: uid,
+      name: (d['name'] as String?) ?? '',
+      email: (d['email'] as String?) ?? '',
+      status: storeStatusFromString(d['status'] as String?),
+    );
+  }
+
+  /// An operator "enters" a mill by its Store ID. Reads the store doc and builds
+  /// a store session scoped to that mill, tagged with the operator role.
+  Future<StoreSession> operatorEnterMill({
+    required String storeId,
+    required OperatorProfile operator,
+  }) async {
+    final id = storeId.trim().toUpperCase();
+    final storeRef = _storeDoc(id);
+    final snap = await storeRef
+        .get()
+        .timeout(_netTimeout, onTimeout: () => _timedOut('Loading the mill'));
+    if (!snap.exists) {
+      throw Exception('Mill $id not found. Check the Store ID.');
+    }
+    final data = snap.data()!;
+    final status = storeStatusFromString(data['status'] as String?);
+    if (status != StoreStatus.approved) {
+      throw Exception('Mill $id is not active yet.');
+    }
+    // Weighbridge is a rice-mill-only feature.
+    if ((data['businessType'] as String?) != DemoBusinessType.riceMill.name) {
+      throw Exception('Store $id is not a Rice Mill. Weighbridge is only '
+          'available for rice mills.');
+    }
+    return StoreSession(
+      storeId: id,
+      storeName: (data['name'] as String?) ?? id,
+      uid: operator.uid,
+      username: operator.name,
+      role: 'weighbridge_operator',
+      status: status,
+    );
+  }
+
+  /// Platform-admin: live stream of operators by status (for approval screen).
+  Stream<List<OperatorProfile>> watchOperatorsByStatus(StoreStatus status) {
+    return _db
+        .collection('weighbridge_operators')
+        .where('status', isEqualTo: status.name)
+        .snapshots()
+        .map((snap) =>
+            snap.docs.map((d) => _operatorFromDoc(d.id, d.data())).toList());
+  }
+
+  Future<void> setOperatorStatus(String uid, StoreStatus status) {
+    return _operatorDoc(uid).update({'status': status.name});
+  }
+
   /// Restores a session on app start (if a Firebase user is still signed in).
   Future<StoreAuthState> restore() async {
     final user = _auth.currentUser;
@@ -251,6 +376,18 @@ class StoreAuthService {
           await _db.collection('platform_admins').doc(user.uid).get();
       if (adminDoc.exists) {
         return const StoreAuthState(stage: StoreAuthStage.admin);
+      }
+    }
+    if (prefs.getBool(_prefsOperator) ?? false) {
+      final opDoc = await _operatorDoc(user.uid).get();
+      if (opDoc.exists) {
+        final profile = _operatorFromDoc(user.uid, opDoc.data()!);
+        return StoreAuthState(
+          stage: profile.isApproved
+              ? StoreAuthStage.operator
+              : StoreAuthStage.pending,
+          operator: profile,
+        );
       }
     }
     var storeId = prefs.getString(_prefsStoreId);
@@ -313,6 +450,21 @@ class StoreAuthService {
     );
   }
 
+  Stream<ReferralSettings> watchReferralSettings() {
+    return _referralSettingsDoc().snapshots().map((snap) {
+      final data = snap.data();
+      if (data == null || data.isEmpty) return const ReferralSettings();
+      return ReferralSettings.fromMap(data);
+    });
+  }
+
+  Future<void> setReferralSettings(ReferralSettings settings) {
+    return _referralSettingsDoc().set(
+      settings.toMap(),
+      SetOptions(merge: true),
+    );
+  }
+
   Future<void> setStoreStatus(String storeId, StoreStatus status) {
     return _storeDoc(storeId).update({'status': status.name});
   }
@@ -321,6 +473,7 @@ class StoreAuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_prefsStoreId);
     await prefs.remove(_prefsAdmin);
+    await prefs.remove(_prefsOperator);
     await _auth.signOut();
   }
 
@@ -344,10 +497,15 @@ class StoreAuthService {
     }
   }
 
-  Future<void> _persist({String? storeId, required bool isAdmin}) async {
+  Future<void> _persist({
+    String? storeId,
+    required bool isAdmin,
+    bool isOperator = false,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     if (storeId != null) await prefs.setString(_prefsStoreId, storeId);
     await prefs.setBool(_prefsAdmin, isAdmin);
+    await prefs.setBool(_prefsOperator, isOperator);
   }
 }
 

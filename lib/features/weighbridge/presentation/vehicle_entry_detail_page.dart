@@ -1,0 +1,1026 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import '../../../core/database/app_database.dart' hide VehicleEntry;
+import '../../../core/di/providers.dart';
+import '../domain/vehicle_entry.dart';
+import '../../notifications/providers/notification_providers.dart';
+import '../../store/presentation/store_auth_controller.dart';
+import '../../paddy_procurement/domain/paddy_procurement.dart';
+import '../../paddy_procurement/providers/paddy_procurement_providers.dart';
+import '../../paddy_procurement/presentation/paddy_procurement_form.dart';
+
+class VehicleEntryDetailPage extends ConsumerStatefulWidget {
+  const VehicleEntryDetailPage({super.key, this.entryId});
+
+  final int? entryId;
+
+  @override
+  ConsumerState<VehicleEntryDetailPage> createState() =>
+      _VehicleEntryDetailPageState();
+}
+
+class _VehicleEntryDetailPageState
+    extends ConsumerState<VehicleEntryDetailPage> {
+  final _formKey = GlobalKey<FormState>();
+
+  // Controllers
+  late TextEditingController _dateCtrl;
+  late TextEditingController _slipNoCtrl;
+  late TextEditingController _voucherCtrl;
+  late TextEditingController _vehicleCtrl;
+  late TextEditingController _rstCtrl;
+  late TextEditingController _partyCtrl;
+  late TextEditingController _firstWtCtrl;
+  late TextEditingController _firstTimeCtrl;
+  late TextEditingController _secondWtCtrl;
+  late TextEditingController _secondTimeCtrl;
+  late TextEditingController _bagsCtrl;
+  late TextEditingController _lotCtrl;
+  late TextEditingController _remarkCtrl;
+  late TextEditingController _completeCodeCtrl;
+  late TextEditingController _completeDateCtrl;
+
+  // Selected values
+  DateTime _date = DateTime.now();
+  int? _selectedProductId;
+  int? _selectedPartyId;
+  bool _complete = false;
+  DateTime? _firstTime;
+  DateTime? _secondTime;
+  DateTime? _completeDate;
+  String _entryType = 'inward';
+  String _weighMode = 'weighbridge';
+  final List<_ManualLineControllers> _manualRows = [];
+
+  // Weighbridge-operator flow: the miller chosen to approve this entry.
+  String? _selectedMillerUid;
+  String? _selectedMillerName;
+  String _loadedStatus = 'approved';
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initControllers();
+
+    if (widget.entryId != null) {
+      _loaded = false;
+    } else {
+      _setDefaults();
+      _loaded = true;
+    }
+  }
+
+  void _initControllers() {
+    _dateCtrl = TextEditingController();
+    _slipNoCtrl = TextEditingController();
+    _voucherCtrl = TextEditingController();
+    _vehicleCtrl = TextEditingController();
+    _rstCtrl = TextEditingController();
+    _partyCtrl = TextEditingController();
+    _firstWtCtrl = TextEditingController();
+    _firstTimeCtrl = TextEditingController();
+    _secondWtCtrl = TextEditingController();
+    _secondTimeCtrl = TextEditingController();
+    _bagsCtrl = TextEditingController();
+    _lotCtrl = TextEditingController();
+    _remarkCtrl = TextEditingController();
+    _completeCodeCtrl = TextEditingController();
+    _completeDateCtrl = TextEditingController();
+  }
+
+  void _setDefaults() {
+    _date = DateTime.now();
+    _dateCtrl.text = DateFormat('dd/MM/yyyy').format(_date);
+    _slipNoCtrl.text = _generateSlipNo();
+    _firstTime = DateTime.now();
+    _firstTimeCtrl.text = DateFormat('dd/MM/yyyy HH:mm').format(_firstTime!);
+    _entryType = 'inward';
+    _weighMode = 'weighbridge';
+    _manualRows.clear();
+    _loaded = true;
+  }
+
+  @override
+  void dispose() {
+    _dateCtrl.dispose();
+    _slipNoCtrl.dispose();
+    _voucherCtrl.dispose();
+    _vehicleCtrl.dispose();
+    _rstCtrl.dispose();
+    _partyCtrl.dispose();
+    _firstWtCtrl.dispose();
+    _firstTimeCtrl.dispose();
+    _secondWtCtrl.dispose();
+    _secondTimeCtrl.dispose();
+    _bagsCtrl.dispose();
+    _lotCtrl.dispose();
+    _remarkCtrl.dispose();
+    _completeCodeCtrl.dispose();
+    _completeDateCtrl.dispose();
+    for (final r in _manualRows) {
+      r.dispose();
+    }
+    super.dispose();
+  }
+
+  String _generateSlipNo() {
+    final now = DateTime.now();
+    return '${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${DateTime.now().millisecondsSinceEpoch.toString().substring(0, 4)}';
+  }
+
+  void _loadEntry(VehicleEntry entry) {
+    if (_loaded) return;
+    _loaded = true;
+
+    setState(() {
+      _date = entry.date;
+      _dateCtrl.text = DateFormat('dd/MM/yyyy').format(_date);
+      _slipNoCtrl.text = entry.slipNo;
+      _voucherCtrl.text = entry.voucherNo ?? '';
+      _vehicleCtrl.text = entry.vehicleNo;
+      _rstCtrl.text = entry.rstManual ?? '';
+      _partyCtrl.text = entry.partyName;
+      _selectedPartyId = entry.partyId;
+      _selectedProductId = entry.productId;
+      _entryType = entry.entryType ?? 'inward';
+      _weighMode = entry.weighMode ?? 'weighbridge';
+
+      // Clear and rebuild manual rows
+      _manualRows.forEach((r) => r.dispose());
+      _manualRows.clear();
+      for (final l in entry.manualWeights) {
+        _manualRows.add(_ManualLineControllers.fromLine(l));
+      }
+
+      _firstWtCtrl.text = entry.firstWeight.toString();
+      _firstTime = entry.firstWeightTime;
+      _firstTimeCtrl.text = entry.firstWeightTime != null
+          ? DateFormat('dd/MM/yyyy HH:mm').format(entry.firstWeightTime!)
+          : '';
+      _secondWtCtrl.text = entry.secondWeight.toString();
+      _secondTime = entry.secondWeightTime;
+      _secondTimeCtrl.text = entry.secondWeightTime != null
+          ? DateFormat('dd/MM/yyyy HH:mm').format(entry.secondWeightTime!)
+          : '';
+      _bagsCtrl.text = entry.bags?.toString() ?? '';
+      _lotCtrl.text = entry.lotNumber ?? '';
+      _remarkCtrl.text = entry.remark ?? '';
+      _complete = entry.complete;
+      _loadedStatus = entry.status;
+      _selectedMillerUid = entry.approverUid;
+      _selectedMillerName = entry.approverName;
+      _completeCodeCtrl.text = entry.completeCode ?? '';
+      _completeDate = entry.completeDate;
+      _completeDateCtrl.text = entry.completeDate != null
+          ? DateFormat('dd/MM/yyyy').format(entry.completeDate!)
+          : '';
+    });
+  }
+
+  double _calculateNetWeight() {
+    if (_weighMode == 'manual') {
+      double total = 0;
+      for (final row in _manualRows) {
+        final weight = double.tryParse(row.weightCtrl.text.trim()) ?? 0;
+        total += weight;
+      }
+      return total;
+    }
+    final first = double.tryParse(_firstWtCtrl.text.trim()) ?? 0;
+    final second = double.tryParse(_secondWtCtrl.text.trim()) ?? 0;
+    if (_entryType == 'inward') {
+      return (first - second).clamp(0, double.infinity);
+    } else {
+      return (second - first).clamp(0, double.infinity);
+    }
+  }
+
+  void _updateNetWeight() {
+    setState(() {});
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final firstWt = double.tryParse(_firstWtCtrl.text.trim()) ?? 0;
+    final secondWt = double.tryParse(_secondWtCtrl.text.trim()) ?? 0;
+    final netWt = _calculateNetWeight();
+
+    if (_selectedProductId == null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Select a product.')));
+      return;
+    }
+
+    final isOperator =
+        ref.read(currentUserProvider)?.isWeighbridgeOperator ?? false;
+    if (isOperator &&
+        (_selectedMillerUid == null || _selectedMillerUid!.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Select a miller to approve.')));
+      return;
+    }
+
+    // Build manual weights list
+    final manualWeights = <ManualWeightLine>[];
+    if (_weighMode == 'manual') {
+      for (final row in _manualRows) {
+        final product = row.productCtrl.text.trim();
+        final bags = int.tryParse(row.bagsCtrl.text.trim());
+        final weight = double.tryParse(row.weightCtrl.text.trim()) ?? 0;
+        if (product.isNotEmpty || weight > 0) {
+          manualWeights.add(ManualWeightLine(
+            product: product,
+            bags: bags,
+            weight: weight,
+          ));
+        }
+      }
+    }
+
+    final currentUid = ref.read(currentUidProvider);
+    final currentUsername =
+        ref.read(storeSessionProvider)?.username ?? 'Operator';
+
+    final companion = VehicleEntryCompanion(
+      id: widget.entryId,
+      date: _date,
+      slipNo: _slipNoCtrl.text.trim(),
+      voucherNo:
+          _voucherCtrl.text.trim().isEmpty ? null : _voucherCtrl.text.trim(),
+      vehicleNo: _vehicleCtrl.text.trim(),
+      rstManual: _rstCtrl.text.trim().isEmpty ? null : _rstCtrl.text.trim(),
+      partyName: _partyCtrl.text.trim(),
+      partyId: _selectedPartyId,
+      productId: _selectedProductId!,
+      firstWeight: firstWt,
+      firstWeightTime: _firstTime,
+      secondWeight: secondWt,
+      secondWeightTime: _secondTime,
+      netWeight: netWt,
+      bags: int.tryParse(_bagsCtrl.text.trim()),
+      lotNumber: _lotCtrl.text.trim().isEmpty ? null : _lotCtrl.text.trim(),
+      entryType: _entryType,
+      weighMode: _weighMode,
+      manualWeights: manualWeights,
+      complete: isOperator ? false : _complete,
+      completeCode:
+          (!isOperator && _complete) ? _completeCodeCtrl.text.trim() : null,
+      completeDate: (!isOperator && _complete) ? _completeDate : null,
+      remark: _remarkCtrl.text.trim().isEmpty ? null : _remarkCtrl.text.trim(),
+      status: isOperator ? 'pending' : null,
+      createdByUid: isOperator ? currentUid : null,
+      createdByName: isOperator ? currentUsername : null,
+      createdByRole: isOperator ? 'weighbridgeOperator' : null,
+      approverUid: isOperator ? _selectedMillerUid : null,
+      approverName: isOperator ? _selectedMillerName : null,
+    );
+
+    try {
+      if (widget.entryId == null) {
+        final newId = await ref
+            .read(weighbridgeRepositoryProvider)
+            .createEntry(companion);
+        if (isOperator) {
+          await _notifyMiller(newId);
+        }
+      } else {
+        await ref.read(weighbridgeRepositoryProvider).updateEntry(companion);
+      }
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    }
+  }
+
+  /// Sends the selected miller an in-app notification that an entry is pending.
+  Future<void> _notifyMiller(int entryId) async {
+    final millerUid = _selectedMillerUid;
+    if (millerUid == null || millerUid.isEmpty) return;
+    final operatorName = ref.read(storeSessionProvider)?.username ?? 'Operator';
+    await ref.read(notificationRepositoryProvider).create(
+          type: 'weighbridge_approval',
+          title: 'Weighbridge entry pending approval',
+          message:
+              '$operatorName submitted vehicle ${_vehicleCtrl.text.trim()} '
+              '(slip ${_slipNoCtrl.text.trim()}) for your approval.',
+          targetUid: millerUid,
+          entityType: 'vehicle_entry',
+          entityId: entryId,
+        );
+  }
+
+  void _addManualRow() {
+    setState(() => _manualRows.add(_ManualLineControllers()));
+  }
+
+  void _removeManualRow(int index) {
+    setState(() {
+      _manualRows.removeAt(index).dispose();
+    });
+  }
+
+  Future<void> _convertToProcurement() async {
+    if (widget.entryId == null) return;
+    final repo = ref.read(paddyProcurementRepositoryProvider);
+    final entry = await ref.read(vehicleEntryProvider(widget.entryId!).future);
+    if (entry == null) return;
+
+    int procurementId;
+    final existing = await repo.findByVehicleEntryId(entry.id);
+    if (existing != null) {
+      procurementId = existing.id!;
+    } else {
+      final products =
+          ref.read(productsProvider).valueOrNull ?? const <Product>[];
+      final product = products.where((p) => p.id == entry.productId);
+      final productName = product.isEmpty ? 'Paddy' : product.first.name;
+
+      final isManual = entry.weighMode == 'manual';
+      final companion = PaddyProcurementCompanion(
+        date: entry.date,
+        slipNo: entry.slipNo,
+        voucherNo: entry.voucherNo,
+        rstManual: entry.rstManual,
+        truckNo: entry.vehicleNo,
+        partyName: entry.partyName,
+        partyId: entry.partyId,
+        productId: entry.productId,
+        productName: productName,
+        grossWeight: isManual ? entry.netWeight : entry.firstWeight,
+        tareWeight: isManual ? 0 : entry.secondWeight,
+        netWeight: entry.netWeight,
+        totalBags: entry.bags ?? 0,
+        vehicleEntryId: entry.id,
+        weighMode: entry.weighMode,
+        status: 'draft',
+      );
+      procurementId = await repo.createProcurement(companion);
+    }
+
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PaddyProcurementForm(procurementId: procurementId),
+      ),
+    );
+  }
+
+  Future<void> _pickDate(TextEditingController ctrl, DateTime initial,
+      void Function(DateTime) onPicked) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      setState(() {
+        ctrl.text = DateFormat('dd/MM/yyyy').format(picked);
+        onPicked(picked);
+      });
+    }
+  }
+
+  Future<void> _pickTime(TextEditingController ctrl, DateTime? initial,
+      void Function(DateTime) onPicked) async {
+    final base = initial ?? DateTime.now();
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(base),
+    );
+    if (time != null) {
+      final dt =
+          DateTime(base.year, base.month, base.day, time.hour, time.minute);
+      setState(() {
+        ctrl.text = DateFormat('dd/MM/yyyy HH:mm').format(dt);
+        onPicked(dt);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final products =
+        ref.watch(productsProvider).valueOrNull ?? const <Product>[];
+    final suppliers =
+        ref.watch(suppliersProvider).valueOrNull ?? const <Supplier>[];
+    final netWt = _calculateNetWeight();
+    final isOperator =
+        ref.watch(currentUserProvider)?.isWeighbridgeOperator ?? false;
+    final millers = ref.watch(millersProvider).valueOrNull ?? const [];
+
+    // ── If editing, use StreamProvider for real-time updates ──
+    if (widget.entryId != null && !_loaded) {
+      final entryAsync = ref.watch(vehicleEntryStreamProvider(widget.entryId!));
+
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Edit Vehicle Entry'),
+        ),
+        body: Center(
+          child: entryAsync.when(
+            data: (entry) {
+              if (entry == null) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline,
+                        size: 48, color: Colors.red),
+                    const SizedBox(height: 12),
+                    const Text('Entry not found.'),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Go Back'),
+                    ),
+                  ],
+                );
+              }
+
+              // Load the entry into the form
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!_loaded) {
+                  _loadEntry(entry);
+                }
+              });
+
+              return const SizedBox.shrink();
+            },
+            loading: () => const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 12),
+                Text('Loading entry...'),
+              ],
+            ),
+            error: (e, _) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 12),
+                Text('Error: $e'),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Go Back'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // ── Main form ──
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.entryId == null
+            ? 'New Vehicle Entry'
+            : 'Edit Vehicle Entry'),
+        actions: [
+          // Convert is only for an approved, completed inward entry — and never
+          // for the operator (they can't convert, only submit for approval).
+          if (!isOperator &&
+              widget.entryId != null &&
+              _complete &&
+              _entryType == 'inward' &&
+              _loadedStatus == 'approved')
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: FilledButton.tonalIcon(
+                onPressed: _convertToProcurement,
+                icon: const Icon(Icons.move_down, size: 18),
+                label: const Text('Convert to Procurement'),
+              ),
+            ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              if (isOperator) ...[
+                DropdownButtonFormField<String>(
+                  value: _selectedMillerUid,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Select Miller (approver) *',
+                    prefixIcon: Icon(Icons.person_pin_circle_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    for (final m in millers)
+                      DropdownMenuItem(
+                        value: m.uid,
+                        child: Text(m.username),
+                      ),
+                  ],
+                  onChanged: (v) => setState(() {
+                    _selectedMillerUid = v;
+                    _selectedMillerName = millers
+                        .where((m) => m.uid == v)
+                        .map((m) => m.username)
+                        .cast<String?>()
+                        .firstWhere((_) => true, orElse: () => null);
+                  }),
+                  validator: (v) =>
+                      v == null || v.isEmpty ? 'Select a miller' : null,
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (!isOperator && widget.entryId != null)
+                _StatusBanner(status: _loadedStatus),
+              // Date & Slip
+              Row(
+                children: [
+                  Expanded(
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.calendar_today),
+                      title: Text(DateFormat('dd/MM/yyyy').format(_date)),
+                      subtitle: const Text('Date'),
+                      onTap: () =>
+                          _pickDate(_dateCtrl, _date, (d) => _date = d),
+                    ),
+                  ),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _slipNoCtrl,
+                      decoration: const InputDecoration(
+                          labelText: 'Slip No', border: OutlineInputBorder()),
+                      validator: (v) =>
+                          v?.trim().isNotEmpty == true ? null : 'Required',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _voucherCtrl,
+                decoration: const InputDecoration(
+                    labelText: 'Vch No', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _vehicleCtrl,
+                      decoration: const InputDecoration(
+                          labelText: 'Vehicle No',
+                          border: OutlineInputBorder()),
+                      validator: (v) =>
+                          v?.trim().isNotEmpty == true ? null : 'Required',
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _rstCtrl,
+                      decoration: const InputDecoration(
+                          labelText: 'RST(Manual)',
+                          border: OutlineInputBorder()),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Autocomplete<Supplier>(
+                      optionsBuilder: (text) {
+                        if (text.text.isEmpty) return const Iterable.empty();
+                        return suppliers.where((s) =>
+                            s.name
+                                .toLowerCase()
+                                .contains(text.text.toLowerCase()) ||
+                            (s.mobile ?? '').contains(text.text));
+                      },
+                      onSelected: (s) {
+                        setState(() {
+                          _selectedPartyId = s.id;
+                          _partyCtrl.text = s.name;
+                        });
+                      },
+                      fieldViewBuilder: (ctx, ctrl, node, onEditingComplete) {
+                        return TextFormField(
+                          controller: _partyCtrl,
+                          focusNode: node,
+                          decoration: const InputDecoration(
+                              labelText: 'Party Name',
+                              border: OutlineInputBorder()),
+                          validator: (v) =>
+                              v?.trim().isNotEmpty == true ? null : 'Required',
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: DropdownButtonFormField<int>(
+                      value: _selectedProductId,
+                      decoration: const InputDecoration(
+                          labelText: 'Product', border: OutlineInputBorder()),
+                      items: [
+                        for (final p in products)
+                          DropdownMenuItem(value: p.id, child: Text(p.name)),
+                      ],
+                      onChanged: (v) => setState(() => _selectedProductId = v),
+                      validator: (v) => v != null ? null : 'Required',
+                      isExpanded: true,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _remarkCtrl,
+                decoration: const InputDecoration(
+                    labelText: 'Remark (e.g., PKT 63)',
+                    border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 16),
+              // Entry Type
+              Wrap(
+                alignment: WrapAlignment.start,
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  const Text('Entry Type:  ',
+                      style: TextStyle(fontWeight: FontWeight.w500)),
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width > 400 ? 240 : 200,
+                    child: SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(
+                            value: 'inward',
+                            label: Text('Inward'),
+                            icon: Icon(Icons.arrow_downward, size: 16)),
+                        ButtonSegment(
+                            value: 'outward',
+                            label: Text('Outward'),
+                            icon: Icon(Icons.arrow_upward, size: 16)),
+                      ],
+                      selected: {_entryType},
+                      onSelectionChanged: (s) {
+                        setState(() {
+                          _entryType = s.first;
+                          _updateNetWeight();
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Weigh Mode
+              Wrap(
+                alignment: WrapAlignment.start,
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  const Text('Weigh Mode:  ',
+                      style: TextStyle(fontWeight: FontWeight.w500)),
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width > 400 ? 260 : 200,
+                    child: SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(
+                            value: 'weighbridge',
+                            label: Text('Weighbridge'),
+                            icon: Icon(Icons.scale, size: 16)),
+                        ButtonSegment(
+                            value: 'manual',
+                            label: Text('Manual'),
+                            icon: Icon(Icons.edit_note, size: 16)),
+                      ],
+                      selected: {_weighMode},
+                      onSelectionChanged: (s) {
+                        setState(() {
+                          _weighMode = s.first;
+                          _updateNetWeight();
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text('Weights',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              if (_weighMode == 'weighbridge') ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _firstWtCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                            labelText: 'First Wt',
+                            border: OutlineInputBorder()),
+                        onChanged: (_) => _updateNetWeight(),
+                        validator: (v) =>
+                            v?.trim().isNotEmpty == true ? null : 'Required',
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(_firstTime != null
+                            ? DateFormat('dd/MM/yyyy HH:mm').format(_firstTime!)
+                            : 'Set time'),
+                        subtitle: const Text('Time'),
+                        onTap: () => _pickTime(_firstTimeCtrl, _firstTime,
+                            (dt) => _firstTime = dt),
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _secondWtCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                            labelText: 'Second Wt',
+                            border: OutlineInputBorder()),
+                        onChanged: (_) => _updateNetWeight(),
+                        validator: (v) =>
+                            v?.trim().isNotEmpty == true ? null : 'Required',
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(_secondTime != null
+                            ? DateFormat('dd/MM/yyyy HH:mm')
+                                .format(_secondTime!)
+                            : 'Set time'),
+                        subtitle: const Text('Time'),
+                        onTap: () => _pickTime(_secondTimeCtrl, _secondTime,
+                            (dt) => _secondTime = dt),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              if (_weighMode == 'manual') ...[
+                for (int i = 0; i < _manualRows.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 4,
+                          child: TextFormField(
+                            controller: _manualRows[i].productCtrl,
+                            decoration: const InputDecoration(
+                                labelText: 'Item',
+                                isDense: true,
+                                border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 8)),
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          flex: 2,
+                          child: TextFormField(
+                            controller: _manualRows[i].bagsCtrl,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                                labelText: 'Bags',
+                                isDense: true,
+                                border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 8)),
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          flex: 2,
+                          child: TextFormField(
+                            controller: _manualRows[i].weightCtrl,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                                labelText: 'Wt',
+                                isDense: true,
+                                border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 8)),
+                            style: const TextStyle(fontSize: 13),
+                            onChanged: (_) => _updateNetWeight(),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle_outline,
+                              color: Colors.red, size: 22),
+                          onPressed: () => _removeManualRow(i),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                  ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: _addManualRow,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Add line'),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 8),
+              // Net Weight display
+              Text(
+                'Net.Wt : ${netWt.toStringAsFixed(2)}',
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _bagsCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                          labelText: 'Pkts', border: OutlineInputBorder()),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _lotCtrl,
+                      decoration: const InputDecoration(
+                          labelText: 'Lot No', border: OutlineInputBorder()),
+                    ),
+                  ),
+                ],
+              ),
+              // Operators submit for a miller to approve — completion is set by
+              // the miller flow, not the operator.
+              if (!isOperator) ...[
+                const SizedBox(height: 16),
+                const Text('Completion',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                Row(
+                  children: [
+                    Switch(
+                      value: _complete,
+                      onChanged: (v) => setState(() {
+                        _complete = v;
+                        if (v && _completeDate == null) {
+                          _completeDate = DateTime.now();
+                          _completeDateCtrl.text =
+                              DateFormat('dd/MM/yyyy').format(_completeDate!);
+                        }
+                      }),
+                    ),
+                    const Text('Complete'),
+                  ],
+                ),
+                if (_complete) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _completeCodeCtrl,
+                          decoration: const InputDecoration(
+                              labelText: 'Complete Code',
+                              border: OutlineInputBorder()),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(_completeDate != null
+                              ? DateFormat('dd/MM/yyyy').format(_completeDate!)
+                              : 'Pick date'),
+                          subtitle: const Text('Date'),
+                          onTap: () => _pickDate(
+                              _completeDateCtrl,
+                              _completeDate ?? DateTime.now(),
+                              (d) => _completeDate = d),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel')),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                      onPressed: _save,
+                      child: Text(isOperator
+                          ? 'Submit for Approval'
+                          : (widget.entryId == null ? 'Save' : 'Update'))),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Holds the text controllers for one manual weight line.
+class _ManualLineControllers {
+  _ManualLineControllers()
+      : productCtrl = TextEditingController(),
+        bagsCtrl = TextEditingController(),
+        weightCtrl = TextEditingController();
+
+  _ManualLineControllers.fromLine(ManualWeightLine l)
+      : productCtrl = TextEditingController(text: l.product),
+        bagsCtrl = TextEditingController(text: l.bags?.toString() ?? ''),
+        weightCtrl = TextEditingController(
+            text: l.weight == 0 ? '' : l.weight.toString());
+
+  final TextEditingController productCtrl;
+  final TextEditingController bagsCtrl;
+  final TextEditingController weightCtrl;
+
+  void dispose() {
+    productCtrl.dispose();
+    bagsCtrl.dispose();
+    weightCtrl.dispose();
+  }
+}
+
+/// A small colored banner showing the entry's approval status to the miller.
+class _StatusBanner extends StatelessWidget {
+  const _StatusBanner({required this.status});
+
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    late final Color color;
+    late final IconData icon;
+    late final String label;
+    switch (status) {
+      case 'pending':
+        color = Colors.orange;
+        icon = Icons.hourglass_top;
+        label = 'Pending approval';
+        break;
+      case 'rejected':
+        color = Colors.red;
+        icon = Icons.cancel_outlined;
+        label = 'Rejected';
+        break;
+      default:
+        color = Colors.green;
+        icon = Icons.check_circle_outline;
+        label = 'Approved';
+    }
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: 8),
+          Text(label,
+              style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}

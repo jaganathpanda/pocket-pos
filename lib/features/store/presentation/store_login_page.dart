@@ -153,6 +153,11 @@ class _StoreLoginPageState extends ConsumerState<StoreLoginPage> {
                           busy ? null : () => context.push('/admin-login'),
                       child: const Text('Platform admin login'),
                     ),
+                    TextButton(
+                      onPressed:
+                          busy ? null : () => context.push('/operator-login'),
+                      child: const Text('Weighbridge operator login'),
+                    ),
                     if (allowPublicStorefront)
                       TextButton(
                         onPressed:

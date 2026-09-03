@@ -16,7 +16,8 @@ class Users extends Table {
   TextColumn get pinHash => text()();
   IntColumn get roleId => integer().references(Roles, #id)();
   // POS counter this user is locked to. Null = owner/manager (sees all counters).
-  IntColumn get posCounterId => integer().nullable().references(PosCounters, #id)();
+  IntColumn get posCounterId =>
+      integer().nullable().references(PosCounters, #id)();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -60,7 +61,8 @@ class Shops extends Table {
 class Categories extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text().customConstraint('UNIQUE COLLATE NOCASE')();
-  IntColumn get parentCategoryId => integer().nullable().references(Categories, #id)();
+  IntColumn get parentCategoryId =>
+      integer().nullable().references(Categories, #id)();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -70,7 +72,8 @@ class Products extends Table {
   TextColumn get productCode => text().unique()();
   TextColumn get sku => text().nullable()();
   TextColumn get barcode => text().nullable()();
-  IntColumn get categoryId => integer().nullable().references(Categories, #id)();
+  IntColumn get categoryId =>
+      integer().nullable().references(Categories, #id)();
   TextColumn get brand => text().nullable()();
   RealColumn get purchasePrice => real().withDefault(const Constant(0))();
   RealColumn get sellingPrice => real().withDefault(const Constant(0))();
@@ -99,8 +102,10 @@ class ProductVariants extends Table {
 class Inventory extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get productId => integer().references(Products, #id)();
-  IntColumn get variantId => integer().nullable().references(ProductVariants, #id)();
-  IntColumn get warehouseId => integer().nullable().references(Warehouses, #id)();
+  IntColumn get variantId =>
+      integer().nullable().references(ProductVariants, #id)();
+  IntColumn get warehouseId =>
+      integer().nullable().references(Warehouses, #id)();
   RealColumn get currentStock => real().withDefault(const Constant(0))();
   RealColumn get availableStock => real().withDefault(const Constant(0))();
   RealColumn get lowStockThreshold => real().withDefault(const Constant(5))();
@@ -115,8 +120,10 @@ class Inventory extends Table {
 class InventoryTransactions extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get productId => integer().references(Products, #id)();
-  IntColumn get variantId => integer().nullable().references(ProductVariants, #id)();
-  IntColumn get warehouseId => integer().nullable().references(Warehouses, #id)();
+  IntColumn get variantId =>
+      integer().nullable().references(ProductVariants, #id)();
+  IntColumn get warehouseId =>
+      integer().nullable().references(Warehouses, #id)();
   TextColumn get type => text()(); // in, out, adjust, damage, return, transfer
   RealColumn get quantity => real()();
   RealColumn get unitCost => real().withDefault(const Constant(0))();
@@ -135,10 +142,13 @@ class Customers extends Table {
 class Carts extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
-  TextColumn get status => text().withDefault(const Constant('active'))(); // active, hold, completed
+  TextColumn get status =>
+      text().withDefault(const Constant('active'))(); // active, hold, completed
   IntColumn get customerId => integer().nullable().references(Customers, #id)();
-  IntColumn get posCounterId => integer().nullable().references(PosCounters, #id)();
-  IntColumn get warehouseId => integer().nullable().references(Warehouses, #id)();
+  IntColumn get posCounterId =>
+      integer().nullable().references(PosCounters, #id)();
+  IntColumn get warehouseId =>
+      integer().nullable().references(Warehouses, #id)();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -147,7 +157,8 @@ class CartItems extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get cartId => integer().references(Carts, #id)();
   IntColumn get productId => integer().references(Products, #id)();
-  IntColumn get variantId => integer().nullable().references(ProductVariants, #id)();
+  IntColumn get variantId =>
+      integer().nullable().references(ProductVariants, #id)();
   RealColumn get quantity => real().withDefault(const Constant(1))();
   RealColumn get unitPrice => real().withDefault(const Constant(0))();
   RealColumn get discountAmount => real().withDefault(const Constant(0))();
@@ -160,8 +171,10 @@ class Sales extends Table {
   IntColumn get cartId => integer().nullable().references(Carts, #id)();
   TextColumn get invoiceNo => text().unique()();
   IntColumn get customerId => integer().nullable().references(Customers, #id)();
-  IntColumn get posCounterId => integer().nullable().references(PosCounters, #id)();
-  IntColumn get warehouseId => integer().nullable().references(Warehouses, #id)();
+  IntColumn get posCounterId =>
+      integer().nullable().references(PosCounters, #id)();
+  IntColumn get warehouseId =>
+      integer().nullable().references(Warehouses, #id)();
   RealColumn get subTotal => real()();
   RealColumn get discountTotal => real()();
   RealColumn get taxTotal => real()();
@@ -174,7 +187,8 @@ class SaleItems extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get saleId => integer().references(Sales, #id)();
   IntColumn get productId => integer().references(Products, #id)();
-  IntColumn get variantId => integer().nullable().references(ProductVariants, #id)();
+  IntColumn get variantId =>
+      integer().nullable().references(ProductVariants, #id)();
   RealColumn get quantity => real()();
   RealColumn get unitPrice => real()();
   RealColumn get discountAmount => real().withDefault(const Constant(0))();
@@ -213,8 +227,8 @@ class StaffAttendances extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get staffId => integer().references(Staffs, #id)();
   DateTimeColumn get attendanceDate => dateTime()();
-  TextColumn get status =>
-      text().withDefault(const Constant('present'))(); // present, absent, half_day, leave
+  TextColumn get status => text().withDefault(
+      const Constant('present'))(); // present, absent, half_day, leave
   DateTimeColumn get checkInAt => dateTime().nullable()();
   DateTimeColumn get checkOutAt => dateTime().nullable()();
   TextColumn get note => text().nullable()();
@@ -236,7 +250,8 @@ class StaffPayrolls extends Table {
   RealColumn get payableAmount => real().withDefault(const Constant(0))();
   RealColumn get paidAmount => real().withDefault(const Constant(0))();
   DateTimeColumn get paidAt => dateTime().nullable()();
-  TextColumn get status => text().withDefault(const Constant('unpaid'))(); // unpaid, partial, paid
+  TextColumn get status =>
+      text().withDefault(const Constant('unpaid'))(); // unpaid, partial, paid
   TextColumn get note => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
@@ -271,23 +286,27 @@ class Suppliers extends Table {
 class Purchases extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get supplierId => integer().nullable().references(Suppliers, #id)();
-  IntColumn get warehouseId => integer().nullable().references(Warehouses, #id)();
+  IntColumn get warehouseId =>
+      integer().nullable().references(Warehouses, #id)();
   TextColumn get invoiceNo => text().nullable()();
   TextColumn get status => text().withDefault(const Constant('draft'))();
   RealColumn get subTotal => real().withDefault(const Constant(0))();
   RealColumn get taxTotal => real().withDefault(const Constant(0))();
   RealColumn get discountTotal => real().withDefault(const Constant(0))();
   RealColumn get grandTotal => real().withDefault(const Constant(0))();
-  TextColumn get paymentStatus => text().withDefault(const Constant('unpaid'))();
+  TextColumn get paymentStatus =>
+      text().withDefault(const Constant('unpaid'))();
   TextColumn get note => text().nullable()();
-  DateTimeColumn get purchasedAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get purchasedAt =>
+      dateTime().withDefault(currentDateAndTime)();
 }
 
 class PurchaseItems extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get purchaseId => integer().references(Purchases, #id)();
   IntColumn get productId => integer().references(Products, #id)();
-  IntColumn get variantId => integer().nullable().references(ProductVariants, #id)();
+  IntColumn get variantId =>
+      integer().nullable().references(ProductVariants, #id)();
   RealColumn get quantity => real()();
   RealColumn get unitCost => real()();
   RealColumn get taxPercent => real().withDefault(const Constant(0))();
@@ -311,6 +330,151 @@ class AuditLogs extends Table {
   IntColumn get entityId => integer().nullable()();
   TextColumn get payload => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+// app_database.dart (partial)
+
+@DataClassName('VehicleEntry')
+class VehicleEntries extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get date => dateTime()();
+  TextColumn get slipNo => text()();
+  TextColumn get voucherNo => text().nullable()();
+  TextColumn get vehicleNo => text()();
+  TextColumn get rstManual => text().nullable()();
+  TextColumn get partyName => text()();
+  IntColumn get partyId =>
+      integer().nullable().references(Suppliers, #id)(); // ✅ correct
+  IntColumn get productId => integer().references(Products, #id)(); // ✅ correct
+  TextColumn get entryType => text().withDefault(const Constant('inward'))();
+  RealColumn get firstWeight => real()();
+  DateTimeColumn get firstWeightTime => dateTime().nullable()();
+  RealColumn get secondWeight => real()();
+  DateTimeColumn get secondWeightTime => dateTime().nullable()();
+  RealColumn get netWeight => real()();
+  IntColumn get bags => integer().nullable()();
+  TextColumn get lotNumber => text().nullable()();
+  BoolColumn get complete => boolean().withDefault(const Constant(false))();
+  TextColumn get completeCode => text().nullable()();
+  DateTimeColumn get completeDate => dateTime().nullable()();
+  TextColumn get remark => text().nullable()();
+  // 'weighbridge' (gross/tare two-weighment) or 'manual' (per-item weighing).
+  TextColumn get weighMode =>
+      text().withDefault(const Constant('weighbridge'))();
+  // JSON list of {product, bags, weight} used in manual mode.
+  TextColumn get manualWeightsJson =>
+      text().withDefault(const Constant('[]'))();
+  DateTimeColumn get createdAt =>
+      dateTime().clientDefault(() => DateTime.now())();
+  DateTimeColumn get updatedAt =>
+      dateTime().clientDefault(() => DateTime.now())();
+  TextColumn get status => text().withDefault(const Constant('approved'))();
+  TextColumn get createdByUid => text().nullable()();
+  TextColumn get createdByName => text().nullable()();
+  TextColumn get approverUid => text().nullable()();
+  TextColumn get approverName => text().nullable()();
+  TextColumn get approvedByUid => text().nullable()();
+  DateTimeColumn get approvedAt => dateTime().nullable()();
+  TextColumn get rejectionReason => text().nullable()();
+}
+// lib/core/database/app_database.dart
+
+@DataClassName('FarmerRow')
+class Farmers extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  TextColumn get type =>
+      text().withDefault(const Constant('farmer'))(); // 'farmer' or 'mandi'
+  TextColumn get mobile => text().nullable()();
+  TextColumn get gstNumber => text().nullable()();
+  TextColumn get email => text().nullable()();
+  TextColumn get address => text().nullable()();
+  TextColumn get contactPerson => text().nullable()();
+  RealColumn get outstandingBalance => real().withDefault(const Constant(0))();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // Farmer-specific fields
+  TextColumn get kisanCardNumber => text().nullable()();
+  TextColumn get aadhaarNumber => text().nullable()();
+  TextColumn get village => text().nullable()();
+  TextColumn get district => text().nullable()();
+  TextColumn get mandiLicenseNumber => text().nullable()(); // For mandi agents
+}
+
+// lib/core/database/app_database.dart
+
+@DataClassName('PaddyProcurementRow')
+class PaddyProcurements extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get date => dateTime()();
+  TextColumn get slipNo => text()();
+  TextColumn get voucherNo => text().nullable()();
+  TextColumn get rstManual => text().nullable()();
+  TextColumn get area => text().nullable()();
+  TextColumn get vType => text().withDefault(const Constant('BILL'))();
+  TextColumn get partyName => text()();
+  IntColumn get partyId => integer().nullable().references(Suppliers, #id)();
+  TextColumn get truckNo => text().nullable()();
+  RealColumn get emptyWeight => real().nullable()();
+  TextColumn get marketType => text().withDefault(const Constant('FT'))();
+  RealColumn get grossWeight => real().nullable()();
+  RealColumn get tareWeight => real().nullable()();
+  IntColumn get juteBags => integer().nullable()();
+  IntColumn get plasticBags => integer().nullable()();
+  IntColumn get totalBags => integer().nullable()();
+  BoolColumn get gnyWtLess => boolean().withDefault(const Constant(false))();
+  BoolColumn get bagReturn => boolean().withDefault(const Constant(false))();
+  RealColumn get otherCut => real().nullable()();
+  RealColumn get dustCut => real().nullable()();
+  RealColumn get polCut => real().nullable()();
+  TextColumn get qualityGrade => text().nullable()();
+  RealColumn get unloadTime => real().nullable()();
+  RealColumn get eBag => real().nullable()();
+  RealColumn get ePkt => real().nullable()();
+  RealColumn get netWeight => real()();
+  RealColumn get avgBagWeight => real().nullable()();
+  TextColumn get rateCalculation =>
+      text().withDefault(const Constant('Qntl'))();
+  RealColumn get kgPerBag => real().withDefault(const Constant(75))();
+  IntColumn get productId => integer().references(Products, #id)();
+  TextColumn get productName => text()();
+  TextColumn get quantityNew => text().withDefault(const Constant('N'))();
+  RealColumn get quantityQntl => real().nullable()();
+  RealColumn get ratePerQntl => real().nullable()();
+  RealColumn get totalAmount => real().nullable()();
+  RealColumn get avgRate => real().nullable()();
+  RealColumn get avgAmount => real().nullable()();
+  RealColumn get qrtCutAmt => real().nullable()();
+  RealColumn get paddyAmt => real().nullable()();
+  TextColumn get qualityCutsJson => text().withDefault(const Constant('[]'))();
+  RealColumn get totalCutKg => real().nullable()();
+  RealColumn get finalWeight => real().nullable()();
+  TextColumn get gunnyTransactionsJson =>
+      text().withDefault(const Constant('[]'))();
+  TextColumn get deliveryType => text().nullable()();
+  TextColumn get truckRentType => text().nullable()();
+  RealColumn get truckRent => real().nullable()();
+  RealColumn get truckRentPaid => real().nullable()();
+  RealColumn get otherAmount => real().nullable()();
+  TextColumn get transportType => text().nullable()();
+  TextColumn get truckAccount => text().nullable()();
+  RealColumn get freightAmount => real().nullable()();
+  TextColumn get procurementType =>
+      text().withDefault(const Constant('local'))();
+  TextColumn get mandiInvoiceNo => text().nullable()();
+  TextColumn get tenderNumber => text().nullable()();
+  IntColumn get commissionAgentId =>
+      integer().nullable().references(Suppliers, #id)();
+  IntColumn get warehouseId =>
+      integer().nullable().references(Warehouses, #id)();
+  // Links a procurement back to the weighbridge entry it was created from.
+  IntColumn get vehicleEntryId =>
+      integer().nullable().references(VehicleEntries, #id)();
+  RealColumn get remainingStock => real().withDefault(const Constant(0))();
+  TextColumn get status => text().withDefault(const Constant('draft'))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
 
 @DriftDatabase(
@@ -342,13 +506,16 @@ class AuditLogs extends Table {
     StaffSalaryPayments,
     Notifications,
     AuditLogs,
+    VehicleEntries,
+    Farmers,
+    PaddyProcurements,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -408,15 +575,57 @@ class AppDatabase extends _$AppDatabase {
           if (from < 6) {
             await m.createTable(staffSalaryPayments);
           }
+          if (from < 7) {
+            await m.createTable(farmers);
+            await m.createTable(paddyProcurements);
+          }
+          if (from < 8) {
+            // Added quality-cut fields. On a <7 upgrade the table was just
+            // created above WITH these columns, so guard against re-adding.
+            for (final col in [
+              paddyProcurements.dustCut,
+              paddyProcurements.polCut,
+              paddyProcurements.qualityGrade,
+            ]) {
+              try {
+                await m.addColumn(paddyProcurements, col);
+              } catch (_) {
+                // Column already exists (fresh table created at v7 step).
+              }
+            }
+          }
+          if (from < 9) {
+            // Weighbridge manual-weighing mode + link from procurement back to
+            // its weighbridge entry. Guarded so freshly-created tables (which
+            // already carry these columns) don't error on re-add.
+            for (final col in [
+              vehicleEntries.weighMode,
+              vehicleEntries.manualWeightsJson,
+            ]) {
+              try {
+                await m.addColumn(vehicleEntries, col);
+              } catch (_) {}
+            }
+            try {
+              await m.addColumn(
+                  paddyProcurements, paddyProcurements.vehicleEntryId);
+            } catch (_) {}
+          }
         },
         beforeOpen: (details) async {
           if (details.wasCreated) {
-            await customStatement('CREATE INDEX idx_products_name ON products(name);');
-            await customStatement('CREATE INDEX idx_products_barcode ON products(barcode);');
-            await customStatement('CREATE INDEX idx_products_code ON products(product_code);');
-            await customStatement('CREATE INDEX idx_inventory_product ON inventory(product_id);');
-            await customStatement('CREATE INDEX idx_sales_date ON sales(sold_at);');
-            await customStatement('CREATE INDEX idx_cart_items_cart ON cart_items(cart_id);');
+            await customStatement(
+                'CREATE INDEX idx_products_name ON products(name);');
+            await customStatement(
+                'CREATE INDEX idx_products_barcode ON products(barcode);');
+            await customStatement(
+                'CREATE INDEX idx_products_code ON products(product_code);');
+            await customStatement(
+                'CREATE INDEX idx_inventory_product ON inventory(product_id);');
+            await customStatement(
+                'CREATE INDEX idx_sales_date ON sales(sold_at);');
+            await customStatement(
+                'CREATE INDEX idx_cart_items_cart ON cart_items(cart_id);');
           }
 
           // No local seeding: authentication and all data are now in
@@ -434,10 +643,10 @@ class AppDatabase extends _$AppDatabase {
     final any = await (select(warehouses)..limit(1)).getSingleOrNull();
     if (any != null) return any.id;
     return into(warehouses).insert(
-      WarehousesCompanion.insert(name: 'Main Store', isDefault: const Value(true)),
+      WarehousesCompanion.insert(
+          name: 'Main Store', isDefault: const Value(true)),
     );
   }
-
 }
 
 LazyDatabase _openConnection() {
