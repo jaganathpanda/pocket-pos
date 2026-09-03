@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/database/seed/demo_business_type.dart';
 import '../../../core/models/storefront_shopping_config.dart';
+import '../../../core/firestore/firestore_ids.dart';
 import '../../notifications/domain/domain.dart';
 import '../../referral/domain/referral.dart';
 import '../../../core/firestore/store_catalog_seeder.dart';
@@ -171,8 +172,133 @@ class StoreAuthService {
       rethrow;
     }
 
+    if (normalizedReferralCode != null && normalizedReferralCode.isNotEmpty) {
+      unawaited(_createReferralRecordForRegistration(
+        storeId: storeId,
+        referredUid: uid,
+        referredEmail: emailKey,
+        referredName: ownerName.trim(),
+        referralCode: normalizedReferralCode,
+      ).catchError((Object e) {
+        if (kDebugMode) {
+          // ignore: avoid_print
+          print('Referral registration link skipped/failed: $e');
+        }
+      }));
+    }
+
     await _persist(storeId: storeId, isAdmin: false);
     return storeId;
+  }
+
+  Future<ReferralSettings> _loadReferralSettings() async {
+    final doc = await _referralSettingsDoc().get();
+    final data = doc.data();
+    if (data == null || data.isEmpty) return const ReferralSettings();
+    return ReferralSettings.fromMap(data);
+  }
+
+  Future<_ReferralReferrerMatch?> _findReferrerByReferralCode(
+    String referralCode,
+  ) async {
+    final snap = await _db
+        .collectionGroup('users')
+        .where('referralCode', isEqualTo: referralCode)
+        .limit(1)
+        .get();
+    if (snap.docs.isEmpty) return null;
+
+    final userDoc = snap.docs.first;
+    final storeRef = userDoc.reference.parent.parent;
+    if (storeRef == null) return null;
+
+    return _ReferralReferrerMatch(
+      storeId: storeRef.id,
+      uid: userDoc.id,
+      userRef: userDoc.reference,
+    );
+  }
+
+  Future<void> _createReferralRecordForRegistration({
+    required String storeId,
+    required String referredUid,
+    required String referredEmail,
+    required String referredName,
+    required String referralCode,
+  }) async {
+    final normalizedCode = referralCode.trim().toUpperCase();
+    if (normalizedCode.isEmpty) return;
+
+    final referrer = await _findReferrerByReferralCode(normalizedCode);
+    if (referrer == null) {
+      await _storeDoc(storeId).set(
+        {
+          'referralRewardStatus': 'invalid_code',
+          'referralRewardEvaluatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+      return;
+    }
+
+    if (referrer.storeId == storeId) {
+      await _storeDoc(storeId).set(
+        {
+          'referralRewardStatus': 'self_referral_rejected',
+          'referralRewardEvaluatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+      return;
+    }
+
+    final settings = await _loadReferralSettings();
+    final referralId = newIntId().toString();
+    final now = DateTime.now();
+    final referral = Referral(
+      id: referralId,
+      referrerUid: referrer.uid,
+      referredUid: referredUid,
+      referredEmail: referredEmail,
+      referredName: referredName,
+      status: ReferralStatus.pending,
+      rewardType: settings.rewardType,
+      rewardAmount: settings.rewardAmount,
+      createdAt: now,
+      expiryAt: now.add(Duration(days: settings.expiryDays)),
+    );
+
+    await _db
+        .collection('stores')
+        .doc(referrer.storeId)
+        .collection('referrals')
+        .doc(referralId)
+        .set({
+      ...referral.toMap(),
+      'referrerStoreId': referrer.storeId,
+      'referredStoreId': storeId,
+      'referralCode': normalizedCode,
+    });
+
+    await _storeDoc(storeId).set(
+      {
+        'referralRewardStatus': 'pending',
+        'referralSourceStoreId': referrer.storeId,
+        'referralSourceUid': referrer.uid,
+        'referralReferralId': referralId,
+        'referralAppliedAt': FieldValue.serverTimestamp(),
+        'appliedReferralCode': normalizedCode,
+      },
+      SetOptions(merge: true),
+    );
+
+    await _storeDoc(storeId).collection('users').doc(referredUid).set(
+      {
+        'referredBy': referrer.uid,
+        'referredAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
   }
 
   /// Best-effort cleanup of a just-created auth account when registration is
@@ -507,6 +633,18 @@ class StoreAuthService {
     await prefs.setBool(_prefsAdmin, isAdmin);
     await prefs.setBool(_prefsOperator, isOperator);
   }
+}
+
+class _ReferralReferrerMatch {
+  final String storeId;
+  final String uid;
+  final DocumentReference<Map<String, dynamic>> userRef;
+
+  const _ReferralReferrerMatch({
+    required this.storeId,
+    required this.uid,
+    required this.userRef,
+  });
 }
 
 /// Thrown inside the registration transaction when the email is already
