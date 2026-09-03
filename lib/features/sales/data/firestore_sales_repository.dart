@@ -10,6 +10,7 @@ import '../../../core/firestore/firestore_mappers.dart';
 import '../../../core/firestore/store_scope.dart';
 import '../../../core/models/discount_policy.dart';
 import '../../inventory/data/firestore_inventory_repository.dart';
+import '../../referral/domain/referral.dart';
 import '../../warehouse/data/firestore_warehouse_repository.dart';
 import '../domain/sales_repository.dart';
 
@@ -676,7 +677,8 @@ class FirestoreSalesRepository implements SalesRepository {
     // by a referred user. Runs best-effort and never blocks checkout.
     if (createdByUid != null && createdByUid.isNotEmpty) {
       unawaited(
-        _processReferralRewardOnCheckout(createdByUid).catchError((Object e) {
+        _processReferralRewardOnCheckout(createdByUid, saleId)
+            .catchError((Object e) {
           if (kDebugMode) {
             // ignore: avoid_print
             print('Referral reward processing skipped/failed: $e');
@@ -700,10 +702,14 @@ class FirestoreSalesRepository implements SalesRepository {
     return saleId;
   }
 
-  Future<void> _processReferralRewardOnCheckout(String referredUid) async {
-    final pendingSnap = await _referrals
+  Future<void> _processReferralRewardOnCheckout(
+    String referredUid,
+    int saleId,
+  ) async {
+    final pendingSnap = await _db
+        .collectionGroup('referrals')
         .where('referredUid', isEqualTo: referredUid)
-        .where('status', isEqualTo: 'pending')
+        .where('status', isEqualTo: ReferralStatus.pending.name)
         .limit(1)
         .get();
     if (pendingSnap.docs.isEmpty) return;
@@ -711,28 +717,79 @@ class FirestoreSalesRepository implements SalesRepository {
     final referralDoc = pendingSnap.docs.first;
     final referralData = referralDoc.data();
     final referrerUid = (referralData['referrerUid'] as String?)?.trim();
+    final referrerStoreId =
+        (referralData['referrerStoreId'] as String?)?.trim();
+    final referredStoreId =
+        (referralData['referredStoreId'] as String?)?.trim() ?? _storeId;
     final rewardAmount = fsNum(referralData['rewardAmount']);
 
-    if (referrerUid == null || referrerUid.isEmpty || rewardAmount <= 0) {
+    if (referrerUid == null ||
+        referrerUid.isEmpty ||
+        referrerStoreId == null ||
+        referrerStoreId.isEmpty ||
+        rewardAmount <= 0) {
       return;
     }
 
-    final batch = _db.batch();
-    batch.set(
+    final referrerStoreRef = _db.collection('stores').doc(referrerStoreId);
+    final referrerUserRef =
+        referrerStoreRef.collection('users').doc(referrerUid);
+    final referredStoreRef = _db.collection('stores').doc(referredStoreId);
+
+    await _db.runTransaction((tx) async {
+      final latestReferralSnap = await tx.get(referralDoc.reference);
+      if (!latestReferralSnap.exists) return;
+
+      final latestReferral = latestReferralSnap.data() ?? {};
+      final latestStatus = (latestReferral['status'] as String?)?.trim();
+      if (latestStatus != ReferralStatus.pending.name) return;
+
+      tx.set(
         referralDoc.reference,
         {
-          'status': 'rewarded',
+          'status': ReferralStatus.rewarded.name,
           'completedAt': FieldValue.serverTimestamp(),
           'rewardedAt': FieldValue.serverTimestamp(),
+          'rewardedSaleId': saleId.toString(),
         },
-        SetOptions(merge: true));
-    batch.set(
-        _users.doc(referrerUid),
+        SetOptions(merge: true),
+      );
+
+      tx.set(
+        referrerUserRef,
         {
           'referralRewards': FieldValue.increment(rewardAmount),
+          'lastReferralRewardAt': FieldValue.serverTimestamp(),
         },
-        SetOptions(merge: true));
-    _write(batch.commit());
+        SetOptions(merge: true),
+      );
+
+      tx.set(
+        referredStoreRef,
+        {
+          'referralRewardStatus': 'credited',
+          'referralRewardAmount': rewardAmount,
+          'referralRewardedAt': FieldValue.serverTimestamp(),
+          'referralSourceStoreId': referrerStoreId,
+          'referralSourceUid': referrerUid,
+          'referralRewardSaleId': saleId.toString(),
+          'referralRewardEvaluatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+
+      tx.set(
+        referredStoreRef.collection('referral_reward_events').doc('$saleId'),
+        {
+          'saleId': saleId.toString(),
+          'sourceStoreId': referrerStoreId,
+          'sourceUid': referrerUid,
+          'rewardAmount': rewardAmount,
+          'createdAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+    });
   }
 
   // ── helpers ────────────────────────────────────────────────────────────────
