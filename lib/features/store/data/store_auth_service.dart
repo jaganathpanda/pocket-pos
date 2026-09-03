@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/database/seed/demo_business_type.dart';
 import '../../../core/models/storefront_shopping_config.dart';
 import '../../notifications/domain/domain.dart';
+import '../../referral/domain/referral.dart';
 import '../../../core/firestore/store_catalog_seeder.dart';
 import '../domain/store_models.dart';
 
@@ -67,6 +68,9 @@ class StoreAuthService {
   DocumentReference<Map<String, dynamic>> _publicFeaturesDoc() =>
       _db.collection('platform_config').doc('public_features');
 
+  DocumentReference<Map<String, dynamic>> _referralSettingsDoc() =>
+      _db.collection('platform_config').doc('referral_settings');
+
   /// Registers a new store (status = pending) and its owner login.
   /// Returns the generated store id.
   Future<String> registerStore({
@@ -77,6 +81,7 @@ class StoreAuthService {
     required DemoBusinessType businessType,
     String? mobile,
     String? email,
+    String? referralCode,
   }) async {
     // One email = one store: the contact email must be unique across the
     // platform. We reserve it atomically in `email_index` right after creating
@@ -88,6 +93,7 @@ class StoreAuthService {
 
     // Generated locally (no pre-read: the caller isn't signed in yet, and the
     // id space is large). Firestore's create rule guards against a real clash.
+    final normalizedReferralCode = referralCode?.trim().toUpperCase();
     final storeId = _generateStoreId();
     final cred = await _auth
         .createUserWithEmailAndPassword(
@@ -133,6 +139,12 @@ class StoreAuthService {
         'ownerUsername': ownerUsername.trim(),
         'mobile': mobile?.trim(),
         'email': emailKey,
+        if (normalizedReferralCode != null && normalizedReferralCode.isNotEmpty)
+          'appliedReferralCode': normalizedReferralCode,
+        if (normalizedReferralCode != null && normalizedReferralCode.isNotEmpty)
+          'referralRewardStatus': 'pending',
+        if (normalizedReferralCode != null && normalizedReferralCode.isNotEmpty)
+          'referralAppliedAt': FieldValue.serverTimestamp(),
         'businessType': businessType.name,
         'status': 'pending',
         'createdAt': FieldValue.serverTimestamp(),
@@ -434,6 +446,21 @@ class StoreAuthService {
   Future<void> setStorefrontFeatureFlag(StorefrontShoppingConfig features) {
     return _publicFeaturesDoc().set(
       features.toFirestoreMap(),
+      SetOptions(merge: true),
+    );
+  }
+
+  Stream<ReferralSettings> watchReferralSettings() {
+    return _referralSettingsDoc().snapshots().map((snap) {
+      final data = snap.data();
+      if (data == null || data.isEmpty) return const ReferralSettings();
+      return ReferralSettings.fromMap(data);
+    });
+  }
+
+  Future<void> setReferralSettings(ReferralSettings settings) {
+    return _referralSettingsDoc().set(
+      settings.toMap(),
       SetOptions(merge: true),
     );
   }

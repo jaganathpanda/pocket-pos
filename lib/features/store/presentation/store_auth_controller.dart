@@ -52,9 +52,8 @@ class StoreAuthController extends StateNotifier<StoreAuthState> {
         password: password,
       );
       state = StoreAuthState(
-        stage: session.isApproved
-            ? StoreAuthStage.active
-            : StoreAuthStage.pending,
+        stage:
+            session.isApproved ? StoreAuthStage.active : StoreAuthStage.pending,
         session: session,
       );
       return true;
@@ -76,6 +75,7 @@ class StoreAuthController extends StateNotifier<StoreAuthState> {
     required DemoBusinessType businessType,
     String? mobile,
     String? email,
+    String? referralCode,
   }) async {
     state = state.copyWith(busy: true, error: null);
     try {
@@ -87,6 +87,7 @@ class StoreAuthController extends StateNotifier<StoreAuthState> {
         businessType: businessType,
         mobile: mobile,
         email: email,
+        referralCode: referralCode,
       );
       state = await _service.restore(); // pending session
       return storeId;

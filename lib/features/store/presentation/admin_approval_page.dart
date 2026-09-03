@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/storefront_shopping_config.dart';
 import '../../notifications/domain/domain.dart';
+import '../../referral/domain/referral.dart';
 import '../domain/store_models.dart';
 import 'store_auth_controller.dart';
 
@@ -18,15 +19,13 @@ final _approvedStoresProvider = StreamProvider<List<StoreRecord>>((ref) {
       .watchStoresByStatus(StoreStatus.approved);
 });
 
-final _pendingOperatorsProvider =
-    StreamProvider<List<OperatorProfile>>((ref) {
+final _pendingOperatorsProvider = StreamProvider<List<OperatorProfile>>((ref) {
   return ref
       .watch(storeAuthServiceProvider)
       .watchOperatorsByStatus(StoreStatus.pending);
 });
 
-final _approvedOperatorsProvider =
-    StreamProvider<List<OperatorProfile>>((ref) {
+final _approvedOperatorsProvider = StreamProvider<List<OperatorProfile>>((ref) {
   return ref
       .watch(storeAuthServiceProvider)
       .watchOperatorsByStatus(StoreStatus.approved);
@@ -42,6 +41,10 @@ final _storefrontFeatureFlagProvider =
   return ref.watch(storeAuthServiceProvider).watchStorefrontFeatureFlag();
 });
 
+final _referralSettingsProvider = StreamProvider<ReferralSettings>((ref) {
+  return ref.watch(storeAuthServiceProvider).watchReferralSettings();
+});
+
 class AdminApprovalPage extends ConsumerWidget {
   const AdminApprovalPage({super.key});
 
@@ -53,6 +56,7 @@ class AdminApprovalPage extends ConsumerWidget {
     final approvedOps = ref.watch(_approvedOperatorsProvider);
     final notificationFeatures = ref.watch(_notificationFeaturesProvider);
     final storefrontFeature = ref.watch(_storefrontFeatureFlagProvider);
+    final referralSettings = ref.watch(_referralSettingsProvider);
     final service = ref.watch(storeAuthServiceProvider);
 
     Future<void> setStatus(StoreRecord s, StoreStatus status) async {
@@ -93,6 +97,17 @@ class AdminApprovalPage extends ConsumerWidget {
     ) async {
       try {
         await service.setStorefrontFeatureFlag(next);
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('$e')));
+        }
+      }
+    }
+
+    Future<void> updateReferralSettings(ReferralSettings next) async {
+      try {
+        await service.setReferralSettings(next);
       } catch (e) {
         if (context.mounted) {
           ScaffoldMessenger.of(context)
@@ -151,6 +166,21 @@ class AdminApprovalPage extends ConsumerWidget {
             ),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => _Empty('Storefront feature flag error: $e'),
+          ),
+          const SizedBox(height: 12),
+          const _SectionHeader('Referral Program (Platform Policy)'),
+          referralSettings.when(
+            data: (settings) => Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: _ReferralPolicyCard(
+                  settings: settings,
+                  onSave: updateReferralSettings,
+                ),
+              ),
+            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => _Empty('Referral settings error: $e'),
           ),
           const SizedBox(height: 20),
           const _SectionHeader('Pending approval'),
@@ -608,5 +638,202 @@ class _NotificationConfigCardState
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+}
+
+class _ReferralPolicyCard extends StatefulWidget {
+  const _ReferralPolicyCard({
+    required this.settings,
+    required this.onSave,
+  });
+
+  final ReferralSettings settings;
+  final Future<void> Function(ReferralSettings next) onSave;
+
+  @override
+  State<_ReferralPolicyCard> createState() => _ReferralPolicyCardState();
+}
+
+class _ReferralPolicyCardState extends State<_ReferralPolicyCard> {
+  late final TextEditingController _rewardAmountCtrl;
+  late final TextEditingController _expiryDaysCtrl;
+  late final TextEditingController _maxReferralsCtrl;
+
+  String? _loadedSignature;
+  bool _enabled = true;
+  RewardType _rewardType = RewardType.credit;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _rewardAmountCtrl = TextEditingController();
+    _expiryDaysCtrl = TextEditingController();
+    _maxReferralsCtrl = TextEditingController();
+    _hydrateFromSettings(widget.settings);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ReferralPolicyCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _hydrateFromSettings(widget.settings);
+  }
+
+  @override
+  void dispose() {
+    _rewardAmountCtrl.dispose();
+    _expiryDaysCtrl.dispose();
+    _maxReferralsCtrl.dispose();
+    super.dispose();
+  }
+
+  String _signatureOf(ReferralSettings settings) {
+    return [
+      settings.enabled.toString(),
+      settings.rewardType.name,
+      settings.rewardAmount.toString(),
+      settings.expiryDays.toString(),
+      settings.maxReferrals?.toString() ?? '',
+    ].join('|');
+  }
+
+  void _hydrateFromSettings(ReferralSettings settings) {
+    final nextSignature = _signatureOf(settings);
+    if (_loadedSignature == nextSignature) return;
+    _loadedSignature = nextSignature;
+    _enabled = settings.enabled;
+    _rewardType = settings.rewardType;
+    _rewardAmountCtrl.text = settings.rewardAmount.toString();
+    _expiryDaysCtrl.text = settings.expiryDays.toString();
+    _maxReferralsCtrl.text = settings.maxReferrals?.toString() ?? '';
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      final next = ReferralSettings(
+        enabled: _enabled,
+        rewardType: _rewardType,
+        rewardAmount: double.tryParse(_rewardAmountCtrl.text.trim()) ?? 100,
+        expiryDays: int.tryParse(_expiryDaysCtrl.text.trim()) ?? 30,
+        maxReferrals: _maxReferralsCtrl.text.trim().isEmpty
+            ? null
+            : int.tryParse(_maxReferralsCtrl.text.trim()),
+      );
+      await widget.onSave(next);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Referral settings saved.')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.share_rounded, size: 20),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'Referral Program Settings',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+              ),
+            ),
+            if (_saving)
+              const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              TextButton.icon(
+                onPressed: _save,
+                icon: const Icon(Icons.save_outlined, size: 16),
+                label: const Text('Save'),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Global platform policy for all stores.',
+          style: TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+        const SizedBox(height: 12),
+        SwitchListTile.adaptive(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Enable referral program'),
+          value: _enabled,
+          onChanged: (v) => setState(() => _enabled = v),
+        ),
+        DropdownButtonFormField<RewardType>(
+          value: _rewardType,
+          decoration: const InputDecoration(
+            labelText: 'Reward type',
+            border: OutlineInputBorder(),
+            isDense: true,
+          ),
+          items: const [
+            DropdownMenuItem(
+              value: RewardType.credit,
+              child: Text('Store Credit'),
+            ),
+            DropdownMenuItem(
+              value: RewardType.discount,
+              child: Text('Discount Coupon'),
+            ),
+            DropdownMenuItem(
+              value: RewardType.cash,
+              child: Text('Cash'),
+            ),
+            DropdownMenuItem(
+              value: RewardType.points,
+              child: Text('Loyalty Points'),
+            ),
+          ],
+          onChanged: (v) {
+            if (v != null) setState(() => _rewardType = v);
+          },
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _rewardAmountCtrl,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(
+            labelText: 'Reward amount',
+            helperText: 'Amount per successful referral',
+            border: OutlineInputBorder(),
+            isDense: true,
+          ),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _expiryDaysCtrl,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Expiry days',
+            helperText: 'Referral validity window',
+            border: OutlineInputBorder(),
+            isDense: true,
+          ),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _maxReferralsCtrl,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Maximum referrals (optional)',
+            helperText: 'Leave empty for unlimited',
+            border: OutlineInputBorder(),
+            isDense: true,
+          ),
+        ),
+      ],
+    );
   }
 }

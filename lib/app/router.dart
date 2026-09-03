@@ -5,6 +5,7 @@ import 'package:pocket_pos/features/farmers/presentation/farmer_list_page.dart';
 import 'package:pocket_pos/features/mill_run/presentation/milling_config_page.dart';
 import 'package:pocket_pos/features/paddy_procurement/presentation/paddy_procurement_form.dart';
 import 'package:pocket_pos/features/paddy_procurement/presentation/paddy_procurement_page.dart';
+import 'package:pocket_pos/features/referral/presentation/referral_dashboard.dart';
 import 'package:pocket_pos/features/weighbridge/presentation/vehicle_entry_detail_page.dart';
 import 'package:pocket_pos/features/weighbridge/presentation/vehicle_entry_list_page.dart';
 import 'package:pocket_pos/features/weighbridge/presentation/weighbridge_operator_dashboard.dart';
@@ -259,6 +260,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/farmers',
             builder: (context, state) => const FarmerListPage(),
           ),
+          GoRoute(
+            path: '/referral',
+            builder: (context, state) => const ReferralDashboard(),
+          ),
         ],
       ),
     ],
@@ -300,11 +305,7 @@ List<NavDest> riceMillNav({
         icon: Icons.grass_rounded
       ),
     if (!scoped)
-      (
-        route: '/farmers',
-        label: 'Farmers / Mandi',
-        icon: Icons.groups_rounded
-      ),
+      (route: '/farmers', label: 'Farmers / Mandi', icon: Icons.groups_rounded),
 
     // ── Milling: paddy → rice ──
     if (!scoped)
@@ -355,9 +356,8 @@ List<NavDest> riceMillNav({
     if (!scoped)
       (
         route: '/notifications',
-        label: unreadCount > 0
-            ? 'Notifications ($unreadCount)'
-            : 'Notifications',
+        label:
+            unreadCount > 0 ? 'Notifications ($unreadCount)' : 'Notifications',
         icon: Icons.notifications_rounded
       ),
     if (!scoped)
@@ -405,9 +405,8 @@ List<NavDest> retailNav({
     if (!scoped)
       (
         route: '/notifications',
-        label: unreadCount > 0
-            ? 'Notifications ($unreadCount)'
-            : 'Notifications',
+        label:
+            unreadCount > 0 ? 'Notifications ($unreadCount)' : 'Notifications',
         icon: Icons.notifications_rounded
       ),
     (route: '/reports', label: 'Reports', icon: Icons.analytics_rounded),
@@ -425,6 +424,8 @@ List<NavDest> retailNav({
       (route: '/settings', label: 'Settings', icon: Icons.settings_rounded),
     if (canManage)
       (route: '/counters', label: 'Counters', icon: Icons.storefront_rounded),
+    if (!scoped)
+      (route: '/referral', label: 'Refer & Earn', icon: Icons.share_rounded),
   ];
 }
 
