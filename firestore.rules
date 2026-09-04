@@ -128,12 +128,6 @@ service cloud.firestore {
       allow list: if isPlatformAdmin();
     }
 
-    // Referral records (platform-wide)
-    match /referral/{referralId} {
-      allow read, write: if isSignedIn();
-    }
-    
-
     // ──────────────────────────────────────────────────────────────────────
     // STORES
     // ──────────────────────────────────────────────────────────────────────
@@ -169,6 +163,38 @@ service cloud.firestore {
                     || isApprovedOperator();
         allow create: if isSignedIn() && request.auth.uid == uid;
         allow update, delete: if isStoreMember(storeId) || isPlatformAdmin();
+      }
+
+      // ────────────────────────────────────────────────────────────────────
+      // REFERRALS (store-scoped, owned by the referrer store)
+      // ────────────────────────────────────────────────────────────────────
+
+      match /referrals/{referralId} {
+        // The referral is created when the referred user signs up with a code.
+        // We allow the referred user to create the record under the referrer
+        // store as long as the referenced referrer user exists in that store.
+        allow create: if isSignedIn()
+          && request.resource.data.referredUid == request.auth.uid
+          && exists(/databases/$(database)/documents/stores/$(storeId)/users/$(request.resource.data.referrerUid))
+          && request.resource.data.referrerUid != request.resource.data.referredUid;
+
+        // Store members and the referred user can read the referral record.
+        allow read: if isStoreMember(storeId)
+          || isPlatformAdmin()
+          || (isSignedIn() && resource.data.referredUid == request.auth.uid)
+          || (isSignedIn() && resource.data.referrerUid == request.auth.uid);
+
+        // Referral lifecycle updates are handled by the store member (referrer)
+        // or by the referred user only when the record is still pending.
+        allow update: if isStoreMember(storeId)
+          || isPlatformAdmin()
+          || (isSignedIn()
+              && resource.data.referredUid == request.auth.uid
+              && resource.data.status == 'pending'
+              && request.resource.data.referredUid == resource.data.referredUid
+              && request.resource.data.referrerUid == resource.data.referrerUid);
+
+        allow delete: if isStoreMember(storeId) || isPlatformAdmin();
       }
       // ────────────────────────────────────────────────────────────────────
       // CATALOG (Read-only for operators)

@@ -721,20 +721,22 @@ class FirestoreSalesRepository implements SalesRepository {
         (referralData['referrerStoreId'] as String?)?.trim();
     final referredStoreId =
         (referralData['referredStoreId'] as String?)?.trim() ?? _storeId;
+    final beneficiaryUid = (referralData['referredUid'] as String?)?.trim();
     final rewardAmount = fsNum(referralData['rewardAmount']);
 
     if (referrerUid == null ||
         referrerUid.isEmpty ||
         referrerStoreId == null ||
         referrerStoreId.isEmpty ||
+        beneficiaryUid == null ||
+        beneficiaryUid.isEmpty ||
         rewardAmount <= 0) {
       return;
     }
 
-    final referrerStoreRef = _db.collection('stores').doc(referrerStoreId);
-    final referrerUserRef =
-        referrerStoreRef.collection('users').doc(referrerUid);
     final referredStoreRef = _db.collection('stores').doc(referredStoreId);
+    final beneficiaryUserRef =
+        referredStoreRef.collection('users').doc(beneficiaryUid);
 
     await _db.runTransaction((tx) async {
       final latestReferralSnap = await tx.get(referralDoc.reference);
@@ -756,7 +758,7 @@ class FirestoreSalesRepository implements SalesRepository {
       );
 
       tx.set(
-        referrerUserRef,
+        beneficiaryUserRef,
         {
           'referralRewards': FieldValue.increment(rewardAmount),
           'lastReferralRewardAt': FieldValue.serverTimestamp(),
@@ -772,6 +774,8 @@ class FirestoreSalesRepository implements SalesRepository {
           'referralRewardedAt': FieldValue.serverTimestamp(),
           'referralSourceStoreId': referrerStoreId,
           'referralSourceUid': referrerUid,
+          'referralBeneficiaryStoreId': referredStoreId,
+          'referralBeneficiaryUid': beneficiaryUid,
           'referralRewardSaleId': saleId.toString(),
           'referralRewardEvaluatedAt': FieldValue.serverTimestamp(),
         },
@@ -784,6 +788,8 @@ class FirestoreSalesRepository implements SalesRepository {
           'saleId': saleId.toString(),
           'sourceStoreId': referrerStoreId,
           'sourceUid': referrerUid,
+          'beneficiaryStoreId': referredStoreId,
+          'beneficiaryUid': beneficiaryUid,
           'rewardAmount': rewardAmount,
           'createdAt': FieldValue.serverTimestamp(),
         },
