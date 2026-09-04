@@ -215,7 +215,6 @@ class StoreAuthService {
     return _ReferralReferrerMatch(
       storeId: storeRef.id,
       uid: userDoc.id,
-      userRef: userDoc.reference,
     );
   }
 
@@ -295,6 +294,7 @@ class StoreAuthService {
     await _storeDoc(storeId).collection('users').doc(referredUid).set(
       {
         'referredBy': referrer.uid,
+        'appliedReferralCode': normalizedCode,
         'referredAt': FieldValue.serverTimestamp(),
       },
       SetOptions(merge: true),
@@ -638,12 +638,10 @@ class StoreAuthService {
 class _ReferralReferrerMatch {
   final String storeId;
   final String uid;
-  final DocumentReference<Map<String, dynamic>> userRef;
 
   const _ReferralReferrerMatch({
     required this.storeId,
     required this.uid,
-    required this.userRef,
   });
 }
 
