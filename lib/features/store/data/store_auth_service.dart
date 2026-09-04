@@ -173,18 +173,29 @@ class StoreAuthService {
     }
 
     if (normalizedReferralCode != null && normalizedReferralCode.isNotEmpty) {
-      unawaited(_createReferralRecordForRegistration(
-        storeId: storeId,
-        referredUid: uid,
-        referredEmail: emailKey,
-        referredName: ownerName.trim(),
-        referralCode: normalizedReferralCode,
-      ).catchError((Object e) {
+      try {
+        await _createReferralRecordForRegistration(
+          storeId: storeId,
+          referredUid: uid,
+          referredEmail: emailKey,
+          referredName: ownerName.trim(),
+          referralCode: normalizedReferralCode,
+        );
+      } catch (e) {
         if (kDebugMode) {
           // ignore: avoid_print
-          print('Referral registration link skipped/failed: $e');
+          print('Referral registration link failed: $e');
         }
-      }));
+        await _storeDoc(storeId).set(
+          {
+            'referralLinkStatus': 'failed',
+            'referralLinkError': e.toString(),
+            'referralRewardStatus': 'pending',
+            'referralRewardEvaluatedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
+      }
     }
 
     await _persist(storeId: storeId, isAdmin: false);
@@ -279,6 +290,16 @@ class StoreAuthService {
       'referralCode': normalizedCode,
     });
 
+    final createdReferral = await _db
+        .collection('stores')
+        .doc(referrer.storeId)
+        .collection('referrals')
+        .doc(referralId)
+        .get();
+    if (!createdReferral.exists) {
+      throw Exception('Referral document was not created.');
+    }
+
     await _storeDoc(storeId).set(
       {
         'referralRewardStatus': 'pending',
@@ -296,6 +317,14 @@ class StoreAuthService {
         'referredBy': referrer.uid,
         'appliedReferralCode': normalizedCode,
         'referredAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+
+    await _storeDoc(storeId).set(
+      {
+        'referralLinkStatus': 'linked',
+        'referralLinkError': FieldValue.delete(),
       },
       SetOptions(merge: true),
     );
