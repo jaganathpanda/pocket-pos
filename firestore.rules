@@ -128,6 +128,18 @@ service cloud.firestore {
       allow list: if isPlatformAdmin();
     }
 
+    // Global referral code index (code -> storeId + uid) used during
+    // cross-store registration referral resolution.
+    match /referral_codes/{code} {
+      allow get: if isSignedIn();
+      allow list: if isPlatformAdmin();
+      allow create, update: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.code == code
+        && exists(/databases/$(database)/documents/stores/$(request.resource.data.storeId)/users/$(request.auth.uid));
+      allow delete: if isPlatformAdmin();
+    }
+
     // ──────────────────────────────────────────────────────────────────────
     // STORES
     // ──────────────────────────────────────────────────────────────────────
@@ -185,14 +197,15 @@ service cloud.firestore {
           || (isSignedIn() && resource.data.referrerUid == request.auth.uid);
 
         // Referral lifecycle updates are handled by the store member (referrer)
-        // or by the referred user only when the record is still pending.
+          // or by members of the referred store while the record is pending.
         allow update: if isStoreMember(storeId)
           || isPlatformAdmin()
           || (isSignedIn()
-              && resource.data.referredUid == request.auth.uid
+            && exists(/databases/$(database)/documents/stores/$(resource.data.referredStoreId)/users/$(request.auth.uid))
               && resource.data.status == 'pending'
               && request.resource.data.referredUid == resource.data.referredUid
-              && request.resource.data.referrerUid == resource.data.referrerUid);
+            && request.resource.data.referrerUid == resource.data.referrerUid
+            && request.resource.data.referredStoreId == resource.data.referredStoreId);
 
         allow delete: if isStoreMember(storeId) || isPlatformAdmin();
       }

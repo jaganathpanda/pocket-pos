@@ -212,20 +212,22 @@ class StoreAuthService {
   Future<_ReferralReferrerMatch?> _findReferrerByReferralCode(
     String referralCode,
   ) async {
-    final snap = await _db
-        .collectionGroup('users')
-        .where('referralCode', isEqualTo: referralCode)
-        .limit(1)
-        .get();
-    if (snap.docs.isEmpty) return null;
+    final normalizedCode = referralCode.trim().toUpperCase();
+    if (normalizedCode.isEmpty) return null;
 
-    final userDoc = snap.docs.first;
-    final storeRef = userDoc.reference.parent.parent;
-    if (storeRef == null) return null;
+    final indexDoc =
+        await _db.collection('referral_codes').doc(normalizedCode).get();
+    if (!indexDoc.exists) return null;
+    final indexData = indexDoc.data();
+    final storeId = (indexData?['storeId'] as String?)?.trim();
+    final uid = (indexData?['uid'] as String?)?.trim();
+    if (storeId == null || storeId.isEmpty || uid == null || uid.isEmpty) {
+      return null;
+    }
 
     return _ReferralReferrerMatch(
-      storeId: storeRef.id,
-      uid: userDoc.id,
+      storeId: storeId,
+      uid: uid,
     );
   }
 

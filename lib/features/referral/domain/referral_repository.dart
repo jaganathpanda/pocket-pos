@@ -10,15 +10,6 @@ abstract class ReferralRepository {
   /// Generate referral code for a user
   Future<String> generateReferralCode(String uid);
 
-  /// Create a referral when a new user signs up with a referral code
-  Future<void> createReferral({
-    required String referrerUid,
-    required String referredUid,
-    required String referredEmail,
-    required String referredName,
-    String? referralCode,
-  });
-
   /// Mark a referral as completed (when referred user makes first purchase)
   Future<void> completeReferral(String referralId);
 

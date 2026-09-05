@@ -40,9 +40,8 @@ class StoreCatalogSeeder {
     // Reuse an existing default warehouse, or create one in the batch.
     final defaultWh =
         await warehouses.where('isDefault', isEqualTo: true).limit(1).get();
-    final anyWh = defaultWh.docs.isNotEmpty
-        ? defaultWh
-        : await warehouses.limit(1).get();
+    final anyWh =
+        defaultWh.docs.isNotEmpty ? defaultWh : await warehouses.limit(1).get();
 
     final batch = _db.batch();
 

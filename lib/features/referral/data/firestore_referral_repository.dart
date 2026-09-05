@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pocket_pos/core/firestore/store_scope.dart';
 import 'dart:math';
-import '../../../core/firestore/firestore_ids.dart';
 import '../domain/referral.dart';
 import '../domain/referral_repository.dart';
 
@@ -16,6 +15,9 @@ class FirestoreReferralRepository implements ReferralRepository {
 
   CollectionReference<Map<String, dynamic>> get _usersCol =>
       storeCollection(_db, _storeId, 'users');
+
+  CollectionReference<Map<String, dynamic>> get _referralCodeIndexCol =>
+      _db.collection('referral_codes');
 
   DocumentReference<Map<String, dynamic>> get _legacyStoreSettingsDoc =>
       storeCollection(_db, _storeId, 'settings').doc('referral_settings');
@@ -74,6 +76,7 @@ class FirestoreReferralRepository implements ReferralRepository {
         // Legacy fix: previous generator produced repeated chars like YYYYYYYY.
         // Regenerate once when such a code is detected.
         if (!_legacyRepeatedCode.hasMatch(normalized)) {
+          await _upsertReferralCodeIndex(code: normalized, uid: uid);
           return normalized;
         }
       }
@@ -94,7 +97,21 @@ class FirestoreReferralRepository implements ReferralRepository {
       'referralCode': code,
     }, SetOptions(merge: true));
 
+    await _upsertReferralCodeIndex(code: code, uid: uid);
+
     return code;
+  }
+
+  Future<void> _upsertReferralCodeIndex({
+    required String code,
+    required String uid,
+  }) {
+    return _referralCodeIndexCol.doc(code).set({
+      'code': code,
+      'storeId': _storeId,
+      'uid': uid,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   String _generateCode() {
@@ -104,40 +121,6 @@ class FirestoreReferralRepository implements ReferralRepository {
       buffer.write(_referralCodeChars[index]);
     }
     return buffer.toString();
-  }
-
-  @override
-  Future<void> createReferral({
-    required String referrerUid,
-    required String referredUid,
-    required String referredEmail,
-    required String referredName,
-    String? referralCode,
-  }) async {
-    // Get settings
-    final settings = await getSettings();
-    final expiryDate = DateTime.now().add(Duration(days: settings.expiryDays));
-
-    final referral = Referral(
-      id: newIntId().toString(),
-      referrerUid: referrerUid,
-      referredUid: referredUid,
-      referredEmail: referredEmail,
-      referredName: referredName,
-      status: ReferralStatus.pending,
-      rewardType: settings.rewardType,
-      rewardAmount: settings.rewardAmount,
-      createdAt: DateTime.now(),
-      expiryAt: expiryDate,
-    );
-
-    await _referralsCol.doc(referral.id).set(referral.toMap());
-
-    // Update referred user's "referredBy" field
-    await _usersCol.doc(referredUid).set({
-      'referredBy': referrerUid,
-      'referredAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
   }
 
   @override
@@ -204,8 +187,9 @@ class FirestoreReferralRepository implements ReferralRepository {
 
   @override
   Future<bool> isValidReferralCode(String code) async {
-    if (code.isEmpty) return false;
-    final snap = await _usersCol.where('referralCode', isEqualTo: code).get();
-    return snap.docs.isNotEmpty;
+    final normalized = code.trim().toUpperCase();
+    if (normalized.isEmpty) return false;
+    final doc = await _referralCodeIndexCol.doc(normalized).get();
+    return doc.exists;
   }
 }
