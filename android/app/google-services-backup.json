@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "1086638616306",
-    "project_id": "mypocketpos",
-    "storage_bucket": "mypocketpos.firebasestorage.app"
+    "project_number": "351899337586",
+    "project_id": "pocket-pos-35e48",
+    "storage_bucket": "pocket-pos-35e48.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1086638616306:android:f237e242a2999b849dea6b",
+        "mobilesdk_app_id": "1:351899337586:android:b66d7bf054f6a45a2653eb",
         "android_client_info": {
-          "package_name": "com.mypocketpos.app"
+          "package_name": "com.example.pocket_pos"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBe02E-0kQbI4PMxxES4dYyD5RlqyuiOsw"
+          "current_key": "AIzaSyACG6cYC3LtyefLjcGqYAo3rAZgb9ldxFs"
         }
       ],
       "services": {

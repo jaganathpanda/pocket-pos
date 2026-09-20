@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../core/database/seed/demo_business_type.dart';
 import '../../../core/di/providers.dart';
@@ -10,11 +9,8 @@ import '../../../core/firestore/store_scope.dart';
 import '../../../core/models/discount_policy.dart';
 import '../../../core/models/invoice_branding.dart';
 import '../../../core/models/printer_config.dart';
-import '../../../core/models/quick_checkout_config.dart';
-import '../../../core/models/storefront_shopping_config.dart';
 import '../../mill_run/domain/milling_config.dart';
 import '../../store/presentation/store_auth_controller.dart';
-import '../../subscription/presentation/store_subscription_status.dart';
 import '../../warehouse/domain/inventory_mode.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -23,27 +19,17 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isRiceMill = ref.watch(isRiceMillProvider);
-    final storeId = ref.watch(activeStoreIdProvider) ?? '';
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Subscription Status — Show at top for visibility
-          StoreSubscriptionStatus(storeId: storeId),
-          const SizedBox(height: 16),
           _InvoiceBrandingCard(),
           const SizedBox(height: 16),
           _DiscountPolicyCard(),
           const SizedBox(height: 16),
-          _QuickCheckoutSettingsCard(),
-          const SizedBox(height: 16),
-          _ImportToolsCard(),
-          const SizedBox(height: 16),
           _PrinterIntegrationCard(),
-          const SizedBox(height: 16),
-          _StorefrontShoppingCard(),
           const SizedBox(height: 16),
           _BusinessTypeCard(),
           const SizedBox(height: 16),
@@ -55,534 +41,6 @@ class SettingsPage extends ConsumerWidget {
           ],
           _DemoDataCard(),
         ],
-      ),
-    );
-  }
-}
-
-class _ImportToolsCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.upload_file_rounded, size: 20),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Import Tools',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Open dedicated CSV import screens from Settings. These tools are intentionally hidden from the main navigation menu.',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            const SizedBox(height: 12),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.inventory_2_rounded),
-              title: const Text('Product Import'),
-              subtitle: const Text(
-                'Download the product template, export current products, and upload product CSV files.',
-              ),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => context.go('/product-import'),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.shopping_bag_rounded),
-              title: const Text('Purchase Import'),
-              subtitle: const Text(
-                'Download the purchase template and upload purchase-entry CSV files with validation preview.',
-              ),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => context.go('/purchase-import'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Shop Settings: Quick Checkout ───────────────────────────────────────────
-
-class _QuickCheckoutSettingsCard extends ConsumerStatefulWidget {
-  @override
-  ConsumerState<_QuickCheckoutSettingsCard> createState() =>
-      _QuickCheckoutSettingsCardState();
-}
-
-class _QuickCheckoutSettingsCardState
-    extends ConsumerState<_QuickCheckoutSettingsCard> {
-  bool _loaded = false;
-  bool _enabled = false;
-  bool _quickInvoiceEnabled = false;
-  bool _saving = false;
-
-  void _loadOnce(QuickCheckoutConfig config) {
-    if (_loaded) return;
-    _loaded = true;
-    _enabled = config.enabled;
-    _quickInvoiceEnabled = config.quickInvoiceEnabled;
-  }
-
-  Future<void> _save() async {
-    final storeId = ref.read(activeStoreIdProvider);
-    if (storeId == null) return;
-
-    setState(() => _saving = true);
-    try {
-      final config = QuickCheckoutConfig(
-        enabled: _enabled,
-        quickInvoiceEnabled: _quickInvoiceEnabled,
-      );
-      await storeCollection(ref.read(firestoreProvider), storeId, 'settings')
-          .doc('shop_settings')
-          .set(config.toFirestoreMap(), SetOptions(merge: true));
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Shop settings saved.')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed: $e')));
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cfg = ref.watch(quickCheckoutConfigProvider).valueOrNull ??
-        const QuickCheckoutConfig.defaults();
-    _loadOnce(cfg);
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.flash_on_rounded, size: 20),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                    'Shop Settings',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
-                  ),
-                ),
-                if (_saving)
-                  const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                else
-                  TextButton.icon(
-                    onPressed: _save,
-                    icon: const Icon(Icons.save_outlined, size: 16),
-                    label: const Text('Save'),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Enable an additional touch-first sales flow for Kirana stores, tea stalls and pan shops. Standard POS checkout remains unchanged.',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            const SizedBox(height: 12),
-            SwitchListTile.adaptive(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Enable Quick Checkout'),
-              subtitle: const Text(
-                'Shows a Quick Checkout menu option and large product cards for fast billing.',
-                style: TextStyle(fontSize: 12),
-              ),
-              value: _enabled,
-              onChanged: (v) => setState(() => _enabled = v),
-            ),
-            SwitchListTile.adaptive(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Enable Quick Invoice Creation'),
-              subtitle: const Text(
-                'Shows a Quick Invoice screen in navigation for creating, saving, and printing simple invoices.',
-                style: TextStyle(fontSize: 12),
-              ),
-              value: _quickInvoiceEnabled,
-              onChanged: (v) => setState(() => _quickInvoiceEnabled = v),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Storefront Shopping Card ────────────────────────────────────────────────
-
-class _StorefrontShoppingCard extends ConsumerStatefulWidget {
-  @override
-  ConsumerState<_StorefrontShoppingCard> createState() =>
-      _StorefrontShoppingCardState();
-}
-
-class _StorefrontShoppingCardState
-    extends ConsumerState<_StorefrontShoppingCard> {
-  bool _loaded = false;
-  bool _enabled = false;
-  bool _autoWindowEnabled = false;
-  DateTime? _windowStartLocal;
-  DateTime? _windowEndLocal;
-  bool _saving = false;
-
-  void _loadOnce(StorefrontShoppingConfig cfg) {
-    if (_loaded) return;
-    _loaded = true;
-    _enabled = cfg.allowAnonymousShopping;
-    _autoWindowEnabled = cfg.autoWindowEnabled;
-    _windowStartLocal = cfg.windowStartAtUtc?.toLocal();
-    _windowEndLocal = cfg.windowEndAtUtc?.toLocal();
-  }
-
-  String _fmt(DateTime? dt) {
-    if (dt == null) return 'Not set';
-    final d = dt.toLocal();
-    final hh = d.hour.toString().padLeft(2, '0');
-    final mm = d.minute.toString().padLeft(2, '0');
-    return '${d.day}/${d.month}/${d.year} $hh:$mm';
-  }
-
-  /// Returns a record describing the current open/closed status and a
-  /// contextual hint line (e.g. "Opens in 2 h 15 m" or "Closes in 45 m").
-  ({
-    bool isOpen,
-    String label,
-    String hint,
-    Color color,
-  }) _liveStatus() {
-    if (!_enabled) {
-      return (
-        isOpen: false,
-        label: 'Closed — shopping disabled',
-        hint: 'Enable anonymous shopping to allow customers.',
-        color: Colors.red,
-      );
-    }
-    if (!_autoWindowEnabled) {
-      return (
-        isOpen: true,
-        label: 'Open — always on',
-        hint: 'No time window set. Shopping allowed at any time.',
-        color: Colors.green,
-      );
-    }
-    final start = _windowStartLocal;
-    final end = _windowEndLocal;
-    if (start == null || end == null || !end.isAfter(start)) {
-      return (
-        isOpen: false,
-        label: 'Closed — schedule not configured',
-        hint: 'Set valid start and stop times to activate.',
-        color: Colors.orange,
-      );
-    }
-    final now = DateTime.now();
-    if (now.isBefore(start)) {
-      final diff = start.difference(now);
-      final h = diff.inHours;
-      final m = diff.inMinutes.remainder(60);
-      final hintStr = h > 0 ? 'Opens in ${h}h ${m}m' : 'Opens in ${m}m';
-      return (
-        isOpen: false,
-        label: 'Closed — not yet open',
-        hint: hintStr,
-        color: Colors.orange,
-      );
-    }
-    if (now.isAfter(end)) {
-      return (
-        isOpen: false,
-        label: 'Closed — window ended',
-        hint: 'Update schedule to re-open shopping.',
-        color: Colors.red,
-      );
-    }
-    final diff = end.difference(now);
-    final h = diff.inHours;
-    final m = diff.inMinutes.remainder(60);
-    final hintStr = h > 0 ? 'Closes in ${h}h ${m}m' : 'Closes in ${m}m';
-    return (
-      isOpen: true,
-      label: 'Open now',
-      hint: hintStr,
-      color: Colors.green,
-    );
-  }
-
-  Future<DateTime?> _pickDateTime(DateTime? initial) async {
-    final now = DateTime.now();
-    final base = initial ?? now;
-    final date = await showDatePicker(
-      context: context,
-      initialDate: base,
-      firstDate: DateTime(now.year - 1),
-      lastDate: DateTime(now.year + 5),
-    );
-    if (date == null || !mounted) return null;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(base),
-    );
-    if (time == null) return null;
-    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
-  }
-
-  Future<void> _save() async {
-    final storeId = ref.read(activeStoreIdProvider);
-    if (storeId == null) return;
-
-    if (_autoWindowEnabled) {
-      if (_windowStartLocal == null || _windowEndLocal == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Set both start and stop time for auto schedule.'),
-          ),
-        );
-        return;
-      }
-      if (!_windowEndLocal!.isAfter(_windowStartLocal!)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Stop time must be after start time.'),
-          ),
-        );
-        return;
-      }
-    }
-
-    setState(() => _saving = true);
-    try {
-      final config = StorefrontShoppingConfig(
-        allowAnonymousShopping: _enabled,
-        autoWindowEnabled: _autoWindowEnabled,
-        windowStartAtUtc: _windowStartLocal?.toUtc(),
-        windowEndAtUtc: _windowEndLocal?.toUtc(),
-      );
-      await storeCollection(ref.read(firestoreProvider), storeId, 'settings')
-          .doc('storefront')
-          .set(config.toFirestoreMap(), SetOptions(merge: true));
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Storefront settings saved.')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed: $e')));
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cfg = ref.watch(storeStorefrontShoppingConfigProvider).valueOrNull ??
-        const StorefrontShoppingConfig.defaults();
-    final globalEnabled = ref.watch(platformAnonymousShoppingEnabledProvider);
-    _loadOnce(cfg);
-
-    final status = _liveStatus();
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.storefront_rounded, size: 20),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                    'Public Storefront Shopping',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // ── Live status badge ──────────────────────────────
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: status.color.withOpacity(0.12),
-                    border: Border.all(color: status.color.withOpacity(0.40)),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        status.isOpen ? Icons.circle : Icons.circle_outlined,
-                        size: 8,
-                        color: status.color,
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        status.isOpen ? 'Open' : 'Closed',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: status.color,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 4),
-                if (_saving)
-                  const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                else
-                  TextButton.icon(
-                    onPressed: _save,
-                    icon: const Icon(Icons.save_outlined, size: 16),
-                    label: const Text('Save'),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              globalEnabled
-                  ? 'Allow customers to create and manage their own cart from the public storefront.'
-                  : 'Platform admin has disabled this feature globally. Turn ON the global flag in Admin panel first.',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            const SizedBox(height: 12),
-            SwitchListTile.adaptive(
-              contentPadding: EdgeInsets.zero,
-              title: const Text(
-                  'Allow anonymous customer shopping for this store'),
-              value: _enabled,
-              onChanged:
-                  globalEnabled ? (v) => setState(() => _enabled = v) : null,
-            ),
-            SwitchListTile.adaptive(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Auto start/stop by time window'),
-              subtitle: const Text(
-                'When enabled, shopping is allowed only between start and stop time.',
-                style: TextStyle(fontSize: 12),
-              ),
-              value: _autoWindowEnabled,
-              onChanged: (globalEnabled && _enabled)
-                  ? (v) => setState(() => _autoWindowEnabled = v)
-                  : null,
-            ),
-            if (_autoWindowEnabled) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: (globalEnabled && _enabled)
-                          ? () async {
-                              final picked =
-                                  await _pickDateTime(_windowStartLocal);
-                              if (picked != null) {
-                                setState(() => _windowStartLocal = picked);
-                              }
-                            }
-                          : null,
-                      icon: const Icon(Icons.play_arrow_rounded, size: 18),
-                      label: const Text('Set Start Time'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: (globalEnabled && _enabled)
-                          ? () async {
-                              final picked =
-                                  await _pickDateTime(_windowEndLocal);
-                              if (picked != null) {
-                                setState(() => _windowEndLocal = picked);
-                              }
-                            }
-                          : null,
-                      icon: const Icon(Icons.stop_rounded, size: 18),
-                      label: const Text('Set Stop Time'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.blueGrey.shade50,
-                  border: Border.all(color: Colors.blueGrey.shade100),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Start: ${_fmt(_windowStartLocal)}',
-                        style: const TextStyle(fontSize: 12)),
-                    const SizedBox(height: 4),
-                    Text('Stop:  ${_fmt(_windowEndLocal)}',
-                        style: const TextStyle(fontSize: 12)),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                            status.isOpen
-                                ? Icons.check_circle_outline
-                                : Icons.schedule_rounded,
-                            size: 14,
-                            color: status.color),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            '${status.label}  •  ${status.hint}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: status.color,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
       ),
     );
   }
@@ -1073,9 +531,6 @@ class _InvoiceBrandingCardState extends ConsumerState<_InvoiceBrandingCard> {
   final _emailCtrl = TextEditingController();
   final _gstinCtrl = TextEditingController();
   final _prefixCtrl = TextEditingController();
-  final _tokenStartCtrl = TextEditingController();
-  int _financialYearStartMonth = 4;
-  int _selectedFinancialYearStartYear = 0;
 
   bool _loaded = false;
   bool _saving = false;
@@ -1088,7 +543,6 @@ class _InvoiceBrandingCardState extends ConsumerState<_InvoiceBrandingCard> {
     _emailCtrl.dispose();
     _gstinCtrl.dispose();
     _prefixCtrl.dispose();
-    _tokenStartCtrl.dispose();
     super.dispose();
   }
 
@@ -1101,21 +555,6 @@ class _InvoiceBrandingCardState extends ConsumerState<_InvoiceBrandingCard> {
     _emailCtrl.text = b.email;
     _gstinCtrl.text = b.gstin;
     _prefixCtrl.text = b.invoicePrefix;
-    _tokenStartCtrl.text = b.quickCartTokenStart.toString();
-    _financialYearStartMonth = b.financialYearStartMonth;
-    _selectedFinancialYearStartYear = b.selectedFinancialYearStartYear > 0
-        ? b.selectedFinancialYearStartYear
-        : _currentFinancialYearStartYear(b.financialYearStartMonth);
-  }
-
-  int _currentFinancialYearStartYear(int startMonth) {
-    final now = DateTime.now();
-    return now.month < startMonth ? now.year - 1 : now.year;
-  }
-
-  String _financialYearLabel(int startYear) {
-    final endYear = (startYear + 1) % 100;
-    return '$startYear-${endYear.toString().padLeft(2, '0')}';
   }
 
   Future<void> _save() async {
@@ -1133,7 +572,6 @@ class _InvoiceBrandingCardState extends ConsumerState<_InvoiceBrandingCard> {
 
     setState(() => _saving = true);
     try {
-      final tokenStart = int.tryParse(_tokenStartCtrl.text.trim()) ?? 1;
       final branding = InvoiceBranding(
         displayName: _displayNameCtrl.text.trim(),
         address: _addressCtrl.text.trim(),
@@ -1141,15 +579,10 @@ class _InvoiceBrandingCardState extends ConsumerState<_InvoiceBrandingCard> {
         email: _emailCtrl.text.trim(),
         gstin: _gstinCtrl.text.trim(),
         invoicePrefix: prefix,
-        quickCartTokenStart: tokenStart.clamp(1, 999999),
-        financialYearStartMonth: _financialYearStartMonth,
-        selectedFinancialYearStartYear: _selectedFinancialYearStartYear,
       );
       await storeCollection(ref.read(firestoreProvider), storeId, 'settings')
           .doc('invoice_branding')
           .set(branding.toFirestoreMap());
-      ref.invalidate(salesReportProvider);
-      ref.read(salesReportManualRangeProvider.notifier).state = null;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invoice branding saved.')),
@@ -1283,96 +716,6 @@ class _InvoiceBrandingCardState extends ConsumerState<_InvoiceBrandingCard> {
                       isDense: true,
                       counterText: '',
                     ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _tokenStartCtrl,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Quick Cart Token Start Number',
-                hintText: '1',
-                helperText:
-                    'Starting number for token-based carts (e.g., 100, 101, 102...)',
-                border: OutlineInputBorder(),
-                isDense: true,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<int>(
-                    initialValue: _financialYearStartMonth,
-                    decoration: const InputDecoration(
-                      labelText: 'Financial Year Start Month',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 1, child: Text('January')),
-                      DropdownMenuItem(value: 2, child: Text('February')),
-                      DropdownMenuItem(value: 3, child: Text('March')),
-                      DropdownMenuItem(value: 4, child: Text('April')),
-                      DropdownMenuItem(value: 5, child: Text('May')),
-                      DropdownMenuItem(value: 6, child: Text('June')),
-                      DropdownMenuItem(value: 7, child: Text('July')),
-                      DropdownMenuItem(value: 8, child: Text('August')),
-                      DropdownMenuItem(value: 9, child: Text('September')),
-                      DropdownMenuItem(value: 10, child: Text('October')),
-                      DropdownMenuItem(value: 11, child: Text('November')),
-                      DropdownMenuItem(value: 12, child: Text('December')),
-                    ],
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setState(() {
-                        _financialYearStartMonth = value;
-                        if (_selectedFinancialYearStartYear <= 0) {
-                          _selectedFinancialYearStartYear =
-                              _currentFinancialYearStartYear(value);
-                        }
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: DropdownButtonFormField<int>(
-                    initialValue: () {
-                      final baseYear = _currentFinancialYearStartYear(_financialYearStartMonth);
-                      if (_selectedFinancialYearStartYear >= baseYear - 2 &&
-                          _selectedFinancialYearStartYear <= baseYear + 2) {
-                        return _selectedFinancialYearStartYear;
-                      }
-                      return baseYear;
-                    }(),
-                    decoration: const InputDecoration(
-                      labelText: 'Financial Year',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                    items: [
-                      for (int year = _currentFinancialYearStartYear(
-                                _financialYearStartMonth,
-                              ) -
-                              2;
-                          year <=
-                              _currentFinancialYearStartYear(
-                                    _financialYearStartMonth,
-                                  ) +
-                                  2;
-                          year++)
-                        DropdownMenuItem(
-                          value: year,
-                          child: Text(_financialYearLabel(year)),
-                        ),
-                    ],
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setState(() => _selectedFinancialYearStartYear = value);
-                    },
                   ),
                 ),
               ],

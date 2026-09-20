@@ -27,10 +27,6 @@ class SaleReturnLineRequest {
 abstract class SalesRepository {
   Stream<List<Cart>> watchActiveCarts(int? posCounterId);
   Stream<List<CartItemWithProduct>> watchCartItems(int cartId);
-  Future<int> nextQuickCartTokenNumber({
-    required DateTime day,
-    required int startingNumber,
-  });
   Future<int> createCart(String name, {int? posCounterId, int? warehouseId});
   Future<int> createCartWithCustomer(String name, int customerId,
       {int? posCounterId, int? warehouseId});
@@ -70,15 +66,6 @@ abstract class SalesRepository {
     String? customerMobile,
     String? customerAddress,
   });
-
-  /// Find a sale by invoice number
-  Future<Sale?> findByInvoiceNo(String invoiceNo);
-
-  /// Find all sales by customer mobile number (last 10 by default)
-  Future<List<Sale>> findSalesByCustomerMobile(String mobile, {int limit = 10});
-
-  /// Get recent sales for a customer or all sales (last 10 by default)
-  Future<List<Sale>> getRecentSales(int? customerId, {int limit = 10});
 }
 
 class CartItemWithProduct {

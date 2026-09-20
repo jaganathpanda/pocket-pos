@@ -15,18 +15,12 @@ import '../domain/sales_repository.dart';
 
 /// Store-scoped Firestore implementation of [SalesRepository] (carts + checkout).
 class FirestoreSalesRepository implements SalesRepository {
-  FirestoreSalesRepository(this._db, this._storeId, {bool customerMode = false})
-      : _customerMode = customerMode,
-        _inventory = FirestoreInventoryRepository(_db, _storeId),
+  FirestoreSalesRepository(this._db, this._storeId)
+      : _inventory = FirestoreInventoryRepository(_db, _storeId),
         _warehouse = FirestoreWarehouseRepository(_db, _storeId);
 
   final FirebaseFirestore _db;
   final String _storeId;
-
-  /// True when driven by a public-storefront customer session. Such a session
-  /// holds a `customer_cart` token that is scoped to products/carts/cart_items
-  /// only, so stock and warehouse lookups must be skipped (see [_stockContext]).
-  final bool _customerMode;
   final FirestoreInventoryRepository _inventory;
   final FirestoreWarehouseRepository _warehouse;
 
@@ -98,31 +92,6 @@ class FirestoreSalesRepository implements SalesRepository {
   }
 
   @override
-  Future<int> nextQuickCartTokenNumber({
-    required DateTime day,
-    required int startingNumber,
-  }) async {
-    final normalizedStart = startingNumber.clamp(1, 999999);
-    final prefix = _dailyQuickTokenPrefix(day);
-    final snap = await _carts
-        .where('name', isGreaterThanOrEqualTo: prefix)
-        .where('name', isLessThanOrEqualTo: '$prefix\uf8ff')
-        .get();
-
-    var maxUsed = normalizedStart - 1;
-    for (final doc in snap.docs) {
-      final tokenNumber = _parseQuickTokenNumber(
-        (doc.data()['name'] as String?)?.trim() ?? '',
-        prefix,
-      );
-      if (tokenNumber != null && tokenNumber > maxUsed) {
-        maxUsed = tokenNumber;
-      }
-    }
-    return maxUsed + 1;
-  }
-
-  @override
   Stream<List<CartItemWithProduct>> watchCartItems(int cartId) {
     return _cartItems
         .where('cartId', isEqualTo: cartId)
@@ -168,17 +137,6 @@ class FirestoreSalesRepository implements SalesRepository {
       'updatedAt': FieldValue.serverTimestamp(),
     }));
     return id;
-  }
-
-  String _dailyQuickTokenPrefix(DateTime day) {
-    final dateStr =
-        '${day.year}${day.month.toString().padLeft(2, '0')}${day.day.toString().padLeft(2, '0')}';
-    return 'TOKEN-$dateStr-';
-  }
-
-  int? _parseQuickTokenNumber(String label, String prefix) {
-    if (!label.startsWith(prefix)) return null;
-    return int.tryParse(label.substring(prefix.length));
   }
 
   @override
@@ -235,15 +193,9 @@ class FirestoreSalesRepository implements SalesRepository {
     final itemsSnap = await _cartItems.where('cartId', isEqualTo: cartId).get();
     for (final d in itemsSnap.docs) {
       final item = cartItemFromDoc(d);
-      final lineSub =
-          double.parse((item.quantity * item.unitPrice).toStringAsFixed(2))
-              .clamp(0, 999999999)
-              .toDouble();
-      // Round discount to 2 decimal places to prevent floating-point errors
-      final discountValue = (lineSub * (normalized / 100));
-      final lineDiscount = double.parse(discountValue.toStringAsFixed(2))
-          .clamp(0, lineSub)
-          .toDouble();
+      final lineSub = (item.quantity * item.unitPrice).clamp(0, 999999999);
+      final lineDiscount =
+          (lineSub * (normalized / 100)).clamp(0, lineSub).toDouble();
       _write(d.reference
           .set({'discountAmount': lineDiscount}, SetOptions(merge: true)));
     }
@@ -540,69 +492,33 @@ class FirestoreSalesRepository implements SalesRepository {
     String? customerMobile,
     String? customerAddress,
   }) async {
-    // Read the raw Firestore cart document as well as the local Cart model.
-    // The Drift Cart model does not contain customerName/customerMobile, but
-    // customer-created carts store those values directly in Firestore.
-    final cartDoc = await cacheSafeDoc(_carts, '$cartId');
-    if (cartDoc == null || !cartDoc.exists) {
-      throw Exception('Cart not found');
-    }
-    final cart = cartFromDoc(cartDoc);
-    final cartData = cartDoc.data();
-
+    final cart = await getCart(cartId);
+    if (cart == null) throw Exception('Cart not found');
     final itemsSnap = await _cartItems.where('cartId', isEqualTo: cartId).get();
     if (itemsSnap.docs.isEmpty) throw Exception('Cart is empty');
     final items = itemsSnap.docs.map(cartItemFromDoc).toList();
 
     // Customer upsert.
-    // Owner-created carts normally already have customerId. Customer-created
-    // carts may have customerId == null, but they contain customerName and
-    // customerMobile in the Firestore cart document. Use those as fallback.
     int? customerId = cart.customerId;
-
-    final cartCustomerMobile =
-        (cartData?['customerMobile'] as String?)?.trim() ?? '';
-
-    final cartCustomerName = (cartData?['customerName'] as String?)?.trim() ??
-        (cartData?['name'] as String?)?.trim() ??
-        '';
-    final effectiveMobile =
-        (customerMobile != null && customerMobile.trim().isNotEmpty)
-            ? customerMobile.trim()
-            : cartCustomerMobile;
-
-    final effectiveName =
-        (customerName != null && customerName.trim().isNotEmpty)
-            ? customerName.trim()
-            : cartCustomerName;
-
-    final effectiveAddress =
-        (customerAddress != null && customerAddress.trim().isNotEmpty)
-            ? customerAddress.trim()
-            : null;
-
-    if (customerId == null && effectiveMobile.isNotEmpty) {
+    if (customerMobile != null && customerMobile.isNotEmpty) {
       try {
         final existing = await _customers
-            .where('mobile', isEqualTo: effectiveMobile)
+            .where('mobile', isEqualTo: customerMobile)
             .limit(1)
             .get();
         if (existing.docs.isNotEmpty) {
           customerId = int.tryParse(existing.docs.first.id);
-
-          if (effectiveName.isNotEmpty || effectiveAddress != null) {
-            _write(existing.docs.first.reference.set({
-              if (effectiveName.isNotEmpty) 'name': effectiveName,
-              if (effectiveAddress != null) 'address': effectiveAddress,
-            }, SetOptions(merge: true)));
+          if (customerName != null && customerName.isNotEmpty) {
+            _write(existing.docs.first.reference.set(
+                {'name': customerName, 'address': customerAddress},
+                SetOptions(merge: true)));
           }
-        } else if (effectiveName.isNotEmpty) {
+        } else if (customerName != null && customerName.isNotEmpty) {
           customerId = newIntId();
-
           _write(_customers.doc('$customerId').set({
-            'name': effectiveName,
-            'mobile': effectiveMobile,
-            'address': effectiveAddress,
+            'name': customerName,
+            'mobile': customerMobile,
+            'address': customerAddress,
             'loyaltyPoints': 0,
           }));
         }
@@ -618,17 +534,11 @@ class FirestoreSalesRepository implements SalesRepository {
     double subTotal = 0, discountTotal = 0, taxTotal = 0;
     for (final item in items) {
       await _assertStock(item.productId, item.quantity, stock);
-      final lineSub =
-          double.parse((item.quantity * item.unitPrice).toStringAsFixed(2));
-      final itemDiscount = double.parse(item.discountAmount.toStringAsFixed(2));
-      final taxable = double.parse((lineSub - itemDiscount).toStringAsFixed(2));
-      final itemTax =
-          double.parse((taxable * (item.taxPercent / 100)).toStringAsFixed(2));
-
-      subTotal = double.parse((subTotal + lineSub).toStringAsFixed(2));
-      discountTotal =
-          double.parse((discountTotal + itemDiscount).toStringAsFixed(2));
-      taxTotal = double.parse((taxTotal + itemTax).toStringAsFixed(2));
+      final lineSub = item.quantity * item.unitPrice;
+      final taxable = lineSub - item.discountAmount;
+      subTotal += lineSub;
+      discountTotal += item.discountAmount;
+      taxTotal += taxable * (item.taxPercent / 100);
     }
     final effectiveDiscountPercent =
         subTotal <= 0 ? 0.0 : (discountTotal * 100 / subTotal);
@@ -639,11 +549,14 @@ class FirestoreSalesRepository implements SalesRepository {
         'max ${policy.maxBillDiscountPercent.toStringAsFixed(2)}% configured in Settings.',
       );
     }
+    // Round money to 2 decimals (paisa). The paid amount from the UI is already
+    // a 2-decimal value, so comparing it against a raw fractional total (which a
+    // percentage bill discount easily produces) would wrongly reject a full
+    // payment. Compare at paisa precision with a 1-paisa tolerance.
     final grandTotal =
-        double.parse((subTotal - discountTotal + taxTotal).toStringAsFixed(2));
-    final normalizedPaid =
-        double.parse((paidAmount < 0 ? 0.0 : paidAmount).toStringAsFixed(2));
-    final isFullyPaid = normalizedPaid >= grandTotal;
+        ((subTotal - discountTotal + taxTotal) * 100).roundToDouble() / 100;
+    final normalizedPaid = paidAmount < 0 ? 0.0 : paidAmount;
+    final isFullyPaid = normalizedPaid + 0.01 >= grandTotal;
     if (!isFullyPaid && paymentMode != 'credit') {
       throw Exception(
           'Paid amount is less than total. Select Credit payment mode for udhar.');
@@ -693,17 +606,8 @@ class FirestoreSalesRepository implements SalesRepository {
       'referenceNo': null,
       'paidAt': FieldValue.serverTimestamp(),
     });
-    batch.set(
-      _carts.doc('$cartId'),
-      {
-        'status': 'completed',
-        'customerId': customerId,
-        if (effectiveName.isNotEmpty) 'customerName': effectiveName,
-        if (effectiveMobile.isNotEmpty) 'customerMobile': effectiveMobile,
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
+    batch.set(_carts.doc('$cartId'), {'status': 'completed'},
+        SetOptions(merge: true));
     // Offline-first: the batch is applied to the local cache immediately (so the
     // sale, its items and the completed-cart status are all visible at once) and
     // syncs on reconnect. Do NOT await server acknowledgement — that would hang
@@ -725,64 +629,10 @@ class FirestoreSalesRepository implements SalesRepository {
     return saleId;
   }
 
-  @override
-  Future<Sale?> findByInvoiceNo(String invoiceNo) async {
-    final trimmed = invoiceNo.trim();
-    if (trimmed.isEmpty) return null;
-    final snap =
-        await _sales.where('invoiceNo', isEqualTo: trimmed).limit(1).get();
-    if (snap.docs.isEmpty) return null;
-    return saleFromDoc(snap.docs.first);
-  }
-
-  @override
-  Future<List<Sale>> findSalesByCustomerMobile(String mobile,
-      {int limit = 10}) async {
-    final trimmed = mobile.trim();
-    if (trimmed.isEmpty) return [];
-
-    // First, find the customer by mobile
-    final customerSnap =
-        await _customers.where('mobile', isEqualTo: trimmed).limit(1).get();
-
-    if (customerSnap.docs.isEmpty) return [];
-
-    final customerId = int.tryParse(customerSnap.docs.first.id);
-    if (customerId == null) return [];
-
-    // Then, find all sales for that customer
-    final salesSnap = await _sales
-        .where('customerId', isEqualTo: customerId)
-        .orderBy('soldAt', descending: true)
-        .limit(limit)
-        .get();
-
-    return salesSnap.docs.map(saleFromDoc).toList();
-  }
-
-  @override
-  Future<List<Sale>> getRecentSales(int? customerId, {int limit = 10}) async {
-    final query = _sales.orderBy('soldAt', descending: true).limit(limit);
-
-    final snap = customerId != null
-        ? await query.where('customerId', isEqualTo: customerId).get()
-        : await query.get();
-
-    return snap.docs.map(saleFromDoc).toList();
-  }
-
   // ── helpers ────────────────────────────────────────────────────────────────
 
   Future<({bool track, int warehouseId})> _stockContext(
       int? cartWarehouseId) async {
-    // A customer_cart token may only read products/carts/cart_items, so
-    // `settings/inventory`, `warehouses` and `inventory` all return
-    // permission-denied — and `defaultWarehouseId()` would even try to create a
-    // warehouse. Report "not tracking" so `_assertStock` returns without any
-    // read; the store user's checkout re-validates every line against stock.
-    if (_customerMode) {
-      return (track: false, warehouseId: cartWarehouseId ?? 0);
-    }
     final mode = await _warehouse.getMode();
     final warehouseId =
         cartWarehouseId ?? await _warehouse.defaultWarehouseId();

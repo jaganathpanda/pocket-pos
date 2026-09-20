@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pocket_pos/features/store/presentation/store_auth_controller.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/di/providers.dart';
-import '../../../core/firestore/store_scope.dart';
 import '../../../core/models/discount_policy.dart';
 import '../../barcode/presentation/barcode_scanner_page.dart';
 import '../../barcode/presentation/hid_scanner_listener.dart';
@@ -985,54 +983,17 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
     final paidCtrl = TextEditingController(text: summary.toStringAsFixed(2));
 
     final cart = await ref.read(salesRepositoryProvider).getCart(widget.cartId);
-
     Customer? customer;
-
-// These are stored directly in the Firestore cart for customer-created carts.
-    String cartCustomerMobile = '';
-    String cartCustomerName = '';
-
     if (cart?.customerId != null) {
-      // Owner-created cart / already-linked customer.
       customer =
           await ref.read(customerRepositoryProvider).getById(cart!.customerId!);
-    } else {
-      // Customer-created cart.
-      // The local Drift Cart doesn't contain customerMobile/customerName,
-      // so read them directly from the Firestore cart document.
-      final storeId = ref.read(activeStoreIdProvider);
-
-      if (storeId != null && storeId.isNotEmpty) {
-        final cartSnap = await storeCollection(
-          ref.read(firestoreProvider),
-          storeId,
-          'carts',
-        ).doc('${widget.cartId}').get();
-
-        final data = cartSnap.data();
-
-        if (data != null && data['source'] == 'customer') {
-          cartCustomerMobile =
-              (data['customerMobile'] as String?)?.trim() ?? '';
-
-          cartCustomerName = (data['customerName'] as String?)?.trim() ??
-              (data['name'] as String?)?.trim() ??
-              '';
-        }
-      }
     }
 
-    final customerMobileCtrl = TextEditingController(
-      text: customer?.mobile ?? cartCustomerMobile,
-    );
-
-    final customerNameCtrl = TextEditingController(
-      text: customer?.name ?? cartCustomerName,
-    );
-
-    final customerAddressCtrl = TextEditingController(
-      text: customer?.address ?? '',
-    );
+    final customerMobileCtrl =
+        TextEditingController(text: customer?.mobile ?? '');
+    final customerNameCtrl = TextEditingController(text: customer?.name ?? '');
+    final customerAddressCtrl =
+        TextEditingController(text: customer?.address ?? '');
 
     String paymentMode = 'cash';
 
@@ -1166,16 +1127,15 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
 
                   // Change calculation
                   Builder(builder: (context) {
-                    final paid = double.parse((double.tryParse(paidCtrl.text) ?? 0).toStringAsFixed(2));
-                    final roundedSummary = double.parse(summary.toStringAsFixed(2));
-                    final change = paid - roundedSummary;
+                    final paid = double.tryParse(paidCtrl.text) ?? 0;
+                    final change = paid - summary;
                     return change >= 0
                         ? Row(
                             children: [
                               const Icon(Icons.change_circle_outlined,
                                   size: 16, color: Colors.green),
                               const SizedBox(width: 4),
-                              Text('Change: ₹${(change).toStringAsFixed(2)}',
+                              Text('Change: ₹${change.toStringAsFixed(2)}',
                                   style: const TextStyle(color: Colors.green)),
                             ],
                           )
@@ -1487,14 +1447,13 @@ class _CartMetaText extends ConsumerWidget {
   final Cart cart;
   final String? counterName;
 
-  Widget _wrap({String? mobile, bool isCustomerCart = false}) {
+  Widget _wrap({String? mobile}) {
     return Wrap(
       spacing: 6,
       runSpacing: 4,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         if (counterName != null) _CounterChip(name: counterName!),
-        if (isCustomerCart) const _CartSourceChip(label: 'CUSTOMER'),
         if (mobile != null && mobile.isNotEmpty)
           Text(mobile, style: const TextStyle(fontSize: 11)),
         _CartStatusChip(status: cart.status),
@@ -1502,67 +1461,15 @@ class _CartMetaText extends ConsumerWidget {
     );
   }
 
-  Future<({bool isCustomerCart, String? mobile})> _loadMeta(
-      WidgetRef ref) async {
-    final storeId = ref.read(activeStoreIdProvider);
-    if (storeId != null && storeId.isNotEmpty) {
-      final snap = await storeCollection(
-        ref.read(firestoreProvider),
-        storeId,
-        'carts',
-      ).doc('${cart.id}').get();
-      final data = snap.data();
-      if (data != null && data['source'] == 'customer') {
-        return (
-          isCustomerCart: true,
-          mobile: (data['customerMobile'] as String?)?.trim(),
-        );
-      }
-    }
-
-    if (cart.customerId == null) {
-      return (isCustomerCart: false, mobile: null);
-    }
-
-    final customer =
-        await ref.read(customerRepositoryProvider).getById(cart.customerId!);
-    return (isCustomerCart: false, mobile: customer?.mobile);
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return FutureBuilder<({bool isCustomerCart, String? mobile})>(
-      future: _loadMeta(ref),
-      builder: (_, snap) => _wrap(
-        mobile: snap.data?.mobile,
-        isCustomerCart: snap.data?.isCustomerCart ?? false,
-      ),
-    );
-  }
-}
+    if (cart.customerId == null) {
+      return _wrap();
+    }
 
-class _CartSourceChip extends StatelessWidget {
-  const _CartSourceChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.teal.shade50,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.teal.shade200),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          color: Colors.teal.shade700,
-        ),
-      ),
+    return FutureBuilder<Customer?>(
+      future: ref.read(customerRepositoryProvider).getById(cart.customerId!),
+      builder: (_, snap) => _wrap(mobile: snap.data?.mobile),
     );
   }
 }

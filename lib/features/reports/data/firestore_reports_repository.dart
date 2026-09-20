@@ -40,13 +40,12 @@ class FirestoreReportsRepository {
     final now = DateTime.now();
     final dayStart = DateTime(now.year, now.month, now.day);
     final sales = (await _allSales())
-        .where((s) => !_isReturnedStatus(s.paymentStatus))
-        .toList(growable: false);
+      .where((s) => !_isReturnedStatus(s.paymentStatus))
+      .toList(growable: false);
     final today = sales.where((s) => !s.soldAt.isBefore(dayStart)).toList();
 
-    final carts = (await _col('carts').get()).docs.map(cartFromDoc).where((c) =>
-        (c.status == 'active' || c.status == 'hold') &&
-        _inCounter(c.posCounterId));
+    final carts = (await _col('carts').get()).docs.map(cartFromDoc).where(
+        (c) => (c.status == 'active' || c.status == 'hold') && _inCounter(c.posCounterId));
     final inventory = (await _col('inventory').get()).docs;
     final products = (await _col('products').get()).docs;
     final customers = (await _col('customers').get()).docs;
@@ -80,111 +79,20 @@ class FirestoreReportsRepository {
     );
   }
 
-  Future<List<({String name, DateTime expiryDate, int daysLeft})>>
-      upcomingExpiringProducts({int limit = 5}) async {
-    final today = DateTime.now();
-    final start = DateTime(today.year, today.month, today.day);
-    final end = start.add(const Duration(days: 30));
-    // Include products expired up to 7 days ago
-    final expiredThreshold = start.subtract(const Duration(days: 7));
-    final snap =
-        await _col('products').where('isActive', isEqualTo: true).get();
-    final rows = <({String name, DateTime expiryDate, int daysLeft})>[];
-
-    for (final doc in snap.docs) {
-      final data = doc.data();
-      final rawExpiry = data['expiryDate'];
-      DateTime? expiryDate;
-      if (rawExpiry is Timestamp) {
-        expiryDate = rawExpiry.toDate();
-      } else if (rawExpiry is DateTime) {
-        expiryDate = rawExpiry;
-      }
-      if (expiryDate == null) continue;
-      final normalizedExpiry = DateTime(
-        expiryDate.year,
-        expiryDate.month,
-        expiryDate.day,
-      );
-      // Include: expired within last 7 days OR expiring within next 30 days
-      if (normalizedExpiry.isBefore(expiredThreshold) || normalizedExpiry.isAfter(end)) {
-        continue;
-      }
-      rows.add((
-        name: (data['name'] as String?)?.trim().isNotEmpty == true
-            ? (data['name'] as String).trim()
-            : 'Product #${doc.id}',
-        expiryDate: normalizedExpiry,
-        daysLeft: normalizedExpiry.difference(start).inDays,
-      ));
-    }
-
-    rows.sort((a, b) => a.expiryDate.compareTo(b.expiryDate));
-    if (rows.length <= limit) return rows;
-    return rows.take(limit).toList(growable: false);
-  }
-
-  Stream<List<({String name, DateTime expiryDate, int daysLeft})>>
-      watchUpcomingExpiringProducts({int limit = 5}) {
-    return _col('products')
-        .where('isActive', isEqualTo: true)
-        .snapshots()
-        .map((snap) {
-      final today = DateTime.now();
-      final start = DateTime(today.year, today.month, today.day);
-      final end = start.add(const Duration(days: 30));
-      final expiredThreshold = start.subtract(const Duration(days: 7));
-      final rows = <({String name, DateTime expiryDate, int daysLeft})>[];
-
-      for (final doc in snap.docs) {
-        final data = doc.data();
-        final rawExpiry = data['expiryDate'];
-        DateTime? expiryDate;
-        if (rawExpiry is Timestamp) {
-          expiryDate = rawExpiry.toDate();
-        } else if (rawExpiry is DateTime) {
-          expiryDate = rawExpiry;
-        }
-        if (expiryDate == null) continue;
-        final normalizedExpiry = DateTime(
-          expiryDate.year,
-          expiryDate.month,
-          expiryDate.day,
-        );
-        if (normalizedExpiry.isBefore(expiredThreshold) ||
-            normalizedExpiry.isAfter(end)) {
-          continue;
-        }
-        rows.add((
-          name: (data['name'] as String?)?.trim().isNotEmpty == true
-              ? (data['name'] as String).trim()
-              : 'Product #${doc.id}',
-          expiryDate: normalizedExpiry,
-          daysLeft: normalizedExpiry.difference(start).inDays,
-        ));
-      }
-
-      rows.sort((a, b) => a.expiryDate.compareTo(b.expiryDate));
-      if (rows.length <= limit) return rows;
-      return rows.take(limit).toList(growable: false);
-    });
-  }
-
   // ── Sales report ─────────────────────────────────────────────────────────
 
   Future<SalesReportData> salesReport(DateTimeRange range) async {
-    final start =
-        DateTime(range.start.year, range.start.month, range.start.day);
-    final end = DateTime(
-        range.end.year, range.end.month, range.end.day, 23, 59, 59, 999);
+    final start = DateTime(range.start.year, range.start.month, range.start.day);
+    final end =
+        DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59, 999);
 
     final salesInRange = (await _allSales())
         .where((s) => !s.soldAt.isBefore(start) && !s.soldAt.isAfter(end))
         .toList()
       ..sort((a, b) => b.soldAt.compareTo(a.soldAt));
     final activeSales = salesInRange
-        .where((s) => !_isReturnedStatus(s.paymentStatus))
-        .toList(growable: false);
+      .where((s) => !_isReturnedStatus(s.paymentStatus))
+      .toList(growable: false);
 
     if (salesInRange.isEmpty) {
       return SalesReportData(
@@ -204,16 +112,10 @@ class FirestoreReportsRepository {
 
     final saleIds = salesInRange.map((s) => s.id).toSet();
     final activeSaleIds = activeSales.map((s) => s.id).toSet();
-    final allItems = (await _col('sale_items').get())
-        .docs
-        .map(saleItemFromDoc)
-        .where((i) => saleIds.contains(i.saleId))
-        .toList();
-    final allPayments = (await _col('payments').get())
-        .docs
-        .map(paymentFromDoc)
-        .where((p) => saleIds.contains(p.saleId))
-        .toList();
+    final allItems =
+        (await _col('sale_items').get()).docs.map(saleItemFromDoc).where((i) => saleIds.contains(i.saleId)).toList();
+    final allPayments =
+        (await _col('payments').get()).docs.map(paymentFromDoc).where((p) => saleIds.contains(p.saleId)).toList();
     final products = {
       for (final d in (await _col('products').get()).docs)
         (int.tryParse(d.id) ?? 0): productFromDoc(d)
@@ -229,10 +131,8 @@ class FirestoreReportsRepository {
     }
 
     final paymentMethodTotals = <String, double>{};
-    for (final p
-        in allPayments.where((p) => activeSaleIds.contains(p.saleId))) {
-      paymentMethodTotals[p.method] =
-          (paymentMethodTotals[p.method] ?? 0) + p.amount;
+    for (final p in allPayments.where((p) => activeSaleIds.contains(p.saleId))) {
+      paymentMethodTotals[p.method] = (paymentMethodTotals[p.method] ?? 0) + p.amount;
     }
 
     final productTotals = <int, ({double qty, double amount})>{};
@@ -282,8 +182,7 @@ class FirestoreReportsRepository {
       totalAmount: activeSales.fold<double>(0, (s, x) => s + x.grandTotal),
       totalTax: activeSales.fold<double>(0, (s, x) => s + x.taxTotal),
       totalDiscount: activeSales.fold<double>(0, (s, x) => s + x.discountTotal),
-      totalItems:
-          allItems.where((i) => activeSaleIds.contains(i.saleId)).length,
+      totalItems: allItems.where((i) => activeSaleIds.contains(i.saleId)).length,
       totalQuantity: allItems
           .where((i) => activeSaleIds.contains(i.saleId))
           .fold<double>(0, (s, i) => s + i.quantity),
@@ -296,8 +195,7 @@ class FirestoreReportsRepository {
   // ── Credit ledger ─────────────────────────────────────────────────────────
 
   Future<List<CreditLedgerRow>> creditLedger() async {
-    final sales = (await _allSales())
-      ..sort((a, b) => b.soldAt.compareTo(a.soldAt));
+    final sales = (await _allSales())..sort((a, b) => b.soldAt.compareTo(a.soldAt));
     if (sales.isEmpty) return const [];
 
     final saleIds = sales.map((s) => s.id).toSet();
@@ -323,8 +221,7 @@ class FirestoreReportsRepository {
           final due = (sale.grandTotal - paid).clamp(0, 999999999).toDouble();
           return CreditLedgerRow(
             sale: sale,
-            customer:
-                sale.customerId == null ? null : customers[sale.customerId],
+            customer: sale.customerId == null ? null : customers[sale.customerId],
             paidAmount: paid,
             dueAmount: due,
           );
@@ -340,8 +237,7 @@ class FirestoreReportsRepository {
   String _gstSummary(List<SaleItem> items, Map<int, Product> productById) {
     if (items.isEmpty) return '-';
     return items.map((item) {
-      final name =
-          productById[item.productId]?.name ?? 'Product #${item.productId}';
+      final name = productById[item.productId]?.name ?? 'Product #${item.productId}';
       final qty = item.quantity % 1 == 0
           ? item.quantity.toInt().toString()
           : item.quantity.toStringAsFixed(2);
