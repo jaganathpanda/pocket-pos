@@ -49,7 +49,7 @@ class SalesReportPage extends ConsumerWidget {
                 initialDateRange: range,
               );
               if (picked != null) {
-                ref.read(salesReportRangeProvider.notifier).state = picked;
+                ref.read(salesReportManualRangeProvider.notifier).state = picked;
               }
             },
             icon: const Icon(Icons.date_range_rounded),

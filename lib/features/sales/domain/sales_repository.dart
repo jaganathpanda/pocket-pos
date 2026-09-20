@@ -66,6 +66,15 @@ abstract class SalesRepository {
     String? customerMobile,
     String? customerAddress,
   });
+
+  /// Get the next available quick cart token number.
+  Future<int> nextQuickCartTokenNumber();
+
+  /// Find sales by customer mobile number.
+  Future<List<Sale>> findSalesByCustomerMobile(String mobile, {int limit = 10});
+
+  /// Find a sale by invoice number.
+  Future<Sale?> findByInvoiceNo(String invoiceNo);
 }
 
 class CartItemWithProduct {

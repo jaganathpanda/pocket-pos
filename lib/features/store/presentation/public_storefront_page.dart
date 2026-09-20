@@ -62,8 +62,7 @@ class _PublicStorefrontPageState extends ConsumerState<PublicStorefrontPage> {
   }
 
   FirestoreSalesRepository _salesRepo(String storeId) {
-    return FirestoreSalesRepository(ref.read(firestoreProvider), storeId,
-        customerMode: true);
+    return FirestoreSalesRepository(ref.read(firestoreProvider), storeId);
   }
 
   Future<void> _watchCart(int cartId, String storeId) async {

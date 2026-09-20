@@ -258,4 +258,11 @@ class FirestoreReportsRepository {
       loyaltyPoints: (d['loyaltyPoints'] as num?)?.toInt() ?? 0,
     );
   }
+
+  /// Stream of products with expiry dates coming up in the next 30 days.
+  /// Note: This is a placeholder implementation. Products currently don't have expiry tracking.
+  Stream<List<({String name, DateTime expiryDate, int daysLeft})>>
+      watchUpcomingExpiringProducts() {
+    return Stream.value(const []);
+  }
 }

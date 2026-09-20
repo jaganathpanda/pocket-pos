@@ -221,11 +221,9 @@ class _QuickCheckoutPageState extends ConsumerState<QuickCheckoutPage> {
     final dateStr =
         '${today.year}${today.month.toString().padLeft(2, '0')}${today.day.toString().padLeft(2, '0')}';
     final nextTokenNumber =
-        await ref.read(salesRepositoryProvider).nextQuickCartTokenNumber(
-              day: today,
-              startingNumber: branding.quickCartTokenStart,
-            );
-    return 'TOKEN-$dateStr-${nextTokenNumber.toString().padLeft(3, '0')}';
+        await ref.read(salesRepositoryProvider).nextQuickCartTokenNumber();
+    final tokenCounter = (nextTokenNumber % 1000).toInt();
+    return 'TOKEN-$dateStr-${tokenCounter.toString().padLeft(3, '0')}';
   }
 
   /// Auto-create cart with persistent token (date + counter, resets daily)

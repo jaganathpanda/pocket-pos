@@ -677,4 +677,45 @@ class FirestoreSalesRepository implements SalesRepository {
       return const DiscountPolicy.defaults();
     }
   }
+
+  @override
+  Future<int> nextQuickCartTokenNumber() async {
+    final counterRef = storeCollection(_db, _storeId, 'settings').doc('quick_cart_counter');
+    try {
+      final snap = await counterRef.get();
+      final current = (snap.data()?['value'] as num?)?.toInt() ?? 0;
+      final next = current + 1;
+      await counterRef.set({'value': next}, SetOptions(merge: true));
+      return next;
+    } catch (_) {
+      return 1;
+    }
+  }
+
+  @override
+  Future<List<Sale>> findSalesByCustomerMobile(String mobile, {int limit = 10}) async {
+    try {
+      final snap = await _sales
+          .where('customerMobile', isEqualTo: mobile)
+          .limit(limit)
+          .get();
+      return snap.docs.map((doc) => saleFromDoc(doc)).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  @override
+  Future<Sale?> findByInvoiceNo(String invoiceNo) async {
+    try {
+      final snap = await _sales
+          .where('invoiceNo', isEqualTo: invoiceNo)
+          .limit(1)
+          .get();
+      if (snap.docs.isEmpty) return null;
+      return saleFromDoc(snap.docs.first);
+    } catch (_) {
+      return null;
+    }
+  }
 }

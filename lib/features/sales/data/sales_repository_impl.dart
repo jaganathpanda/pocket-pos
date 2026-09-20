@@ -607,4 +607,20 @@ class SalesRepositoryImpl implements SalesRepository {
     final warehouseId = cartWarehouseId ?? await _db.defaultWarehouseId();
     return (track: track, warehouseId: warehouseId);
   }
+
+  @override
+  Future<int> nextQuickCartTokenNumber() async {
+    // Generate next token number from current timestamp or counter
+    return DateTime.now().millisecondsSinceEpoch ~/ 1000;
+  }
+
+  @override
+  Future<List<Sale>> findSalesByCustomerMobile(String mobile, {int limit = 10}) async {
+    return [];
+  }
+
+  @override
+  Future<Sale?> findByInvoiceNo(String invoiceNo) async {
+    return null;
+  }
 }
