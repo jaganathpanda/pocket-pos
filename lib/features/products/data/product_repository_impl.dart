@@ -10,14 +10,20 @@ class ProductRepositoryImpl implements ProductRepository {
 
   @override
   Stream<List<Product>> watchAll() {
-    return (_db.select(_db.products)..where((p) => p.isActive.equals(true))..orderBy([(t) => OrderingTerm.asc(t.name)])).watch();
+    return (_db.select(_db.products)
+          ..where((p) => p.isActive.equals(true))
+          ..orderBy([(t) => OrderingTerm.asc(t.name)]))
+        .watch();
   }
 
   @override
   Future<List<Product>> search(String query) {
     final q = '%$query%';
     return (_db.select(_db.products)
-          ..where((p) => p.name.like(q) | p.productCode.like(q) | (p.barcode.isNotNull() & p.barcode.like(q)))
+          ..where((p) =>
+              p.name.like(q) |
+              p.productCode.like(q) |
+              (p.barcode.isNotNull() & p.barcode.like(q)))
           ..limit(30))
         .get();
   }
@@ -51,6 +57,9 @@ class ProductRepositoryImpl implements ProductRepository {
     required double taxPercent,
     String unit = 'piece',
     double openingStock = 0,
+    bool showInQuickCheckout = true,
+    String? quickCheckoutEmoji,
+    DateTime? expiryDate,
   }) async {
     final id = await _db.into(_db.products).insert(
           ProductsCompanion.insert(
@@ -113,6 +122,9 @@ class ProductRepositoryImpl implements ProductRepository {
     required double purchasePrice,
     required double taxPercent,
     String unit = 'piece',
+    bool showInQuickCheckout = true,
+    String? quickCheckoutEmoji,
+    DateTime? expiryDate,
   }) {
     return (_db.update(_db.products)..where((p) => p.id.equals(id))).write(
       ProductsCompanion(

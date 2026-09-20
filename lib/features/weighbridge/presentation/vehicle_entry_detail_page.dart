@@ -520,17 +520,13 @@ class _VehicleEntryDetailPageState
                   items: [
                     for (final m in millers)
                       DropdownMenuItem(
-                        value: m.uid,
-                        child: Text(m.username),
+                        value: m.name,
+                        child: Text(m.name),
                       ),
                   ],
                   onChanged: (v) => setState(() {
                     _selectedMillerUid = v;
-                    _selectedMillerName = millers
-                        .where((m) => m.uid == v)
-                        .map((m) => m.username)
-                        .cast<String?>()
-                        .firstWhere((_) => true, orElse: () => null);
+                    _selectedMillerName = v;
                   }),
                   validator: (v) =>
                       v == null || v.isEmpty ? 'Select a miller' : null,

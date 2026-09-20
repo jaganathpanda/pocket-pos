@@ -12,7 +12,8 @@ class SalesRepositoryImpl implements SalesRepository {
   @override
   Stream<List<Cart>> watchActiveCarts(int? posCounterId) {
     final query = _db.select(_db.carts)
-      ..where((c) => Expression.or([c.status.equals('active'), c.status.equals('hold')]))
+      ..where((c) =>
+          Expression.or([c.status.equals('active'), c.status.equals('hold')]))
       ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]);
     if (posCounterId != null) {
       query.where((c) => c.posCounterId.equals(posCounterId));
@@ -21,9 +22,31 @@ class SalesRepositoryImpl implements SalesRepository {
   }
 
   @override
+  Future<int> nextQuickCartTokenNumber({
+    required DateTime day,
+    required int startingNumber,
+  }) async {
+    final normalizedStart = startingNumber.clamp(1, 999999);
+    final prefix = _dailyQuickTokenPrefix(day);
+    final carts = await (_db.select(_db.carts)
+          ..where((c) => c.name.like('$prefix%')))
+        .get();
+
+    var maxUsed = normalizedStart - 1;
+    for (final cart in carts) {
+      final tokenNumber = _parseQuickTokenNumber(cart.name, prefix);
+      if (tokenNumber != null && tokenNumber > maxUsed) {
+        maxUsed = tokenNumber;
+      }
+    }
+    return maxUsed + 1;
+  }
+
+  @override
   Stream<List<CartItemWithProduct>> watchCartItems(int cartId) {
     final query = _db.select(_db.cartItems).join([
-      innerJoin(_db.products, _db.products.id.equalsExp(_db.cartItems.productId)),
+      innerJoin(
+          _db.products, _db.products.id.equalsExp(_db.cartItems.productId)),
     ])
       ..where(_db.cartItems.cartId.equals(cartId));
 
@@ -50,6 +73,17 @@ class SalesRepositoryImpl implements SalesRepository {
         );
   }
 
+  String _dailyQuickTokenPrefix(DateTime day) {
+    final dateStr =
+        '${day.year}${day.month.toString().padLeft(2, '0')}${day.day.toString().padLeft(2, '0')}';
+    return 'TOKEN-$dateStr-';
+  }
+
+  int? _parseQuickTokenNumber(String label, String prefix) {
+    if (!label.startsWith(prefix)) return null;
+    return int.tryParse(label.substring(prefix.length));
+  }
+
   @override
   Future<int> createCartWithCustomer(String name, int customerId,
       {int? posCounterId, int? warehouseId}) {
@@ -66,7 +100,8 @@ class SalesRepositoryImpl implements SalesRepository {
   @override
   Future<void> updateCartCustomer(int cartId, int customerId) {
     return (_db.update(_db.carts)..where((c) => c.id.equals(cartId))).write(
-      CartsCompanion(customerId: Value(customerId), updatedAt: Value(DateTime.now())),
+      CartsCompanion(
+          customerId: Value(customerId), updatedAt: Value(DateTime.now())),
     );
   }
 
@@ -80,11 +115,21 @@ class SalesRepositoryImpl implements SalesRepository {
   @override
   Future<void> updateCartDiscountPercent(int cartId, double percent) async {
     final normalized = percent.clamp(0, 100).toDouble();
-    final items = await (_db.select(_db.cartItems)..where((i) => i.cartId.equals(cartId))).get();
+    final items = await (_db.select(_db.cartItems)
+          ..where((i) => i.cartId.equals(cartId)))
+        .get();
     for (final item in items) {
-      final lineSub = (item.quantity * item.unitPrice).clamp(0, 999999999);
-      final lineDiscount = (lineSub * (normalized / 100)).clamp(0, lineSub).toDouble();
-      await (_db.update(_db.cartItems)..where((i) => i.id.equals(item.id))).write(
+      final lineSub =
+          double.parse((item.quantity * item.unitPrice).toStringAsFixed(2))
+              .clamp(0, 999999999)
+              .toDouble();
+      // Round discount to 2 decimal places to prevent floating-point errors
+      final discountValue = (lineSub * (normalized / 100));
+      final lineDiscount = double.parse(discountValue.toStringAsFixed(2))
+          .clamp(0, lineSub)
+          .toDouble();
+      await (_db.update(_db.cartItems)..where((i) => i.id.equals(item.id)))
+          .write(
         CartItemsCompanion(discountAmount: Value(lineDiscount)),
       );
     }
@@ -95,7 +140,8 @@ class SalesRepositoryImpl implements SalesRepository {
 
   @override
   Future<Cart?> getCart(int cartId) {
-    return (_db.select(_db.carts)..where((c) => c.id.equals(cartId))).getSingleOrNull();
+    return (_db.select(_db.carts)..where((c) => c.id.equals(cartId)))
+        .getSingleOrNull();
   }
 
   @override
@@ -124,18 +170,24 @@ class SalesRepositoryImpl implements SalesRepository {
 
   @override
   Future<void> deleteCart(int cartId) async {
-    await (_db.delete(_db.cartItems)..where((i) => i.cartId.equals(cartId))).go();
+    await (_db.delete(_db.cartItems)..where((i) => i.cartId.equals(cartId)))
+        .go();
     await (_db.delete(_db.carts)..where((c) => c.id.equals(cartId))).go();
   }
 
   @override
   Future<void> addItem({required int cartId, required int productId}) async {
-    final product = await (_db.select(_db.products)..where((p) => p.id.equals(productId))).getSingle();
+    final product = await (_db.select(_db.products)
+          ..where((p) => p.id.equals(productId)))
+        .getSingle();
     final cart = await getCart(cartId);
     final stock = await _stockContext(cart?.warehouseId);
 
     final existing = await (_db.select(_db.cartItems)
-          ..where((i) => i.cartId.equals(cartId) & i.productId.equals(productId) & i.variantId.isNull()))
+          ..where((i) =>
+              i.cartId.equals(cartId) &
+              i.productId.equals(productId) &
+              i.variantId.isNull()))
         .getSingleOrNull();
 
     if (existing != null) {
@@ -146,11 +198,13 @@ class SalesRepositoryImpl implements SalesRepository {
         stock: stock,
       );
 
-      await (_db.update(_db.cartItems)..where((i) => i.id.equals(existing.id))).write(
+      await (_db.update(_db.cartItems)..where((i) => i.id.equals(existing.id)))
+          .write(
         CartItemsCompanion(quantity: Value(requestedQty)),
       );
     } else {
-      await _assertStockAvailable(productId: productId, requestedQty: 1, stock: stock);
+      await _assertStockAvailable(
+          productId: productId, requestedQty: 1, stock: stock);
 
       await _db.into(_db.cartItems).insert(
             CartItemsCompanion.insert(
@@ -164,7 +218,8 @@ class SalesRepositoryImpl implements SalesRepository {
           );
     }
 
-    await (_db.update(_db.carts)..where((c) => c.id.equals(cartId))).write(CartsCompanion(updatedAt: Value(DateTime.now())));
+    await (_db.update(_db.carts)..where((c) => c.id.equals(cartId)))
+        .write(CartsCompanion(updatedAt: Value(DateTime.now())));
   }
 
   @override
@@ -174,7 +229,9 @@ class SalesRepositoryImpl implements SalesRepository {
       return;
     }
 
-    final item = await (_db.select(_db.cartItems)..where((i) => i.id.equals(cartItemId))).getSingleOrNull();
+    final item = await (_db.select(_db.cartItems)
+          ..where((i) => i.id.equals(cartItemId)))
+        .getSingleOrNull();
     if (item == null) {
       throw Exception('Cart item not found');
     }
@@ -187,14 +244,16 @@ class SalesRepositoryImpl implements SalesRepository {
       stock: stock,
     );
 
-    await (_db.update(_db.cartItems)..where((i) => i.id.equals(cartItemId))).write(
+    await (_db.update(_db.cartItems)..where((i) => i.id.equals(cartItemId)))
+        .write(
       CartItemsCompanion(quantity: Value(quantity)),
     );
   }
 
   @override
   Future<void> removeItem(int cartItemId) {
-    return (_db.delete(_db.cartItems)..where((i) => i.id.equals(cartItemId))).go();
+    return (_db.delete(_db.cartItems)..where((i) => i.id.equals(cartItemId)))
+        .go();
   }
 
   @override
@@ -209,12 +268,16 @@ class SalesRepositoryImpl implements SalesRepository {
     }
 
     await _db.transaction(() async {
-      final sale = await (_db.select(_db.sales)..where((s) => s.id.equals(saleId))).getSingleOrNull();
+      final sale = await (_db.select(_db.sales)
+            ..where((s) => s.id.equals(saleId)))
+          .getSingleOrNull();
       if (sale == null) {
         throw Exception('Sale not found');
       }
 
-      final payments = await (_db.select(_db.payments)..where((p) => p.saleId.equals(saleId))).get();
+      final payments = await (_db.select(_db.payments)
+            ..where((p) => p.saleId.equals(saleId)))
+          .get();
       final paidBefore = payments.fold<double>(0, (sum, p) => sum + p.amount);
       final newPaid = paidBefore + amount;
 
@@ -227,7 +290,8 @@ class SalesRepositoryImpl implements SalesRepository {
             ),
           );
 
-      final nextStatus = newPaid + 0.0001 >= sale.grandTotal ? 'paid' : 'partial';
+      final nextStatus =
+          newPaid + 0.0001 >= sale.grandTotal ? 'paid' : 'partial';
       await (_db.update(_db.sales)..where((s) => s.id.equals(saleId))).write(
         SalesCompanion(paymentStatus: Value(nextStatus)),
       );
@@ -273,7 +337,8 @@ class SalesRepositoryImpl implements SalesRepository {
     }
 
     return _db.transaction(() async {
-      final sale = await (_db.select(_db.sales)..where((s) => s.id.equals(saleId)))
+      final sale = await (_db.select(_db.sales)
+            ..where((s) => s.id.equals(saleId)))
           .getSingleOrNull();
       if (sale == null) throw Exception('Sale not found');
 
@@ -285,7 +350,8 @@ class SalesRepositoryImpl implements SalesRepository {
       final priorReturnPayment = await (_db.select(_db.payments)
             ..where((p) =>
                 p.saleId.equals(saleId) &
-                p.referenceNo.isIn(const ['SALE_RETURN', 'SALE_RETURN_PARTIAL']))
+                p.referenceNo
+                    .isIn(const ['SALE_RETURN', 'SALE_RETURN_PARTIAL']))
             ..limit(1))
           .getSingleOrNull();
       if (priorReturnPayment != null) {
@@ -325,8 +391,8 @@ class SalesRepositoryImpl implements SalesRepository {
           );
         }
 
-        final lineReturnAmount =
-            (item.lineTotal * (reqQty / item.quantity)).clamp(0, item.lineTotal);
+        final lineReturnAmount = (item.lineTotal * (reqQty / item.quantity))
+            .clamp(0, item.lineTotal);
         returnedAmountNow += lineReturnAmount;
 
         if (stock.track) {
@@ -349,8 +415,10 @@ class SalesRepositoryImpl implements SalesRepository {
                   ),
                 );
           } else {
-            final next = (inv.availableStock + reqQty).clamp(0, 99999999).toDouble();
-            await (_db.update(_db.inventory)..where((i) => i.id.equals(inv.id))).write(
+            final next =
+                (inv.availableStock + reqQty).clamp(0, 99999999).toDouble();
+            await (_db.update(_db.inventory)..where((i) => i.id.equals(inv.id)))
+                .write(
               InventoryCompanion(
                 currentStock: Value(next),
                 availableStock: Value(next),
@@ -375,13 +443,16 @@ class SalesRepositoryImpl implements SalesRepository {
         throw Exception('Nothing to return for selected quantities.');
       }
 
-      final nextGrandTotal =
-          (sale.grandTotal - returnedAmountNow).clamp(0, sale.grandTotal).toDouble();
+      final nextGrandTotal = (sale.grandTotal - returnedAmountNow)
+          .clamp(0, sale.grandTotal)
+          .toDouble();
       final payments = await (_db.select(_db.payments)
             ..where((p) => p.saleId.equals(saleId)))
           .get();
-      final netPaidBefore = payments.fold<double>(0, (sum, p) => sum + p.amount);
-      final refundAmount = math.max(0, (netPaidBefore - nextGrandTotal)).toDouble();
+      final netPaidBefore =
+          payments.fold<double>(0, (sum, p) => sum + p.amount);
+      final refundAmount =
+          math.max(0, (netPaidBefore - nextGrandTotal)).toDouble();
 
       if (refundAmount > 0) {
         await _db.into(_db.payments).insert(
@@ -435,7 +506,9 @@ class SalesRepositoryImpl implements SalesRepository {
         throw Exception('Cart not found');
       }
 
-      final items = await (_db.select(_db.cartItems)..where((i) => i.cartId.equals(cartId))).get();
+      final items = await (_db.select(_db.cartItems)
+            ..where((i) => i.cartId.equals(cartId)))
+          .get();
       if (items.isEmpty) {
         throw Exception('Cart is empty');
       }
@@ -443,12 +516,16 @@ class SalesRepositoryImpl implements SalesRepository {
       // Handle customer update/creation if mobile is provided
       int? customerId = cart.customerId;
       if (customerMobile != null && customerMobile.isNotEmpty) {
-        final existing = await (_db.select(_db.customers)..where((c) => c.mobile.equals(customerMobile))).getSingleOrNull();
+        final existing = await (_db.select(_db.customers)
+              ..where((c) => c.mobile.equals(customerMobile)))
+            .getSingleOrNull();
         if (existing != null) {
           customerId = existing.id;
           // Update customer info if new name/address provided
           if (customerName != null && customerName.isNotEmpty) {
-            await (_db.update(_db.customers)..where((c) => c.id.equals(existing.id))).write(
+            await (_db.update(_db.customers)
+                  ..where((c) => c.id.equals(existing.id)))
+                .write(
               CustomersCompanion(
                 name: Value(customerName),
                 address: Value(customerAddress),
@@ -457,12 +534,12 @@ class SalesRepositoryImpl implements SalesRepository {
           }
         } else if (customerName != null && customerName.isNotEmpty) {
           customerId = await _db.into(_db.customers).insert(
-            CustomersCompanion.insert(
-              name: customerName,
-              mobile: Value(customerMobile),
-              address: Value(customerAddress),
-            ),
-          );
+                CustomersCompanion.insert(
+                  name: customerName,
+                  mobile: Value(customerMobile),
+                  address: Value(customerAddress),
+                ),
+              );
         }
       }
 
@@ -479,22 +556,32 @@ class SalesRepositoryImpl implements SalesRepository {
           stock: stock,
         );
 
-        final lineSub = item.quantity * item.unitPrice;
-        final taxable = lineSub - item.discountAmount;
-        subTotal += lineSub;
-        discountTotal += item.discountAmount;
-        taxTotal += taxable * (item.taxPercent / 100);
+        final lineSub =
+            double.parse((item.quantity * item.unitPrice).toStringAsFixed(2));
+        final itemDiscount =
+            double.parse(item.discountAmount.toStringAsFixed(2));
+        final taxable =
+            double.parse((lineSub - itemDiscount).toStringAsFixed(2));
+        final itemTax = double.parse(
+            (taxable * (item.taxPercent / 100)).toStringAsFixed(2));
+
+        subTotal = double.parse((subTotal + lineSub).toStringAsFixed(2));
+        discountTotal =
+            double.parse((discountTotal + itemDiscount).toStringAsFixed(2));
+        taxTotal = double.parse((taxTotal + itemTax).toStringAsFixed(2));
       }
 
-      final grandTotal = subTotal - discountTotal + taxTotal;
-      final normalizedPaid = paidAmount < 0 ? 0 : paidAmount;
-      final isFullyPaid = normalizedPaid + 0.0001 >= grandTotal;
+      final grandTotal = double.parse(
+          (subTotal - discountTotal + taxTotal).toStringAsFixed(2));
+      final normalizedPaid =
+          double.parse((paidAmount < 0 ? 0 : paidAmount).toStringAsFixed(2));
+      final isFullyPaid = normalizedPaid >= grandTotal;
       if (!isFullyPaid && paymentMode != 'credit') {
-        throw Exception('Paid amount is less than total. Select Credit payment mode for udhar.');
+        throw Exception(
+            'Paid amount is less than total. Select Credit payment mode for udhar.');
       }
-      final paymentStatus = isFullyPaid
-          ? 'paid'
-          : (normalizedPaid > 0 ? 'partial' : 'credit');
+      final paymentStatus =
+          isFullyPaid ? 'paid' : (normalizedPaid > 0 ? 'partial' : 'credit');
       final invoiceNo = 'INV-${DateTime.now().millisecondsSinceEpoch}';
 
       final saleId = await _db.into(_db.sales).insert(
@@ -539,9 +626,15 @@ class SalesRepositoryImpl implements SalesRepository {
               .getSingleOrNull();
 
           if (inv != null) {
-            final newQty = (inv.availableStock - item.quantity).clamp(0, 99999999).toDouble();
-            await (_db.update(_db.inventory)..where((i) => i.id.equals(inv.id))).write(
-              InventoryCompanion(currentStock: Value(newQty), availableStock: Value(newQty), updatedAt: Value(DateTime.now())),
+            final newQty = (inv.availableStock - item.quantity)
+                .clamp(0, 99999999)
+                .toDouble();
+            await (_db.update(_db.inventory)..where((i) => i.id.equals(inv.id)))
+                .write(
+              InventoryCompanion(
+                  currentStock: Value(newQty),
+                  availableStock: Value(newQty),
+                  updatedAt: Value(DateTime.now())),
             );
 
             await _db.into(_db.inventoryTransactions).insert(
@@ -574,6 +667,45 @@ class SalesRepositoryImpl implements SalesRepository {
     });
   }
 
+  @override
+  Future<Sale?> findByInvoiceNo(String invoiceNo) async {
+    final trimmed = invoiceNo.trim();
+    if (trimmed.isEmpty) return null;
+    return (_db.select(_db.sales)..where((s) => s.invoiceNo.equals(trimmed)))
+        .getSingleOrNull();
+  }
+
+  @override
+  Future<List<Sale>> findSalesByCustomerMobile(String mobile,
+      {int limit = 10}) async {
+    final trimmed = mobile.trim();
+    if (trimmed.isEmpty) return [];
+
+    final query = _db.select(_db.sales).join([
+      innerJoin(
+          _db.customers, _db.customers.id.equalsExp(_db.sales.customerId)),
+    ])
+      ..where(_db.customers.mobile.equals(trimmed))
+      ..orderBy([OrderingTerm.desc(_db.sales.soldAt)])
+      ..limit(limit);
+
+    final results = await query.get();
+    return results.map((row) => row.readTable(_db.sales)).toList();
+  }
+
+  @override
+  Future<List<Sale>> getRecentSales(int? customerId, {int limit = 10}) async {
+    final query = _db.select(_db.sales)
+      ..orderBy([(s) => OrderingTerm.desc(s.soldAt)])
+      ..limit(limit);
+
+    if (customerId != null) {
+      query.where((s) => s.customerId.equals(customerId));
+    }
+
+    return query.get();
+  }
+
   Future<void> _assertStockAvailable({
     required int productId,
     required double requestedQty,
@@ -594,12 +726,14 @@ class SalesRepositoryImpl implements SalesRepository {
 
     final available = inv?.availableStock ?? 0;
     if (requestedQty > available) {
-      throw Exception('Insufficient stock. Available: ${available.toStringAsFixed(2)}, requested: ${requestedQty.toStringAsFixed(2)}');
+      throw Exception(
+          'Insufficient stock. Available: ${available.toStringAsFixed(2)}, requested: ${requestedQty.toStringAsFixed(2)}');
     }
   }
 
   /// Resolves whether stock is tracked and which warehouse a cart draws from.
-  Future<({bool track, int warehouseId})> _stockContext(int? cartWarehouseId) async {
+  Future<({bool track, int warehouseId})> _stockContext(
+      int? cartWarehouseId) async {
     final modeRow = await (_db.select(_db.appSettings)
           ..where((s) => s.key.equals('inventory_mode')))
         .getSingleOrNull();

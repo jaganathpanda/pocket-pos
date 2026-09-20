@@ -66,6 +66,25 @@ class StoreAuthController extends StateNotifier<StoreAuthState> {
     }
   }
 
+  Future<bool> loginWithGoogle() async {
+    state = state.copyWith(busy: true, error: null);
+    try {
+      final session = await _service.loginWithGoogle();
+      state = StoreAuthState(
+        stage:
+            session.isApproved ? StoreAuthStage.active : StoreAuthStage.pending,
+        session: session,
+      );
+      return true;
+    } on FirebaseAuthException catch (e) {
+      state = state.copyWith(busy: false, error: _message(e));
+      return false;
+    } catch (e) {
+      state = state.copyWith(busy: false, error: _clean(e));
+      return false;
+    }
+  }
+
   /// Returns the generated store id on success, or null on failure.
   Future<String?> register({
     required String storeName,
@@ -100,6 +119,24 @@ class StoreAuthController extends StateNotifier<StoreAuthState> {
     }
   }
 
+  Future<bool> adminLogin({
+    required String email,
+    required String password,
+  }) async {
+    state = state.copyWith(busy: true, error: null);
+    try {
+      await _service.adminLogin(email: email, password: password);
+      state = const StoreAuthState(stage: StoreAuthStage.admin);
+      return true;
+    } on FirebaseAuthException catch (e) {
+      state = state.copyWith(busy: false, error: _message(e));
+      return false;
+    } catch (e) {
+      state = state.copyWith(busy: false, error: _clean(e));
+      return false;
+    }
+  }
+
   /// Registers a platform weighbridge operator (pending admin approval).
   Future<bool> registerOperator({
     required String name,
@@ -115,7 +152,7 @@ class StoreAuthController extends StateNotifier<StoreAuthState> {
         password: password,
         mobile: mobile,
       );
-      state = await _service.restore(); // pending operator session
+      state = await _service.restore();
       return true;
     } on FirebaseAuthException catch (e) {
       state = state.copyWith(busy: false, error: _message(e));
@@ -150,8 +187,7 @@ class StoreAuthController extends StateNotifier<StoreAuthState> {
     }
   }
 
-  /// An approved operator enters a mill by Store ID; on success the app scopes
-  /// to that mill (role stays weighbridge_operator).
+  /// An approved operator enters a mill by Store ID.
   Future<bool> enterMill(String storeId) async {
     final operator = state.operator;
     if (operator == null) return false;
@@ -178,24 +214,6 @@ class StoreAuthController extends StateNotifier<StoreAuthState> {
     final operator = state.operator;
     if (operator == null) return;
     state = StoreAuthState(stage: StoreAuthStage.operator, operator: operator);
-  }
-
-  Future<bool> adminLogin({
-    required String email,
-    required String password,
-  }) async {
-    state = state.copyWith(busy: true, error: null);
-    try {
-      await _service.adminLogin(email: email, password: password);
-      state = const StoreAuthState(stage: StoreAuthStage.admin);
-      return true;
-    } on FirebaseAuthException catch (e) {
-      state = state.copyWith(busy: false, error: _message(e));
-      return false;
-    } catch (e) {
-      state = state.copyWith(busy: false, error: _clean(e));
-      return false;
-    }
   }
 
   /// Re-checks the current store's status (for the pending screen's refresh).

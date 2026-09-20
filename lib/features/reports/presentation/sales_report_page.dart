@@ -28,11 +28,11 @@ class SalesReportPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final range = ref.watch(salesReportRangeProvider);
     final report = ref.watch(salesReportProvider);
+    final visibleRowsLimit = ref.watch(salesReportVisibleRowsProvider);
     final lastPrintMode = ref.watch(_salesLastPrintModeProvider);
     final showLastPrintBanner = ref.watch(_salesShowLastPrintBannerProvider);
-    final printerConfig =
-        ref.watch(printerConfigProvider).valueOrNull ??
-            const PrinterConfig.defaults();
+    final printerConfig = ref.watch(printerConfigProvider).valueOrNull ??
+        const PrinterConfig.defaults();
     final canPrint = printerConfig.enabled || printerConfig.allowPdfFallback;
 
     return Scaffold(
@@ -49,7 +49,9 @@ class SalesReportPage extends ConsumerWidget {
                 initialDateRange: range,
               );
               if (picked != null) {
-                ref.read(salesReportRangeProvider.notifier).state = picked;
+                ref.read(salesReportManualRangeProvider.notifier).state =
+                    picked;
+                ref.read(salesReportVisibleRowsProvider.notifier).state = 50;
               }
             },
             icon: const Icon(Icons.date_range_rounded),
@@ -83,6 +85,8 @@ class SalesReportPage extends ConsumerWidget {
         data: (data) {
           final rangeLabel =
               '${DateFormat('dd MMM yyyy').format(data.start)} - ${DateFormat('dd MMM yyyy').format(data.end)}';
+          final visibleRows =
+              data.rows.take(visibleRowsLimit).toList(growable: false);
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -95,6 +99,14 @@ class SalesReportPage extends ConsumerWidget {
                 const SizedBox(height: 12),
               ],
               Text(rangeLabel, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 4),
+              Text(
+                'Financial year totals are shown for the selected settings range.',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: Colors.grey[700]),
+              ),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 12,
@@ -206,7 +218,7 @@ class SalesReportPage extends ConsumerWidget {
                               DataColumn(label: Text('Actions')),
                             ],
                             rows: [
-                              for (final row in data.rows)
+                              for (final row in visibleRows)
                                 DataRow(
                                   cells: [
                                     DataCell(Text(row.invoiceNo)),
@@ -235,22 +247,22 @@ class SalesReportPage extends ConsumerWidget {
                                         children: [
                                           IconButton(
                                             tooltip: canPrint
-                                              ? 'Print invoice'
-                                              : 'Enable printer integration or PDF fallback in Settings',
+                                                ? 'Print invoice'
+                                                : 'Enable printer integration or PDF fallback in Settings',
                                             icon: const Icon(
                                                 Icons.print_outlined),
                                             onPressed: canPrint
-                                              ? () =>
-                                                _printInvoice(context, ref, row)
-                                              : null,
+                                                ? () => _printInvoice(
+                                                    context, ref, row)
+                                                : null,
                                           ),
                                           IconButton(
                                             tooltip: _isReturnCompleted(
                                                     row.paymentStatus)
                                                 ? 'Invoice already returned'
                                                 : 'Sales return / refund',
-                                            icon: const Icon(
-                                                Icons.assignment_return_outlined),
+                                            icon: const Icon(Icons
+                                                .assignment_return_outlined),
                                             onPressed: _isReturnCompleted(
                                                     row.paymentStatus)
                                                 ? null
@@ -307,6 +319,23 @@ class SalesReportPage extends ConsumerWidget {
                             ],
                           ),
                         ),
+                      if (data.rows.length > visibleRows.length) ...[
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: FilledButton.tonalIcon(
+                            onPressed: () {
+                              ref
+                                  .read(salesReportVisibleRowsProvider.notifier)
+                                  .state = visibleRows.length + 50;
+                            },
+                            icon: const Icon(Icons.expand_more_rounded),
+                            label: Text(
+                              'Show More (${visibleRows.length}/${data.rows.length})',
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -382,7 +411,8 @@ class SalesReportPage extends ConsumerWidget {
 
   String _toCsv(SalesReportData data) {
     final b = StringBuffer();
-    b.writeln('invoice,date,payment_method,payment_status,items,qty,amount,products_gst');
+    b.writeln(
+        'invoice,date,payment_method,payment_status,items,qty,amount,products_gst');
     for (final row in data.rows) {
       b.writeln(
         '${_csv(row.invoiceNo)},${row.soldAt.toIso8601String()},${_csv((row.paymentMethod ?? '-').toUpperCase())},'
@@ -411,23 +441,24 @@ class SalesReportPage extends ConsumerWidget {
     final items = await _loadReturnableItems(ref, row.saleId);
     if (items.isEmpty) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('No returnable quantities left for this invoice.')),
+        const SnackBar(
+            content: Text('No returnable quantities left for this invoice.')),
       );
       return;
     }
 
-    final result = await _showPartialReturnDialog(context, row.invoiceNo, items);
+    final result =
+        await _showPartialReturnDialog(context, row.invoiceNo, items);
     if (result == null) return;
 
     try {
-      final returnResult = await ref
-          .read(salesRepositoryProvider)
-          .processPartialSaleReturn(
-            saleId: row.saleId,
-            lines: result.lines,
-            reason: result.reason,
-            refundMethod: result.refundMethod,
-          );
+      final returnResult =
+          await ref.read(salesRepositoryProvider).processPartialSaleReturn(
+                saleId: row.saleId,
+                lines: result.lines,
+                reason: result.reason,
+                refundMethod: result.refundMethod,
+              );
 
       ref.invalidate(salesReportProvider);
       ref.invalidate(dashboardMetricsProvider);
@@ -439,10 +470,13 @@ class SalesReportPage extends ConsumerWidget {
       final refundText = returnResult.refundAmount > 0
           ? 'Refunded ${formatInr(returnResult.refundAmount)} via ${result.refundMethod.toUpperCase()}.'
           : 'No monetary refund needed for this return.';
-      final stockText =
-          returnResult.stockRestocked ? ' Stock restocked.' : ' Stock tracking is disabled.';
+      final stockText = returnResult.stockRestocked
+          ? ' Stock restocked.'
+          : ' Stock tracking is disabled.';
       messenger.showSnackBar(
-        SnackBar(content: Text('Sale return completed. $returnedText $refundText$stockText')),
+        SnackBar(
+            content: Text(
+                'Sale return completed. $returnedText $refundText$stockText')),
       );
     } catch (e) {
       messenger.showSnackBar(
@@ -462,11 +496,14 @@ class SalesReportPage extends ConsumerWidget {
         .get();
     if (itemSnap.docs.isEmpty) return const [];
 
-    final saleItems = itemSnap.docs.map(saleItemFromDoc).toList(growable: false);
-    final productIds = saleItems.map((i) => i.productId).toSet().toList(growable: false);
+    final saleItems =
+        itemSnap.docs.map(saleItemFromDoc).toList(growable: false);
+    final productIds =
+        saleItems.map((i) => i.productId).toSet().toList(growable: false);
     final productSnap = await storeCollection(fs, storeId, 'products').get();
     final productById = {
-      for (final d in productSnap.docs) (int.tryParse(d.id) ?? 0): productFromDoc(d),
+      for (final d in productSnap.docs)
+        (int.tryParse(d.id) ?? 0): productFromDoc(d),
     };
 
     final rows = <_ReturnableLine>[];
@@ -474,12 +511,14 @@ class SalesReportPage extends ConsumerWidget {
       final item = saleItemFromDoc(doc);
       if (!productIds.contains(item.productId)) continue;
       final returnedQty = fsNum(doc.data()['returnedQty']);
-      final remainingQty = (item.quantity - returnedQty).clamp(0, item.quantity).toDouble();
+      final remainingQty =
+          (item.quantity - returnedQty).clamp(0, item.quantity).toDouble();
       if (remainingQty <= 0) continue;
       rows.add(
         _ReturnableLine(
           saleItemId: item.id,
-          productName: productById[item.productId]?.name ?? 'Product #${item.productId}',
+          productName:
+              productById[item.productId]?.name ?? 'Product #${item.productId}',
           soldQty: item.quantity,
           alreadyReturnedQty: returnedQty,
           remainingQty: remainingQty,
@@ -497,7 +536,9 @@ class SalesReportPage extends ConsumerWidget {
   }
 
   Future<_PartialReturnDialogResult?> _showPartialReturnDialog(
-      BuildContext context, String invoiceNo, List<_ReturnableLine> items) async {
+      BuildContext context,
+      String invoiceNo,
+      List<_ReturnableLine> items) async {
     final reasonCtrl = TextEditingController();
     var refundMethod = 'cash';
     final qtyCtrls = [
@@ -522,8 +563,10 @@ class SalesReportPage extends ConsumerWidget {
                     child: TextButton.icon(
                       onPressed: () {
                         for (var i = 0; i < qtyCtrls.length; i++) {
-                          qtyCtrls[i].text = items[i].remainingQty
-                              .toStringAsFixed(items[i].remainingQty % 1 == 0 ? 0 : 2);
+                          qtyCtrls[i].text = items[i]
+                              .remainingQty
+                              .toStringAsFixed(
+                                  items[i].remainingQty % 1 == 0 ? 0 : 2);
                         }
                         setState(() {});
                       },
@@ -541,10 +584,11 @@ class SalesReportPage extends ConsumerWidget {
                         final line = items[index];
                         final soldText = line.soldQty
                             .toStringAsFixed(line.soldQty % 1 == 0 ? 0 : 2);
-                        final returnedText = line.alreadyReturnedQty.toStringAsFixed(
-                            line.alreadyReturnedQty % 1 == 0 ? 0 : 2);
-                        final remainingText = line.remainingQty
-                            .toStringAsFixed(line.remainingQty % 1 == 0 ? 0 : 2);
+                        final returnedText = line.alreadyReturnedQty
+                            .toStringAsFixed(
+                                line.alreadyReturnedQty % 1 == 0 ? 0 : 2);
+                        final remainingText = line.remainingQty.toStringAsFixed(
+                            line.remainingQty % 1 == 0 ? 0 : 2);
                         final isFullyReturned = line.remainingQty <= 0.0001;
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 6),
@@ -556,7 +600,8 @@ class SalesReportPage extends ConsumerWidget {
                                   children: [
                                     Text(
                                       line.productName,
-                                      style: const TextStyle(fontWeight: FontWeight.w600),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w600),
                                     ),
                                     const SizedBox(height: 6),
                                     Wrap(
@@ -572,7 +617,8 @@ class SalesReportPage extends ConsumerWidget {
                                           backgroundColor:
                                               Colors.orange.withOpacity(0.12),
                                           side: BorderSide(
-                                            color: Colors.orange.withOpacity(0.35),
+                                            color:
+                                                Colors.orange.withOpacity(0.35),
                                           ),
                                           label: Text(
                                             'Returned: $returnedText',
@@ -614,7 +660,8 @@ class SalesReportPage extends ConsumerWidget {
                                 child: GestureDetector(
                                   onLongPress: () {
                                     qtyCtrls[index].text = '0';
-                                    qtyCtrls[index].selection = const TextSelection(
+                                    qtyCtrls[index].selection =
+                                        const TextSelection(
                                       baseOffset: 0,
                                       extentOffset: 1,
                                     );
@@ -623,7 +670,8 @@ class SalesReportPage extends ConsumerWidget {
                                         content: Text(
                                           'Reset ${items[index].productName} to 0',
                                         ),
-                                        duration: const Duration(milliseconds: 900),
+                                        duration:
+                                            const Duration(milliseconds: 900),
                                       ),
                                     );
                                   },
@@ -632,28 +680,35 @@ class SalesReportPage extends ConsumerWidget {
                                     focusNode: qtyFocusNodes[index],
                                     autofocus: index == 0,
                                     keyboardType:
-                                        const TextInputType.numberWithOptions(decimal: true),
+                                        const TextInputType.numberWithOptions(
+                                            decimal: true),
                                     onTap: () {
                                       final raw = qtyCtrls[index].text.trim();
                                       final parsed = double.tryParse(raw) ?? 0;
                                       if (parsed <= 0) {
-                                        final next = items[index].remainingQty
+                                        final next = items[index]
+                                            .remainingQty
                                             .toStringAsFixed(
-                                                items[index].remainingQty % 1 == 0 ? 0 : 2);
+                                                items[index].remainingQty % 1 ==
+                                                        0
+                                                    ? 0
+                                                    : 2);
                                         qtyCtrls[index].text = next;
-                                        qtyCtrls[index].selection = TextSelection(
+                                        qtyCtrls[index].selection =
+                                            TextSelection(
                                           baseOffset: 0,
                                           extentOffset: next.length,
                                         );
                                       }
                                     },
-                                    textInputAction: index == qtyCtrls.length - 1
-                                        ? TextInputAction.done
-                                        : TextInputAction.next,
+                                    textInputAction:
+                                        index == qtyCtrls.length - 1
+                                            ? TextInputAction.done
+                                            : TextInputAction.next,
                                     onSubmitted: (_) {
                                       if (index < qtyFocusNodes.length - 1) {
-                                        FocusScope.of(context)
-                                            .requestFocus(qtyFocusNodes[index + 1]);
+                                        FocusScope.of(context).requestFocus(
+                                            qtyFocusNodes[index + 1]);
                                       }
                                     },
                                     decoration: const InputDecoration(
@@ -677,7 +732,8 @@ class SalesReportPage extends ConsumerWidget {
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       labelText: 'Return reason *',
-                      hintText: 'Damaged item, billing error, customer cancellation...',
+                      hintText:
+                          'Damaged item, billing error, customer cancellation...',
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -692,7 +748,8 @@ class SalesReportPage extends ConsumerWidget {
                       DropdownMenuItem(value: 'cash', child: Text('Cash')),
                       DropdownMenuItem(value: 'upi', child: Text('UPI')),
                       DropdownMenuItem(value: 'card', child: Text('Card')),
-                      DropdownMenuItem(value: 'bank', child: Text('Bank Transfer')),
+                      DropdownMenuItem(
+                          value: 'bank', child: Text('Bank Transfer')),
                     ],
                     onChanged: (value) {
                       if (value != null) {
@@ -744,7 +801,8 @@ class SalesReportPage extends ConsumerWidget {
                     if (lines.isEmpty) {
                       ScaffoldMessenger.of(ctx).showSnackBar(
                         const SnackBar(
-                          content: Text('Enter return quantity for at least one item.'),
+                          content: Text(
+                              'Enter return quantity for at least one item.'),
                         ),
                       );
                       return;
@@ -798,7 +856,8 @@ class SalesReportPage extends ConsumerWidget {
       final productIds = saleItems.map((i) => i.productId).toSet().toList();
       var productNameById = <int, String>{};
       if (productIds.isNotEmpty) {
-        final productSnap = await storeCollection(fs, storeId, 'products').get();
+        final productSnap =
+            await storeCollection(fs, storeId, 'products').get();
         final productById = {
           for (final d in productSnap.docs)
             (int.tryParse(d.id) ?? 0): productFromDoc(d),
@@ -809,12 +868,10 @@ class SalesReportPage extends ConsumerWidget {
         };
       }
 
-      final branding =
-          ref.read(invoiceBrandingProvider).valueOrNull ??
-              const InvoiceBranding.defaults();
-      final printerConfig =
-          ref.read(printerConfigProvider).valueOrNull ??
-              const PrinterConfig.defaults();
+      final branding = ref.read(invoiceBrandingProvider).valueOrNull ??
+          const InvoiceBranding.defaults();
+      final printerConfig = ref.read(printerConfigProvider).valueOrNull ??
+          const PrinterConfig.defaults();
       final shopName = branding.displayName.isNotEmpty
           ? branding.displayName
           : (ref.read(storeSessionProvider)?.storeName ?? 'Pocket POS');
@@ -893,13 +950,7 @@ class SalesReportPage extends ConsumerWidget {
             })>
         items,
     required double grandTotal,
-    List<
-            ({
-              String method,
-              double amount,
-              DateTime paidAt,
-              String? referenceNo
-            })>
+    List<({String method, double amount, DateTime paidAt, String? referenceNo})>
         refundEntries = const [],
   }) async {
     final bytes = await ReceiptPdfService().generateSimpleReceipt(
@@ -924,13 +975,14 @@ class SalesReportPage extends ConsumerWidget {
     }
   }
 
-  Future<List<
-      ({
-        String method,
-        double amount,
-        DateTime paidAt,
-        String? referenceNo
-      })>> _loadRefundEntries(WidgetRef ref, int saleId) async {
+  Future<
+      List<
+          ({
+            String method,
+            double amount,
+            DateTime paidAt,
+            String? referenceNo
+          })>> _loadRefundEntries(WidgetRef ref, int saleId) async {
     final storeId = ref.read(activeStoreIdProvider);
     if (storeId == null || storeId.isEmpty) return const [];
 
@@ -939,13 +991,12 @@ class SalesReportPage extends ConsumerWidget {
         .where('saleId', isEqualTo: saleId)
         .get();
 
-    final entries = <
-        ({
-          String method,
-          double amount,
-          DateTime paidAt,
-          String? referenceNo
-        })>[];
+    final entries = <({
+      String method,
+      double amount,
+      DateTime paidAt,
+      String? referenceNo
+    })>[];
     for (final doc in snap.docs) {
       final data = doc.data();
       final amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
@@ -953,7 +1004,8 @@ class SalesReportPage extends ConsumerWidget {
       entries.add((
         method: (data['method'] as String?) ?? 'refund',
         amount: amount.abs(),
-        paidAt: (data['paidAt'] as dynamic)?.toDate() as DateTime? ?? DateTime.now(),
+        paidAt: (data['paidAt'] as dynamic)?.toDate() as DateTime? ??
+            DateTime.now(),
         referenceNo: data['referenceNo'] as String?,
       ));
     }

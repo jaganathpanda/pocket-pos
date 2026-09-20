@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pocket_pos/core/database/database_provider.dart';
-import 'package:pocket_pos/features/weighbridge/data/firestore_weighbridge_repository.dart';
-import 'package:pocket_pos/features/weighbridge/data/weighbridge_repository.dart';
-import 'package:pocket_pos/features/weighbridge/data/weighbridge_repository_impl.dart';
 
 import '../../features/auth/domain/auth_models.dart';
 import '../../features/auth/presentation/auth_controller.dart';
@@ -38,17 +34,16 @@ import '../../features/suppliers/domain/supplier_repository.dart';
 import '../../features/warehouse/data/firestore_warehouse_repository.dart';
 import '../../features/warehouse/domain/inventory_mode.dart';
 import '../../features/warehouse/domain/warehouse_repository.dart';
+import '../../features/weighbridge/data/firestore_weighbridge_repository.dart';
 import '../../features/weighbridge/domain/vehicle_entry.dart';
-// The Drift schema generates its own row class named VehicleEntry; the
-// weighbridge providers deal in the domain model (which carries the joined
-// productName / supplier fields), so the generated one is hidden here.
-import '../database/app_database.dart' hide VehicleEntry;
+import '../database/app_database.dart';
 import '../database/seed/demo_business_type.dart';
 import '../database/seed/demo_data_loader.dart';
 import '../firestore/store_scope.dart';
 import '../models/discount_policy.dart';
 import '../models/invoice_branding.dart';
 import '../models/printer_config.dart';
+import '../models/quick_checkout_config.dart';
 import '../models/storefront_shopping_config.dart';
 import '../services/printer_service.dart';
 
@@ -83,12 +78,6 @@ final countersProvider = StreamProvider<List<PosCounter>>((ref) {
 final posUsersProvider = StreamProvider<List<PosUserRow>>((ref) {
   if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
   return ref.watch(posCounterRepositoryProvider).watchPosUsers();
-});
-
-/// Millers (owner/manager users) available to approve weighbridge entries.
-final millersProvider = StreamProvider<List<PosUserRow>>((ref) {
-  if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
-  return ref.watch(posCounterRepositoryProvider).watchMillers();
 });
 
 final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
@@ -279,18 +268,29 @@ final cartSummaryProvider =
   double taxTotal = 0;
 
   for (final row in items) {
-    final lineSub = row.item.quantity * row.item.unitPrice;
-    final taxable = lineSub - row.item.discountAmount;
-    subTotal += lineSub;
-    discountTotal += row.item.discountAmount;
-    taxTotal += taxable * (row.item.taxPercent / 100);
+    // Round to 2 decimals at each step to prevent floating-point errors
+    final lineSub = double.parse(
+        (row.item.quantity * row.item.unitPrice).toStringAsFixed(2));
+    final itemDiscount =
+        double.parse(row.item.discountAmount.toStringAsFixed(2));
+    final taxable = double.parse((lineSub - itemDiscount).toStringAsFixed(2));
+    final itemTax = double.parse(
+        (taxable * (row.item.taxPercent / 100)).toStringAsFixed(2));
+
+    subTotal = double.parse((subTotal + lineSub).toStringAsFixed(2));
+    discountTotal =
+        double.parse((discountTotal + itemDiscount).toStringAsFixed(2));
+    taxTotal = double.parse((taxTotal + itemTax).toStringAsFixed(2));
   }
+
+  final grandTotal =
+      double.parse((subTotal - discountTotal + taxTotal).toStringAsFixed(2));
 
   return CartSummary(
     subTotal: subTotal,
     discountTotal: discountTotal,
     taxTotal: taxTotal,
-    grandTotal: subTotal - discountTotal + taxTotal,
+    grandTotal: grandTotal,
   );
 });
 
@@ -300,103 +300,6 @@ final cartGrandTotalProvider =
       await ref.watch(salesRepositoryProvider).watchCartItems(cartId).first;
   final summary = ref.read(cartSummaryProvider(rows));
   return summary.grandTotal;
-});
-
-// ── Weighbridge / Vehicle Entry ─────────────────────────────────────────────
-final useFirestoreProvider = Provider<bool>((ref) {
-  // Default to Firestore for production, but allow switching
-  // For web Chrome debugging, set to false to use Drift
-  // return false; // Use Drift for local testing
-  return true; // Use Firestore for production
-});
-
-final weighbridgeRepositoryProvider = Provider<WeighbridgeRepository>((ref) {
-  final useFirestore = ref.watch(useFirestoreProvider);
-  final storeId = ref.watch(activeStoreIdProvider);
-
-  if (useFirestore && storeId != null && storeId.isNotEmpty) {
-    print('🏗️ Using FirestoreWeighbridgeRepository for store: $storeId');
-    return FirestoreWeighbridgeRepository(
-      ref.watch(firestoreProvider),
-      storeId,
-    );
-  } else {
-    print('🏗️ Using WeighbridgeRepositoryImpl (Drift)');
-    return WeighbridgeRepositoryImpl(ref.watch(appDatabaseProvider));
-  }
-});
-
-/// Filter state for the vehicle entry list.
-final weighbridgeFilterProvider = StateProvider<WeighbridgeFilter>((ref) {
-  return const WeighbridgeFilter();
-});
-
-/// Stream of vehicle entries filtered by the current filter state.
-final vehicleEntriesStreamProvider = StreamProvider<List<VehicleEntry>>((ref) {
-  final filter = ref.watch(weighbridgeFilterProvider);
-  final storeId = ref.watch(activeStoreIdProvider);
-  final useFirestore = ref.watch(useFirestoreProvider);
-
-  if (useFirestore && storeId == null) {
-    return Stream.value(const []);
-  }
-  return ref.watch(weighbridgeRepositoryProvider).watchAll(
-        fromDate: filter.fromDate,
-        toDate: filter.toDate,
-        vehicleNo: filter.vehicleNo,
-        partyName: filter.partyName,
-      );
-});
-
-/// Fetches a single vehicle entry by ID (one-time fetch).
-final vehicleEntryProvider =
-    FutureProvider.family<VehicleEntry?, int>((ref, id) {
-  final storeId = ref.watch(activeStoreIdProvider);
-  final useFirestore = ref.watch(useFirestoreProvider);
-
-  if (useFirestore && storeId == null) {
-    return Future.value(null);
-  }
-  return ref.watch(weighbridgeRepositoryProvider).getEntry(id);
-});
-
-/// 👇 ADD THIS: Real-time stream of a single vehicle entry by ID.
-final vehicleEntryStreamProvider =
-    StreamProvider.family<VehicleEntry?, int>((ref, id) {
-  print('🔍 vehicleEntryStreamProvider called for ID: $id');
-  final storeId = ref.watch(activeStoreIdProvider);
-  final useFirestore = ref.watch(useFirestoreProvider);
-
-  if (useFirestore && storeId == null) {
-    return Stream.value(null);
-  }
-  return ref.watch(weighbridgeRepositoryProvider).watchEntry(id);
-});
-
-/// The current signed-in user's Firebase Auth uid (null when logged out).
-final currentUidProvider = Provider<String?>((ref) {
-  return ref.watch(storeSessionProvider)?.uid;
-});
-
-/// Weighbridge entries awaiting approval, routed to the current miller.
-final pendingApprovalsProvider = StreamProvider<List<VehicleEntry>>((ref) {
-  final uid = ref.watch(currentUidProvider);
-  if (uid == null || uid.isEmpty) return Stream.value(const []);
-  return ref
-      .watch(weighbridgeRepositoryProvider)
-      .watchPending(approverUid: uid);
-});
-
-/// Count of pending approvals for the current miller (badge).
-final pendingApprovalsCountProvider = Provider<int>((ref) {
-  return ref.watch(pendingApprovalsProvider).valueOrNull?.length ?? 0;
-});
-
-/// Vehicle entries created by the current weighbridge operator.
-final myWeighbridgeEntriesProvider = StreamProvider<List<VehicleEntry>>((ref) {
-  final uid = ref.watch(currentUidProvider);
-  if (uid == null || uid.isEmpty) return Stream.value(const []);
-  return ref.watch(weighbridgeRepositoryProvider).watchByCreator(uid);
 });
 
 class DashboardMetrics {
@@ -455,6 +358,15 @@ const _emptyDashboard = DashboardMetrics(
 final dashboardMetricsProvider = FutureProvider<DashboardMetrics>((ref) async {
   if (ref.watch(activeStoreIdProvider) == null) return _emptyDashboard;
   return _reportsRepo(ref).dashboard();
+});
+
+final upcomingExpiringProductsProvider =
+    StreamProvider<List<({String name, DateTime expiryDate, int daysLeft})>>(
+        (ref) {
+  if (ref.watch(activeStoreIdProvider) == null) {
+    return Stream.value(const []);
+  }
+  return _reportsRepo(ref).watchUpcomingExpiringProducts();
 });
 
 class SalesReportRow {
@@ -529,14 +441,42 @@ class SalesReportData {
   final List<SalesReportRow> rows;
 }
 
-final salesReportRangeProvider = StateProvider<DateTimeRange>((ref) {
+int _currentFinancialYearStartYear(int startMonth, {DateTime? now}) {
   final now = DateTime.now();
+  final normalizedStartMonth = startMonth.clamp(1, 12);
+  return now.month < normalizedStartMonth ? now.year - 1 : now.year;
+}
+
+DateTimeRange financialYearDateRange(
+  InvoiceBranding branding, {
+  DateTime? now,
+}) {
+  final effectiveNow = now ?? DateTime.now();
+  final startMonth = branding.financialYearStartMonth.clamp(1, 12);
+  final selectedStartYear = branding.selectedFinancialYearStartYear > 0
+      ? branding.selectedFinancialYearStartYear
+      : _currentFinancialYearStartYear(startMonth, now: effectiveNow);
+  final start = DateTime(selectedStartYear, startMonth, 1);
+  final end = DateTime(selectedStartYear + 1, startMonth, 1)
+      .subtract(const Duration(milliseconds: 1));
   return DateTimeRange(
-    start: DateTime(now.year, now.month, now.day)
-        .subtract(const Duration(days: 29)),
-    end: DateTime(now.year, now.month, now.day),
+    start: start,
+    end: end,
   );
+}
+
+final salesReportManualRangeProvider =
+    StateProvider<DateTimeRange?>((ref) => null);
+
+final salesReportRangeProvider = Provider<DateTimeRange>((ref) {
+  final manualRange = ref.watch(salesReportManualRangeProvider);
+  if (manualRange != null) return manualRange;
+  final branding = ref.watch(invoiceBrandingProvider).valueOrNull ??
+      const InvoiceBranding.defaults();
+  return financialYearDateRange(branding);
 });
+
+final salesReportVisibleRowsProvider = StateProvider<int>((ref) => 50);
 
 final salesReportProvider = FutureProvider<SalesReportData>((ref) async {
   final range = ref.watch(salesReportRangeProvider);
@@ -574,30 +514,6 @@ class CreditLedgerRow {
   final Customer? customer;
   final double paidAmount;
   final double dueAmount;
-}
-
-class WeighbridgeFilter {
-  final DateTime? fromDate;
-  final DateTime? toDate;
-  final String? vehicleNo;
-  final String? partyName;
-
-  const WeighbridgeFilter(
-      {this.fromDate, this.toDate, this.vehicleNo, this.partyName});
-
-  WeighbridgeFilter copyWith({
-    DateTime? fromDate,
-    DateTime? toDate,
-    String? vehicleNo,
-    String? partyName,
-  }) {
-    return WeighbridgeFilter(
-      fromDate: fromDate ?? this.fromDate,
-      toDate: toDate ?? this.toDate,
-      vehicleNo: vehicleNo ?? this.vehicleNo,
-      partyName: partyName ?? this.partyName,
-    );
-  }
 }
 
 final creditLedgerProvider = FutureProvider<List<CreditLedgerRow>>((ref) async {
@@ -699,10 +615,43 @@ final platformStorefrontShoppingConfigProvider =
   });
 });
 
+/// Non-blocking platform config provider for login page
+/// Returns immediately with cached/default value, loads in background
+final platformStorefrontShoppingConfigNonBlockingProvider =
+    FutureProvider<StorefrontShoppingConfig>((ref) async {
+  try {
+    // Timeout after 2 seconds to avoid blocking UI
+    final future = ref
+        .watch(firestoreProvider)
+        .collection('platform_config')
+        .doc('public_features')
+        .get()
+        .then((snap) {
+      if (!snap.exists || snap.data() == null || snap.data()!.isEmpty) {
+        return const StorefrontShoppingConfig.defaults();
+      }
+      try {
+        return StorefrontShoppingConfig.fromFirestoreMap(snap.data()!);
+      } catch (e) {
+        return const StorefrontShoppingConfig.defaults();
+      }
+    });
+
+    return await future.timeout(
+      const Duration(seconds: 2),
+      onTimeout: () => const StorefrontShoppingConfig.defaults(),
+    );
+  } catch (e) {
+    // On any error, return default
+    return const StorefrontShoppingConfig.defaults();
+  }
+});
+
 final platformAnonymousShoppingEnabledProvider = Provider<bool>((ref) {
-  final cfg = ref.watch(platformStorefrontShoppingConfigProvider).valueOrNull;
-  // Return false if config is null (loading/error state)
-  return cfg?.allowAnonymousShopping ?? false;
+  // Use non-blocking provider - show button by default if config hasn't loaded
+  final cfgAsync =
+      ref.watch(platformStorefrontShoppingConfigNonBlockingProvider);
+  return cfgAsync.valueOrNull?.allowAnonymousShopping ?? true;
 });
 
 /// Store-level opt-in for the public storefront.
@@ -717,4 +666,111 @@ final storeStorefrontShoppingConfigProvider =
       .doc('storefront')
       .snapshots()
       .map((snap) => StorefrontShoppingConfig.fromFirestoreMap(snap.data()));
+});
+
+/// Store-level Quick Checkout setting in `stores/{storeId}/settings/shop_settings`.
+final quickCheckoutConfigProvider = StreamProvider<QuickCheckoutConfig>((ref) {
+  final storeId = ref.watch(activeStoreIdProvider);
+  if (storeId == null) {
+    return Stream.value(const QuickCheckoutConfig.defaults());
+  }
+  return storeCollection(ref.watch(firestoreProvider), storeId, 'settings')
+      .doc('shop_settings')
+      .snapshots()
+      .map((snap) => QuickCheckoutConfig.fromFirestoreMap(snap.data()));
+});
+
+final quickCheckoutEnabledProvider = Provider<bool>((ref) {
+  return ref.watch(quickCheckoutConfigProvider).valueOrNull?.enabled ?? false;
+});
+
+final quickInvoiceEnabledProvider = Provider<bool>((ref) {
+  return ref
+          .watch(quickCheckoutConfigProvider)
+          .valueOrNull
+          ?.quickInvoiceEnabled ??
+      false;
+});
+
+// ── Weighbridge Operators (Platform-level) ────────────────────────────────────
+
+/// The current user's UID (from Firebase Auth). Used by operator pages.
+final currentUidProvider = Provider<String?>((ref) {
+  final authState = ref.watch(storeAuthControllerProvider);
+  // Try session first (store members), then operator
+  return authState.session?.uid ?? authState.operator?.uid;
+});
+
+final weighbridgeRepositoryProvider =
+    Provider<FirestoreWeighbridgeRepository>((ref) {
+  final storeId = ref.watch(activeStoreIdProvider) ?? '';
+  return FirestoreWeighbridgeRepository(ref.watch(firestoreProvider), storeId);
+});
+
+final pendingApprovalsProvider = StreamProvider<List<VehicleEntry>>((ref) {
+  // Pending vehicle entries awaiting approval by store members
+  final storeId = ref.watch(activeStoreIdProvider);
+  if (storeId == null) return Stream.value(const []);
+  return ref.watch(weighbridgeRepositoryProvider).watchPending();
+});
+
+final vehicleEntryStreamProvider =
+    StreamProvider.family<VehicleEntry?, int>((ref, entryId) {
+  final storeId = ref.watch(activeStoreIdProvider);
+  if (storeId == null) return Stream.value(null);
+  return ref.watch(weighbridgeRepositoryProvider).watchEntry(entryId);
+});
+
+final vehicleEntryProvider =
+    FutureProvider.family<VehicleEntry?, int>((ref, entryId) async {
+  final storeId = ref.watch(activeStoreIdProvider);
+  if (storeId == null) return null;
+  return ref.watch(weighbridgeRepositoryProvider).getEntry(entryId);
+});
+
+final millersProvider = StreamProvider<List<Staff>>((ref) {
+  if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
+  return ref.watch(staffRepositoryProvider).watchActiveStaff();
+});
+
+/// Filter for weighbridge vehicle entries.
+class WeighbridgeFilter {
+  const WeighbridgeFilter({
+    this.fromDate,
+    this.toDate,
+    this.vehicleNo,
+    this.partyName,
+  });
+
+  final DateTime? fromDate;
+  final DateTime? toDate;
+  final String? vehicleNo;
+  final String? partyName;
+}
+
+/// Filter state for weighbridge vehicle entries list.
+final weighbridgeFilterProvider = StateProvider<WeighbridgeFilter>((ref) {
+  return const WeighbridgeFilter();
+});
+
+/// All vehicle entries with optional filtering.
+final vehicleEntriesStreamProvider = StreamProvider<List<VehicleEntry>>((ref) {
+  final storeId = ref.watch(activeStoreIdProvider);
+  if (storeId == null) return Stream.value(const []);
+  final filter = ref.watch(weighbridgeFilterProvider);
+  return ref.watch(weighbridgeRepositoryProvider).watchAll(
+        fromDate: filter.fromDate,
+        toDate: filter.toDate,
+        vehicleNo: filter.vehicleNo,
+        partyName: filter.partyName,
+      );
+});
+
+/// Vehicle entries created by the current operator (for operator dashboard).
+final myWeighbridgeEntriesProvider = StreamProvider<List<VehicleEntry>>((ref) {
+  final storeId = ref.watch(activeStoreIdProvider);
+  if (storeId == null) return Stream.value(const []);
+  final uid = ref.watch(currentUidProvider);
+  if (uid == null) return Stream.value(const []);
+  return ref.watch(weighbridgeRepositoryProvider).watchByCreator(uid);
 });

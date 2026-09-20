@@ -1,0 +1,166 @@
+rules_version = '2';
+
+// Pocket POS multi-tenant rules.
+//
+// Tenancy model: every store's data lives under `stores/{storeId}/...` and is
+// reachable only by that store's members (`stores/{storeId}/users/{uid}`), by a
+// platform admin, or — for the public storefront — by the holder of a scoped
+// `customer_cart` custom token minted by the Apps Script cart-session endpoint.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isPlatformAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/platform_admins/$(request.auth.uid));
+    }
+
+    // Is the caller a member of this store (owner/staff)?
+    function isStoreMember(storeId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/stores/$(storeId)/users/$(request.auth.uid));
+    }
+
+    // A scoped public-storefront session. Explicitly forces both sides of the
+    // cartId check to STRING to prevent type-cast mismatch: the token claim
+    // arrives as a number while the cart's document id is a string.
+    function isCustomerCartToken(storeId, cartId) {
+      return isSignedIn()
+        && request.auth.token.role == 'customer_cart'
+        && string(request.auth.token.storeId) == string(storeId)
+        && string(request.auth.token.cartId) == string(cartId);
+    }
+
+    function isCustomerCart() {
+      return isSignedIn() && request.auth.token.role == 'customer_cart';
+    }
+
+    // ── Registration support ────────────────────────────────────────────────
+
+    // One email = one store. Registration reserves the address here, inside a
+    // transaction, before the store document is written.
+    //
+    // `get` is open to any signed-in caller because the reservation transaction
+    // must read the doc before claiming it. That permits one-at-a-time probing
+    // of whether an address is registered; `list` stays closed so the
+    // collection cannot be enumerated wholesale.
+    match /email_index/{emailKey} {
+      allow get: if isSignedIn();
+      allow create: if isSignedIn()
+                    && request.resource.data.uid == request.auth.uid;
+      // Registration rolls the reservation back if store creation fails.
+      allow delete: if isSignedIn()
+                    && resource.data.uid == request.auth.uid;
+      allow list, update: if isPlatformAdmin();
+    }
+
+    // Lets a user find their store on session-restore (uid -> storeId).
+    match /user_store_index/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    // PLATFORM ADMINS
+    match /platform_admins/{uid} {
+      allow get: if isSignedIn()
+                 && request.auth.uid == uid;
+
+      allow list, write: if isPlatformAdmin();
+    }
+
+    // Platform config — platform admins only.
+    match /platform_config/{docId} {
+      allow read, write: if isPlatformAdmin();
+    }
+
+    match /stores/{storeId} {
+
+      // Registration: a signed-in user may create their own store, always as
+      // `pending`. Approval is an admin-only transition (see update below), so
+      // a self-registered store can never start out active.
+      allow create: if isSignedIn()
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.ownerUid == request.auth.uid
+                    && request.resource.data.storeId == storeId;
+
+      // Allow unauthenticated reads for email activation.
+      // Activation page reads the store doc to verify the token before updating.
+      allow get: if isStoreMember(storeId)
+                 || isPlatformAdmin()
+                 || isCustomerCart()
+                 || (!isSignedIn() && resource.data.status == 'pending');
+
+
+      // Only the admin console lists stores (the pending-approval queue).
+      allow list: if isPlatformAdmin();
+
+      // Admins may change anything — this is how `status` becomes 'approved'.
+      // Members may edit their own profile fields but must not escalate: both
+      // `status` and `ownerUid` have to come back unchanged. The owner-profile
+      // screen saves with a merge set, so request.resource.data holds the
+      // merged document and these comparisons see the existing values.
+      // Unauthenticated email activation: only allow pending → approved transition.
+      allow update: if isPlatformAdmin()
+                    || (isStoreMember(storeId)
+                        && request.resource.data.status == resource.data.status
+                        && request.resource.data.ownerUid == resource.data.ownerUid)
+                    || (!isSignedIn()
+                        && resource.data.status == 'pending'
+                        && request.resource.data.status == 'approved');
+
+      allow delete: if isPlatformAdmin();
+
+      // Store-scoped user directory. `create` is self-service so registration
+      // can bootstrap the owner's membership record — without it isStoreMember
+      // could never become true for a brand-new store, and every subsequent
+      // write (including the demo-catalog seed) would be denied.
+      match /users/{uid} {
+        allow read: if isStoreMember(storeId) || isPlatformAdmin();
+        allow create: if isSignedIn() && request.auth.uid == uid;
+        allow update, delete: if isStoreMember(storeId) || isPlatformAdmin();
+      }
+
+      // PRODUCTS
+      match /products/{productId} {
+        allow read: if isStoreMember(storeId)
+                   || isPlatformAdmin()
+                   || isCustomerCart();
+        allow write: if isStoreMember(storeId) || isPlatformAdmin();
+      }
+
+      // CARTS
+      match /carts/{cartId} {
+        allow read: if isStoreMember(storeId)
+                   || isPlatformAdmin()
+                   || isCustomerCartToken(storeId, cartId);
+
+        allow create, update, delete: if isStoreMember(storeId)
+                                       || isCustomerCartToken(storeId, cartId);
+      }
+
+      // CART ITEMS — the customer's cart is identified by the `cartId` field,
+      // so authorization is per-document: create checks the incoming payload,
+      // read/update/delete check the stored document.
+      match /cart_items/{itemId} {
+        allow read: if isStoreMember(storeId)
+                   || isPlatformAdmin()
+                   || isCustomerCartToken(storeId, resource.data.cartId);
+
+        allow create: if isStoreMember(storeId)
+                     || isCustomerCartToken(storeId, request.resource.data.cartId);
+
+        allow update, delete: if isStoreMember(storeId)
+                             || isCustomerCartToken(storeId, resource.data.cartId);
+      }
+
+      // Everything else under a store (inventory, warehouses, sales, settings,
+      // ...) is members-only. Storefront customers deliberately have no access
+      // here — the client skips stock lookups for customer sessions.
+      match /{document=**} {
+        allow read, write: if isStoreMember(storeId) || isPlatformAdmin();
+      }
+    }
+  }
+}

@@ -1,8 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/firestore/store_scope.dart';
+import '../../store/presentation/store_auth_controller.dart';
 import '../../barcode/presentation/barcode_scanner_page.dart';
 import '../../barcode/presentation/hid_scanner_listener.dart';
 import '../../warehouse/domain/inventory_mode.dart';
@@ -28,7 +32,6 @@ class _ProductPageState extends ConsumerState<ProductPage> {
   @override
   Widget build(BuildContext context) {
     final products = ref.watch(productsProvider);
-    final categories = ref.watch(categoriesProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -72,11 +75,6 @@ class _ProductPageState extends ConsumerState<ProductPage> {
         children: [
           products.when(
             data: (list) {
-              final categoryById = {
-                for (final c in (categories.valueOrNull ?? const <Category>[]))
-                  c.id: c.name,
-              };
-
               if (list.isEmpty) {
                 return const Center(
                     child: Text('No products found. Tap + to add one.'));
@@ -90,8 +88,7 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                     title: Text(p.name,
                         style: const TextStyle(fontWeight: FontWeight.w500)),
                     subtitle: Text(
-                      'Category: ${p.categoryId == null ? '-' : (categoryById[p.categoryId] ?? '-')}  |  '
-                      'Code: ${p.productCode}  |  Barcode: ${p.barcode ?? '-'}  |  Tax: ${p.taxPercent}%  |  Unit: ${p.unit}',
+                      'Code: ${p.productCode}  |  Barcode: ${p.barcode ?? '-'}  |  Unit: ${p.unit}  |  Tax: ${p.taxPercent}%',
                       style: const TextStyle(fontSize: 12),
                     ),
                     trailing: Row(
@@ -203,6 +200,7 @@ class _ProductPageState extends ConsumerState<ProductPage> {
     final opening = TextEditingController(text: '0');
     final purchaseFocus = FocusNode();
     final sellingFocus = FocusNode();
+    DateTime? expiryDate;
     // On focus: clear a leading 0 so the user types the real price straight
     // away. On blur: restore 0 if left empty.
     void clearZeroOnFocus(TextEditingController c, FocusNode n) {
@@ -219,6 +217,29 @@ class _ProductPageState extends ConsumerState<ProductPage> {
     clearZeroOnFocus(selling, sellingFocus);
     final formKey = GlobalKey<FormState>();
     int? selectedCategoryId = product?.categoryId;
+    final emoji = TextEditingController();
+    bool hideFromQuickCheckout = false;
+
+    if (isEdit) {
+      final storeId = ref.read(activeStoreIdProvider);
+      if (storeId != null && storeId.isNotEmpty) {
+        final snap = await storeCollection(
+          ref.read(firestoreProvider),
+          storeId,
+          'products',
+        ).doc('${product.id}').get();
+        final data = snap.data() ?? const <String, dynamic>{};
+        hideFromQuickCheckout = data['hideFromQuickCheckout'] == true;
+        emoji.text = (data['quickCheckoutEmoji'] as String?)?.trim() ?? '';
+        final rawExpiry = data['expiryDate'];
+        if (rawExpiry is Timestamp) {
+          expiryDate = rawExpiry.toDate();
+        } else if (rawExpiry is DateTime) {
+          expiryDate = rawExpiry;
+        }
+      }
+    }
+
     final messenger = ScaffoldMessenger.of(context);
 
     // Opening stock is only meaningful for a brand-new product in a
@@ -383,6 +404,80 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                         const SizedBox(width: 8),
                         Expanded(child: _field(unit, 'Unit (piece/kg/ltr...)')),
                       ]),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: ctx,
+                            initialDate: expiryDate ?? DateTime.now(),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2100),
+                          );
+                          if (picked != null) {
+                            setLocal(() => expiryDate = picked);
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: InputDecorator(
+                          decoration: const InputDecoration(
+                            labelText: 'Expiry Date (optional)',
+                            isDense: true,
+                            border: OutlineInputBorder(),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  expiryDate == null
+                                      ? 'Select expiry date'
+                                      : DateFormat('dd MMM yyyy')
+                                          .format(expiryDate!),
+                                  style: TextStyle(
+                                    color: expiryDate == null
+                                        ? Theme.of(ctx)
+                                            .inputDecorationTheme
+                                            .hintStyle
+                                            ?.color
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                              if (expiryDate != null)
+                                IconButton(
+                                  tooltip: 'Clear expiry date',
+                                  onPressed: () =>
+                                      setLocal(() => expiryDate = null),
+                                  icon: const Icon(Icons.close_rounded),
+                                ),
+                              const Icon(Icons.calendar_today_rounded,
+                                  size: 18),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: emoji,
+                        maxLength: 2,
+                        decoration: const InputDecoration(
+                          labelText: 'Quick Checkout Emoji/Icon',
+                          helperText:
+                              'Example: ☕, 🍪, 🥤 (optional, shown on big cards)',
+                          isDense: true,
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      SwitchListTile.adaptive(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Hide from Quick Checkout'),
+                        subtitle: const Text(
+                          'Turn this on only when you want to remove the product from the quick card grid.',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        value: hideFromQuickCheckout,
+                        onChanged: (v) =>
+                            setLocal(() => hideFromQuickCheckout = v),
+                      ),
                       if (showOpeningStock) ...[
                         const SizedBox(height: 8),
                         _field(opening, 'Opening stock', numeric: true),
@@ -416,6 +511,11 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                         purchasePrice: double.tryParse(purchase.text) ?? 0,
                         taxPercent: double.tryParse(tax.text) ?? 0,
                         unit: unitVal,
+                        showInQuickCheckout: !hideFromQuickCheckout,
+                        quickCheckoutEmoji: emoji.text.trim().isEmpty
+                            ? null
+                            : emoji.text.trim(),
+                        expiryDate: expiryDate,
                       );
                     } else {
                       await repo.add(
@@ -430,6 +530,11 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                         openingStock: showOpeningStock
                             ? (double.tryParse(opening.text) ?? 0)
                             : 0,
+                        showInQuickCheckout: !hideFromQuickCheckout,
+                        quickCheckoutEmoji: emoji.text.trim().isEmpty
+                            ? null
+                            : emoji.text.trim(),
+                        expiryDate: expiryDate,
                       );
                     }
                     if (ctx.mounted) Navigator.pop(ctx);
@@ -449,6 +554,7 @@ class _ProductPageState extends ConsumerState<ProductPage> {
 
     purchaseFocus.dispose();
     sellingFocus.dispose();
+    emoji.dispose();
   }
 
   /// A short, human-friendly product code, e.g. `PRD-4F2A9C`.

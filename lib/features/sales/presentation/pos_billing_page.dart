@@ -1166,15 +1166,16 @@ class _CartDetailsState extends ConsumerState<_CartDetails> {
 
                   // Change calculation
                   Builder(builder: (context) {
-                    final paid = double.tryParse(paidCtrl.text) ?? 0;
-                    final change = paid - summary;
+                    final paid = double.parse((double.tryParse(paidCtrl.text) ?? 0).toStringAsFixed(2));
+                    final roundedSummary = double.parse(summary.toStringAsFixed(2));
+                    final change = paid - roundedSummary;
                     return change >= 0
                         ? Row(
                             children: [
                               const Icon(Icons.change_circle_outlined,
                                   size: 16, color: Colors.green),
                               const SizedBox(width: 4),
-                              Text('Change: ₹${change.toStringAsFixed(2)}',
+                              Text('Change: ₹${(change).toStringAsFixed(2)}',
                                   style: const TextStyle(color: Colors.green)),
                             ],
                           )

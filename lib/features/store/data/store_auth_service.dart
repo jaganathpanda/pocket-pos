@@ -410,6 +410,13 @@ class StoreAuthService {
     await _persist(storeId: null, isAdmin: true);
   }
 
+  /// Google Sign-In for store members (requires store selection workflow).
+  /// This is a placeholder; the full implementation is not currently available.
+  Future<StoreSession> loginWithGoogle() async {
+    throw UnimplementedError(
+        'Google Sign-In is not yet implemented. Use email/password login.');
+  }
+
   // ── Weighbridge operators (platform-level, not tied to a store) ────────────
 
   /// Registers a platform weighbridge operator (status = pending) with a real
