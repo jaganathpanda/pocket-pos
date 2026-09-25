@@ -32,7 +32,6 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
-.github/
 
 # Symbolication related
 app.*.symbols
@@ -70,3 +69,5 @@ app.*.map.json
 *.keystore
 *.jks
 pubspec_overrides.yaml
+
+echo "web/blog/mypocketpos.apk" >> .gitignore

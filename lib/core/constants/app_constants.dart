@@ -6,7 +6,7 @@ class AppConstants {
   /// Replace with your deployed /exec URL after deploying appscript/cart_session.js.
   /// See appscript/README.md for setup steps.
   static const cartSessionEndpoint =
-      'https://script.google.com/macros/s/AKfycbwT7NrcEzsA6BHFUist0Xdu6mQtcFPieUJXvCIHOtYUStJV_9XYzrA8bZYCK7aPvW0V/exec';
+      'https://script.google.com/macros/s/AKfycbyARiUDECXDJwQAJCbQFnS1VQsxfPgRLZHugBbEq6N9aUv-vg1LTpP37Z0B8MfYiks_bQ/exec';
 
   static const defaultTaxPercent = 0.0;
   static const lowStockThreshold = 5;

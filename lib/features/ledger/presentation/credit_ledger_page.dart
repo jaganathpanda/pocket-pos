@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/di/providers.dart';
+import '../../../core/utilities/csv_file_export.dart';
 import '../../../core/utilities/money.dart';
 
 class CreditLedgerPage extends ConsumerWidget {
@@ -25,13 +25,20 @@ class CreditLedgerPage extends ConsumerWidget {
           IconButton(
             tooltip: 'Export CSV',
             onPressed: () async {
-              final rows = await ref.read(creditLedgerProvider.future);
-              if (!context.mounted) return;
-              final csv = _toCsv(rows);
-              await Clipboard.setData(ClipboardData(text: csv));
-              if (context.mounted) {
+              try {
+                final rows = await ref.read(creditLedgerProvider.future);
+                await saveCsvFile(
+                  fileName: 'credit_ledger.csv',
+                  content: _toCsv(rows),
+                );
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Ledger CSV copied to clipboard')),
+                  const SnackBar(content: Text('Ledger CSV downloaded')),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('CSV download failed: $e')),
                 );
               }
             },
@@ -43,7 +50,8 @@ class CreditLedgerPage extends ConsumerWidget {
       body: ledger.when(
         data: (rows) {
           if (rows.isEmpty) {
-            return const Center(child: Text('No credit / udhar records found.'));
+            return const Center(
+                child: Text('No credit / udhar records found.'));
           }
 
           final totalDue = rows.fold<double>(0, (sum, r) => sum + r.dueAmount);
@@ -55,7 +63,8 @@ class CreditLedgerPage extends ConsumerWidget {
                   title: const Text('Total Pending Credit'),
                   trailing: Text(
                     formatInr(totalDue),
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.red),
                   ),
                 ),
               ),
@@ -72,28 +81,38 @@ class CreditLedgerPage extends ConsumerWidget {
                             Expanded(
                               child: Text(
                                 row.customer?.name ?? 'Walk-in Customer',
-                                style: const TextStyle(fontWeight: FontWeight.w600),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600),
                               ),
                             ),
                             Text(
                               'Due ${formatInr(row.dueAmount)}',
-                              style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.red),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.red),
                             ),
                           ],
                         ),
                         const SizedBox(height: 6),
                         Text('Invoice: ${row.sale.invoiceNo}'),
-                        Text('Date: ${DateFormat('dd MMM yyyy HH:mm').format(row.sale.soldAt)}'),
+                        Text(
+                            'Date: ${DateFormat('dd MMM yyyy HH:mm').format(row.sale.soldAt)}'),
                         Text('Mobile: ${row.customer?.mobile ?? '-'}'),
                         const SizedBox(height: 8),
                         Row(
                           children: [
                             Expanded(
-                              child: Text('Paid ${formatInr(row.paidAmount)}', style: const TextStyle(fontSize: 12)),
+                              child: Text('Paid ${formatInr(row.paidAmount)}',
+                                  style: const TextStyle(fontSize: 12)),
                             ),
                             FilledButton.tonal(
-                              onPressed: row.dueAmount > 0 ? () => _showRecordPaymentDialog(context, ref, row) : null,
-                              child: Text(row.dueAmount > 0 ? 'Record Payment' : 'No Due'),
+                              onPressed: row.dueAmount > 0
+                                  ? () => _showRecordPaymentDialog(
+                                      context, ref, row)
+                                  : null,
+                              child: Text(row.dueAmount > 0
+                                  ? 'Record Payment'
+                                  : 'No Due'),
                             ),
                           ],
                         ),
@@ -110,8 +129,10 @@ class CreditLedgerPage extends ConsumerWidget {
     );
   }
 
-  Future<void> _showRecordPaymentDialog(BuildContext context, WidgetRef ref, CreditLedgerRow row) async {
-    final amountCtrl = TextEditingController(text: row.dueAmount.toStringAsFixed(2));
+  Future<void> _showRecordPaymentDialog(
+      BuildContext context, WidgetRef ref, CreditLedgerRow row) async {
+    final amountCtrl =
+        TextEditingController(text: row.dueAmount.toStringAsFixed(2));
     final refCtrl = TextEditingController();
     String method = 'cash';
 
@@ -127,13 +148,16 @@ class CreditLedgerPage extends ConsumerWidget {
               children: [
                 TextField(
                   controller: amountCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Amount', border: OutlineInputBorder()),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                      labelText: 'Amount', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
                   initialValue: method,
-                  decoration: const InputDecoration(labelText: 'Method', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                      labelText: 'Method', border: OutlineInputBorder()),
                   items: const [
                     DropdownMenuItem(value: 'cash', child: Text('Cash')),
                     DropdownMenuItem(value: 'card', child: Text('Card')),
@@ -145,14 +169,20 @@ class CreditLedgerPage extends ConsumerWidget {
                 const SizedBox(height: 10),
                 TextField(
                   controller: refCtrl,
-                  decoration: const InputDecoration(labelText: 'Reference No (optional)', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                      labelText: 'Reference No (optional)',
+                      border: OutlineInputBorder()),
                 ),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel')),
+            FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Save')),
           ],
         ),
       ),
@@ -166,14 +196,15 @@ class CreditLedgerPage extends ConsumerWidget {
             saleId: row.sale.id,
             amount: amount,
             method: method,
-            referenceNo: refCtrl.text.trim().isEmpty ? null : refCtrl.text.trim(),
+            referenceNo:
+                refCtrl.text.trim().isEmpty ? null : refCtrl.text.trim(),
           );
       ref.invalidate(creditLedgerProvider);
       ref.invalidate(dashboardMetricsProvider);
       ref.invalidate(salesReportProvider);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Payment recorded')), 
+          const SnackBar(content: Text('Payment recorded')),
         );
       }
     } catch (e) {
@@ -187,7 +218,8 @@ class CreditLedgerPage extends ConsumerWidget {
 
   String _toCsv(List<CreditLedgerRow> rows) {
     final buffer = StringBuffer();
-    buffer.writeln('invoice_no,customer,mobile,sold_at,grand_total,paid,due,status');
+    buffer.writeln(
+        'invoice_no,customer,mobile,sold_at,grand_total,paid,due,status');
     for (final row in rows) {
       buffer.writeln(
         '${row.sale.invoiceNo},${_csv(row.customer?.name ?? 'Walk-in')},${_csv(row.customer?.mobile ?? '')},'

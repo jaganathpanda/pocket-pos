@@ -5,7 +5,12 @@ void main() {
   group('validators', () {
     test('mobile validation', () {
       expect(isValidMobile('9876543210'), isTrue);
+      expect(isValidMobile(' 9876543210 '), isTrue);
       expect(isValidMobile('12345'), isFalse);
+      expect(validateMobile(''), isNull);
+      expect(validateMobile('', required: true), isNotNull);
+      expect(validateMobile('9876543210'), isNull);
+      expect(validateMobile('12345'), isNotNull);
     });
 
     test('pin validation', () {

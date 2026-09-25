@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/utilities/csv_file_export.dart';
 import '../../../core/utilities/money.dart';
 import '../../store/presentation/store_auth_controller.dart';
 import '../data/expense_repository.dart';
@@ -22,12 +22,20 @@ class ExpensePage extends ConsumerWidget {
           IconButton(
             tooltip: 'Export CSV',
             onPressed: () async {
-              final rows = await ref.read(storeExpensesProvider.future);
-              if (!context.mounted) return;
-              await Clipboard.setData(ClipboardData(text: _toCsv(rows)));
-              if (context.mounted) {
+              try {
+                final rows = await ref.read(storeExpensesProvider.future);
+                await saveCsvFile(
+                  fileName: 'expenses.csv',
+                  content: _toCsv(rows),
+                );
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Expense CSV copied to clipboard')),
+                  const SnackBar(content: Text('Expense CSV downloaded')),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('CSV download failed: $e')),
                 );
               }
             },
@@ -74,9 +82,11 @@ class ExpensePage extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           Text(formatInr(e.amount),
-                              style: const TextStyle(fontWeight: FontWeight.w700)),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w700)),
                           IconButton(
-                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            icon: const Icon(Icons.delete_outline,
+                                color: Colors.red),
                             onPressed: () async {
                               final storeId = ref.read(activeStoreIdProvider);
                               if (storeId == null) return;
@@ -99,7 +109,8 @@ class ExpensePage extends ConsumerWidget {
     );
   }
 
-  Future<void> _showAddExpenseDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showAddExpenseDialog(
+      BuildContext context, WidgetRef ref) async {
     final category = TextEditingController();
     final amount = TextEditingController();
     final note = TextEditingController();
@@ -123,7 +134,8 @@ class ExpensePage extends ConsumerWidget {
                 const SizedBox(height: 10),
                 TextField(
                   controller: amount,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(
                       labelText: 'Amount', border: OutlineInputBorder()),
                 ),
@@ -131,12 +143,14 @@ class ExpensePage extends ConsumerWidget {
                 TextField(
                   controller: note,
                   decoration: const InputDecoration(
-                      labelText: 'Note (optional)', border: OutlineInputBorder()),
+                      labelText: 'Note (optional)',
+                      border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    Expanded(child: Text(DateFormat('dd MMM yyyy').format(spentAt))),
+                    Expanded(
+                        child: Text(DateFormat('dd MMM yyyy').format(spentAt))),
                     TextButton(
                       onPressed: () async {
                         final picked = await showDatePicker(
@@ -146,8 +160,12 @@ class ExpensePage extends ConsumerWidget {
                           initialDate: spentAt,
                         );
                         if (picked != null) {
-                          setState(() => spentAt = DateTime(picked.year,
-                              picked.month, picked.day, spentAt.hour, spentAt.minute));
+                          setState(() => spentAt = DateTime(
+                              picked.year,
+                              picked.month,
+                              picked.day,
+                              spentAt.hour,
+                              spentAt.minute));
                         }
                       },
                       child: const Text('Pick Date'),
@@ -158,8 +176,12 @@ class ExpensePage extends ConsumerWidget {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel')),
+            FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Save')),
           ],
         ),
       ),
@@ -172,7 +194,8 @@ class ExpensePage extends ConsumerWidget {
     if (cat.isEmpty || amt <= 0) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Category and valid amount are required')),
+          const SnackBar(
+              content: Text('Category and valid amount are required')),
         );
       }
       return;

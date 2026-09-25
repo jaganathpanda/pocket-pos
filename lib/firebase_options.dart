@@ -50,20 +50,20 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAOBS028sisdT1o8QUf2F5abIfIzAHmZ68',
-    appId: '1:351899337586:web:5d7e28df8d0276e92653eb',
-    messagingSenderId: '351899337586',
-    projectId: 'pocket-pos-35e48',
-    authDomain: 'pocket-pos-35e48.firebaseapp.com',
-    storageBucket: 'pocket-pos-35e48.firebasestorage.app',
-    measurementId: 'G-0NTBQFMX1G',
+    apiKey: 'AIzaSyBTDQy7I8UiNsOe4hDmlnp11ou5T5rVwNg',
+    appId: '1:1086638616306:web:0fbdebd0577551649dea6b',
+    messagingSenderId: '1086638616306',
+    projectId: 'mypocketpos',
+    authDomain: 'mypocketpos.firebaseapp.com',
+    storageBucket: 'mypocketpos.firebasestorage.app',
+    measurementId: 'G-J0YSZ6G07C',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyACG6cYC3LtyefLjcGqYAo3rAZgb9ldxFs',
-    appId: '1:351899337586:android:b66d7bf054f6a45a2653eb',
-    messagingSenderId: '351899337586',
-    projectId: 'pocket-pos-35e48',
-    storageBucket: 'pocket-pos-35e48.firebasestorage.app',
+    apiKey: 'AIzaSyBe02E-0kQbI4PMxxES4dYyD5RlqyuiOsw',
+    appId: '1:1086638616306:android:f237e242a2999b849dea6b',
+    messagingSenderId: '1086638616306',
+    projectId: 'mypocketpos',
+    storageBucket: 'mypocketpos.firebasestorage.app',
   );
 }

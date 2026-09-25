@@ -10,7 +10,6 @@ import '../../../core/firestore/firestore_mappers.dart';
 import '../../../core/firestore/store_scope.dart';
 import '../../../core/models/discount_policy.dart';
 import '../../inventory/data/firestore_inventory_repository.dart';
-import '../../referral/domain/referral.dart';
 import '../../warehouse/data/firestore_warehouse_repository.dart';
 import '../domain/sales_repository.dart';
 
@@ -39,10 +38,6 @@ class FirestoreSalesRepository implements SalesRepository {
       storeCollection(_db, _storeId, 'sales');
   CollectionReference<Map<String, dynamic>> get _saleItems =>
       storeCollection(_db, _storeId, 'sale_items');
-  CollectionReference<Map<String, dynamic>> get _referrals =>
-      storeCollection(_db, _storeId, 'referrals');
-  CollectionReference<Map<String, dynamic>> get _users =>
-      storeCollection(_db, _storeId, 'users');
   CollectionReference<Map<String, dynamic>> get _payments =>
       storeCollection(_db, _storeId, 'payments');
   CollectionReference<Map<String, dynamic>> get _customers =>
@@ -103,6 +98,31 @@ class FirestoreSalesRepository implements SalesRepository {
   }
 
   @override
+  Future<int> nextQuickCartTokenNumber({
+    required DateTime day,
+    required int startingNumber,
+  }) async {
+    final normalizedStart = startingNumber.clamp(1, 999999);
+    final prefix = _dailyQuickTokenPrefix(day);
+    final snap = await _carts
+        .where('name', isGreaterThanOrEqualTo: prefix)
+        .where('name', isLessThanOrEqualTo: '$prefix\uf8ff')
+        .get();
+
+    var maxUsed = normalizedStart - 1;
+    for (final doc in snap.docs) {
+      final tokenNumber = _parseQuickTokenNumber(
+        (doc.data()['name'] as String?)?.trim() ?? '',
+        prefix,
+      );
+      if (tokenNumber != null && tokenNumber > maxUsed) {
+        maxUsed = tokenNumber;
+      }
+    }
+    return maxUsed + 1;
+  }
+
+  @override
   Stream<List<CartItemWithProduct>> watchCartItems(int cartId) {
     return _cartItems
         .where('cartId', isEqualTo: cartId)
@@ -148,6 +168,17 @@ class FirestoreSalesRepository implements SalesRepository {
       'updatedAt': FieldValue.serverTimestamp(),
     }));
     return id;
+  }
+
+  String _dailyQuickTokenPrefix(DateTime day) {
+    final dateStr =
+        '${day.year}${day.month.toString().padLeft(2, '0')}${day.day.toString().padLeft(2, '0')}';
+    return 'TOKEN-$dateStr-';
+  }
+
+  int? _parseQuickTokenNumber(String label, String prefix) {
+    if (!label.startsWith(prefix)) return null;
+    return int.tryParse(label.substring(prefix.length));
   }
 
   @override
@@ -204,9 +235,15 @@ class FirestoreSalesRepository implements SalesRepository {
     final itemsSnap = await _cartItems.where('cartId', isEqualTo: cartId).get();
     for (final d in itemsSnap.docs) {
       final item = cartItemFromDoc(d);
-      final lineSub = (item.quantity * item.unitPrice).clamp(0, 999999999);
-      final lineDiscount =
-          (lineSub * (normalized / 100)).clamp(0, lineSub).toDouble();
+      final lineSub =
+          double.parse((item.quantity * item.unitPrice).toStringAsFixed(2))
+              .clamp(0, 999999999)
+              .toDouble();
+      // Round discount to 2 decimal places to prevent floating-point errors
+      final discountValue = (lineSub * (normalized / 100));
+      final lineDiscount = double.parse(discountValue.toStringAsFixed(2))
+          .clamp(0, lineSub)
+          .toDouble();
       _write(d.reference
           .set({'discountAmount': lineDiscount}, SetOptions(merge: true)));
     }
@@ -512,7 +549,6 @@ class FirestoreSalesRepository implements SalesRepository {
     }
     final cart = cartFromDoc(cartDoc);
     final cartData = cartDoc.data();
-    final createdByUid = (cartData?['createdByUid'] as String?)?.trim();
 
     final itemsSnap = await _cartItems.where('cartId', isEqualTo: cartId).get();
     if (itemsSnap.docs.isEmpty) throw Exception('Cart is empty');
@@ -582,11 +618,17 @@ class FirestoreSalesRepository implements SalesRepository {
     double subTotal = 0, discountTotal = 0, taxTotal = 0;
     for (final item in items) {
       await _assertStock(item.productId, item.quantity, stock);
-      final lineSub = item.quantity * item.unitPrice;
-      final taxable = lineSub - item.discountAmount;
-      subTotal += lineSub;
-      discountTotal += item.discountAmount;
-      taxTotal += taxable * (item.taxPercent / 100);
+      final lineSub =
+          double.parse((item.quantity * item.unitPrice).toStringAsFixed(2));
+      final itemDiscount = double.parse(item.discountAmount.toStringAsFixed(2));
+      final taxable = double.parse((lineSub - itemDiscount).toStringAsFixed(2));
+      final itemTax =
+          double.parse((taxable * (item.taxPercent / 100)).toStringAsFixed(2));
+
+      subTotal = double.parse((subTotal + lineSub).toStringAsFixed(2));
+      discountTotal =
+          double.parse((discountTotal + itemDiscount).toStringAsFixed(2));
+      taxTotal = double.parse((taxTotal + itemTax).toStringAsFixed(2));
     }
     final effectiveDiscountPercent =
         subTotal <= 0 ? 0.0 : (discountTotal * 100 / subTotal);
@@ -597,14 +639,11 @@ class FirestoreSalesRepository implements SalesRepository {
         'max ${policy.maxBillDiscountPercent.toStringAsFixed(2)}% configured in Settings.',
       );
     }
-    // Round money to 2 decimals (paisa). The paid amount from the UI is already
-    // a 2-decimal value, so comparing it against a raw fractional total (which a
-    // percentage bill discount easily produces) would wrongly reject a full
-    // payment. Compare at paisa precision with a 1-paisa tolerance.
     final grandTotal =
-        ((subTotal - discountTotal + taxTotal) * 100).roundToDouble() / 100;
-    final normalizedPaid = paidAmount < 0 ? 0.0 : paidAmount;
-    final isFullyPaid = normalizedPaid + 0.01 >= grandTotal;
+        double.parse((subTotal - discountTotal + taxTotal).toStringAsFixed(2));
+    final normalizedPaid =
+        double.parse((paidAmount < 0 ? 0.0 : paidAmount).toStringAsFixed(2));
+    final isFullyPaid = normalizedPaid >= grandTotal;
     if (!isFullyPaid && paymentMode != 'credit') {
       throw Exception(
           'Paid amount is less than total. Select Credit payment mode for udhar.');
@@ -620,8 +659,6 @@ class FirestoreSalesRepository implements SalesRepository {
       'cartId': cartId,
       'invoiceNo': invoiceNo,
       'customerId': customerId,
-      if (createdByUid != null && createdByUid.isNotEmpty)
-        'createdByUid': createdByUid,
       'posCounterId': cart.posCounterId,
       'warehouseId': stock.track ? stock.warehouseId : null,
       'subTotal': subTotal,
@@ -673,20 +710,6 @@ class FirestoreSalesRepository implements SalesRepository {
     // checkout until the network returns.
     _write(batch.commit());
 
-    // Trigger referral completion/reward for the first successful checkout
-    // by a referred user. Runs best-effort and never blocks checkout.
-    if (createdByUid != null && createdByUid.isNotEmpty) {
-      unawaited(
-        _processReferralRewardOnCheckout(createdByUid, saleId)
-            .catchError((Object e) {
-          if (kDebugMode) {
-            // ignore: avoid_print
-            print('Referral reward processing skipped/failed: $e');
-          }
-        }),
-      );
-    }
-
     // Decrement stock (each is a read-modify-write applied locally too).
     if (stock.track) {
       for (final item in items) {
@@ -702,100 +725,50 @@ class FirestoreSalesRepository implements SalesRepository {
     return saleId;
   }
 
-  Future<void> _processReferralRewardOnCheckout(
-    String referredUid,
-    int saleId,
-  ) async {
-    final pendingSnap = await _db
-        .collectionGroup('referrals')
-        .where('referredUid', isEqualTo: referredUid)
-        .where('status', isEqualTo: ReferralStatus.pending.name)
-        .limit(1)
+  @override
+  Future<Sale?> findByInvoiceNo(String invoiceNo) async {
+    final trimmed = invoiceNo.trim();
+    if (trimmed.isEmpty) return null;
+    final snap =
+        await _sales.where('invoiceNo', isEqualTo: trimmed).limit(1).get();
+    if (snap.docs.isEmpty) return null;
+    return saleFromDoc(snap.docs.first);
+  }
+
+  @override
+  Future<List<Sale>> findSalesByCustomerMobile(String mobile,
+      {int limit = 10}) async {
+    final trimmed = mobile.trim();
+    if (trimmed.isEmpty) return [];
+
+    // First, find the customer by mobile
+    final customerSnap =
+        await _customers.where('mobile', isEqualTo: trimmed).limit(1).get();
+
+    if (customerSnap.docs.isEmpty) return [];
+
+    final customerId = int.tryParse(customerSnap.docs.first.id);
+    if (customerId == null) return [];
+
+    // Then, find all sales for that customer
+    final salesSnap = await _sales
+        .where('customerId', isEqualTo: customerId)
+        .orderBy('soldAt', descending: true)
+        .limit(limit)
         .get();
-    if (pendingSnap.docs.isEmpty) return;
 
-    final referralDoc = pendingSnap.docs.first;
-    final referralData = referralDoc.data();
-    final referrerUid = (referralData['referrerUid'] as String?)?.trim();
-    final referrerStoreId =
-        (referralData['referrerStoreId'] as String?)?.trim();
-    final referredStoreId =
-        (referralData['referredStoreId'] as String?)?.trim() ?? _storeId;
-    final beneficiaryUid = (referralData['referredUid'] as String?)?.trim();
-    final rewardAmount = fsNum(referralData['rewardAmount']);
+    return salesSnap.docs.map(saleFromDoc).toList();
+  }
 
-    if (referrerUid == null ||
-        referrerUid.isEmpty ||
-        referrerStoreId == null ||
-        referrerStoreId.isEmpty ||
-        beneficiaryUid == null ||
-        beneficiaryUid.isEmpty ||
-        rewardAmount <= 0) {
-      return;
-    }
+  @override
+  Future<List<Sale>> getRecentSales(int? customerId, {int limit = 10}) async {
+    final query = _sales.orderBy('soldAt', descending: true).limit(limit);
 
-    final referredStoreRef = _db.collection('stores').doc(referredStoreId);
-    final beneficiaryUserRef =
-        referredStoreRef.collection('users').doc(beneficiaryUid);
+    final snap = customerId != null
+        ? await query.where('customerId', isEqualTo: customerId).get()
+        : await query.get();
 
-    await _db.runTransaction((tx) async {
-      final latestReferralSnap = await tx.get(referralDoc.reference);
-      if (!latestReferralSnap.exists) return;
-
-      final latestReferral = latestReferralSnap.data() ?? {};
-      final latestStatus = (latestReferral['status'] as String?)?.trim();
-      if (latestStatus != ReferralStatus.pending.name) return;
-
-      tx.set(
-        referralDoc.reference,
-        {
-          'status': ReferralStatus.rewarded.name,
-          'completedAt': FieldValue.serverTimestamp(),
-          'rewardedAt': FieldValue.serverTimestamp(),
-          'rewardedSaleId': saleId.toString(),
-        },
-        SetOptions(merge: true),
-      );
-
-      tx.set(
-        beneficiaryUserRef,
-        {
-          'referralRewards': FieldValue.increment(rewardAmount),
-          'lastReferralRewardAt': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
-
-      tx.set(
-        referredStoreRef,
-        {
-          'referralRewardStatus': 'credited',
-          'referralRewardAmount': rewardAmount,
-          'referralRewardedAt': FieldValue.serverTimestamp(),
-          'referralSourceStoreId': referrerStoreId,
-          'referralSourceUid': referrerUid,
-          'referralBeneficiaryStoreId': referredStoreId,
-          'referralBeneficiaryUid': beneficiaryUid,
-          'referralRewardSaleId': saleId.toString(),
-          'referralRewardEvaluatedAt': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
-
-      tx.set(
-        referredStoreRef.collection('referral_reward_events').doc('$saleId'),
-        {
-          'saleId': saleId.toString(),
-          'sourceStoreId': referrerStoreId,
-          'sourceUid': referrerUid,
-          'beneficiaryStoreId': referredStoreId,
-          'beneficiaryUid': beneficiaryUid,
-          'rewardAmount': rewardAmount,
-          'createdAt': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
-    });
+    return snap.docs.map(saleFromDoc).toList();
   }
 
   // ── helpers ────────────────────────────────────────────────────────────────

@@ -28,15 +28,27 @@
         ]
       },
       {
-        "source": "/@(robots.txt|sitemap.xml)",
+        "source": "/subscriptions.html",
         "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=3600" }
+          { "key": "Cache-Control", "value": "no-cache, max-age=0" }
         ]
       },
       {
-        "source": "**/*.@(js|wasm|png|jpg|jpeg|svg|woff2|json)",
+        "source": "/@(robots.txt|sitemap.xml)",
         "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(js|css|wasm|png|jpg|jpeg|svg|woff2|json)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
         ]
       }
     ]
@@ -45,17 +57,17 @@
     "platforms": {
       "android": {
         "default": {
-          "projectId": "pocket-pos-35e48",
-          "appId": "1:351899337586:android:b66d7bf054f6a45a2653eb",
+          "projectId": "mypocketpos",
+          "appId": "1:1086638616306:android:f237e242a2999b849dea6b",
           "fileOutput": "android/app/google-services.json"
         }
       },
       "dart": {
         "lib/firebase_options.dart": {
-          "projectId": "pocket-pos-35e48",
+          "projectId": "mypocketpos",
           "configurations": {
-            "android": "1:351899337586:android:b66d7bf054f6a45a2653eb",
-            "web": "1:351899337586:web:5d7e28df8d0276e92653eb"
+            "android": "1:1086638616306:android:f237e242a2999b849dea6b",
+            "web": "1:1086638616306:web:0fbdebd0577551649dea6b"
           }
         }
       }

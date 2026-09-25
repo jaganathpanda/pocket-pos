@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/utilities/validators.dart';
 
 class SupplierPage extends ConsumerWidget {
   const SupplierPage({super.key});
@@ -21,7 +22,8 @@ class SupplierPage extends ConsumerWidget {
       ),
       body: suppliers.when(
         data: (list) => list.isEmpty
-            ? const Center(child: Text('No vendors yet. Add one to get started.'))
+            ? const Center(
+                child: Text('No vendors yet. Add one to get started.'))
             : ListView.separated(
                 itemCount: list.length,
                 separatorBuilder: (_, __) => const Divider(height: 1),
@@ -30,7 +32,8 @@ class SupplierPage extends ConsumerWidget {
                   return _SupplierTile(
                     supplier: s,
                     onEdit: () => _showAddEditDialog(context, ref, s),
-                    onViewPurchases: () => context.go('/purchases', extra: s.id),
+                    onViewPurchases: () =>
+                        context.go('/purchases', extra: s.id),
                     onDelete: () => _confirmDelete(context, ref, s),
                   );
                 },
@@ -41,7 +44,9 @@ class SupplierPage extends ConsumerWidget {
     );
   }
 
-  Future<void> _showAddEditDialog(BuildContext context, WidgetRef ref, Supplier? existing) async {
+  Future<void> _showAddEditDialog(
+      BuildContext context, WidgetRef ref, Supplier? existing) async {
+    final formKey = GlobalKey<FormState>();
     final name = TextEditingController(text: existing?.name);
     final mobile = TextEditingController(text: existing?.mobile);
     final gst = TextEditingController(text: existing?.gstNumber);
@@ -54,43 +59,54 @@ class SupplierPage extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         title: Text(existing == null ? 'Add Party / Vendor' : 'Edit Party'),
         content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _field(name, 'Party / Vendor Name *'),
-              _field(mobile, 'Mobile'),
-              _field(gst, 'GST Number'),
-              _field(email, 'Email'),
-              _field(contact, 'Contact Person'),
-              _field(address, 'Address', maxLines: 2),
-            ],
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _field(name, 'Party / Vendor Name *'),
+                _field(mobile, 'Mobile', validator: validateMobile),
+                _field(gst, 'GST Number'),
+                _field(email, 'Email'),
+                _field(contact, 'Contact Person'),
+                _field(address, 'Address', maxLines: 2),
+              ],
+            ),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           FilledButton(
             onPressed: () async {
+              if (!formKey.currentState!.validate()) return;
               final n = name.text.trim();
               if (n.isEmpty) return;
               final repo = ref.read(supplierRepositoryProvider);
               if (existing == null) {
                 await repo.add(
                   name: n,
-                  mobile: mobile.text.trim().isEmpty ? null : mobile.text.trim(),
+                  mobile:
+                      mobile.text.trim().isEmpty ? null : mobile.text.trim(),
                   gstNumber: gst.text.trim().isEmpty ? null : gst.text.trim(),
                   email: email.text.trim().isEmpty ? null : email.text.trim(),
-                  address: address.text.trim().isEmpty ? null : address.text.trim(),
-                  contactPerson: contact.text.trim().isEmpty ? null : contact.text.trim(),
+                  address:
+                      address.text.trim().isEmpty ? null : address.text.trim(),
+                  contactPerson:
+                      contact.text.trim().isEmpty ? null : contact.text.trim(),
                 );
               } else {
                 await repo.update(
                   id: existing.id,
                   name: n,
-                  mobile: mobile.text.trim().isEmpty ? null : mobile.text.trim(),
+                  mobile:
+                      mobile.text.trim().isEmpty ? null : mobile.text.trim(),
                   gstNumber: gst.text.trim().isEmpty ? null : gst.text.trim(),
                   email: email.text.trim().isEmpty ? null : email.text.trim(),
-                  address: address.text.trim().isEmpty ? null : address.text.trim(),
-                  contactPerson: contact.text.trim().isEmpty ? null : contact.text.trim(),
+                  address:
+                      address.text.trim().isEmpty ? null : address.text.trim(),
+                  contactPerson:
+                      contact.text.trim().isEmpty ? null : contact.text.trim(),
                 );
               }
               if (ctx.mounted) Navigator.pop(ctx);
@@ -102,14 +118,18 @@ class SupplierPage extends ConsumerWidget {
     );
   }
 
-  Future<void> _confirmDelete(BuildContext context, WidgetRef ref, Supplier s) async {
+  Future<void> _confirmDelete(
+      BuildContext context, WidgetRef ref, Supplier s) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Vendor?'),
-        content: Text('Remove "${s.name}"? Existing purchases will be retained.'),
+        content:
+            Text('Remove "${s.name}"? Existing purchases will be retained.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(ctx, true),
@@ -123,13 +143,20 @@ class SupplierPage extends ConsumerWidget {
     }
   }
 
-  Widget _field(TextEditingController c, String label, {int maxLines = 1}) {
+  Widget _field(
+    TextEditingController c,
+    String label, {
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: TextField(
+      child: TextFormField(
         controller: c,
         maxLines: maxLines,
-        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
+        validator: validator,
+        decoration: InputDecoration(
+            labelText: label, border: const OutlineInputBorder()),
       ),
     );
   }
@@ -155,13 +182,15 @@ class _SupplierTile extends StatelessWidget {
         backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         child: Text(supplier.name[0].toUpperCase()),
       ),
-      title: Text(supplier.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+      title: Text(supplier.name,
+          style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (supplier.mobile != null) Text('📞 ${supplier.mobile}'),
           if (supplier.gstNumber != null) Text('GST: ${supplier.gstNumber}'),
-          if (supplier.contactPerson != null) Text('Contact: ${supplier.contactPerson}'),
+          if (supplier.contactPerson != null)
+            Text('Contact: ${supplier.contactPerson}'),
         ],
       ),
       isThreeLine: supplier.mobile != null && supplier.gstNumber != null,
@@ -173,7 +202,8 @@ class _SupplierTile extends StatelessWidget {
               'Due: Rs ${supplier.outstandingBalance.toStringAsFixed(0)}',
               style: TextStyle(
                 fontSize: 11,
-                color: supplier.outstandingBalance > 0 ? Colors.red : Colors.green,
+                color:
+                    supplier.outstandingBalance > 0 ? Colors.red : Colors.green,
               ),
             ),
           ),

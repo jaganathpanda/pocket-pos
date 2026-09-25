@@ -32,13 +32,6 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/stores/$(storeId)/users/$(request.auth.uid));
     }
 
-    // Is the caller an approved platform weighbridge operator?
-    function isApprovedOperator() {
-      return isSignedIn()
-        && exists(/databases/$(database)/documents/weighbridge_operators/$(request.auth.uid))
-        && get(/databases/$(database)/documents/weighbridge_operators/$(request.auth.uid)).data.status == 'approved';
-    }
-
     // A scoped public-storefront session. Explicitly forces both sides of the
     // cartId check to STRING to prevent type-cast mismatch: the token claim
     // arrives as a number while the cart's document id is a string.
@@ -53,110 +46,114 @@ service cloud.firestore {
       return isSignedIn() && request.auth.token.role == 'customer_cart';
     }
 
-    // Weighbridge is a rice-mill-only feature.
-    function isRiceMill(storeId) {
-      return get(/databases/$(database)/documents/stores/$(storeId)).data.businessType == 'riceMill';
-    }
-    // ──────────────────────────────────────────────────────────────────────
-    // EMAIL INDEX (Registration support)
-    // ──────────────────────────────────────────────────────────────────────
+    // ── Registration support ────────────────────────────────────────────────
 
-
+    // One email = one store. Registration reserves the address here, inside a
+    // transaction, before the store document is written.
+    //
+    // `get` is open to any signed-in caller because the reservation transaction
+    // must read the doc before claiming it. That permits one-at-a-time probing
+    // of whether an address is registered; `list` stays closed so the
+    // collection cannot be enumerated wholesale.
     match /email_index/{emailKey} {
       allow get: if isSignedIn();
       allow create: if isSignedIn()
                     && request.resource.data.uid == request.auth.uid;
+      // Registration rolls the reservation back if store creation fails.
       allow delete: if isSignedIn()
                     && resource.data.uid == request.auth.uid;
       allow list, update: if isPlatformAdmin();
     }
 
-    // ──────────────────────────────────────────────────────────────────────
-    // USER STORE INDEX
-    // ──────────────────────────────────────────────────────────────────────
-
+    // Lets a user find their store on session-restore (uid -> storeId).
     match /user_store_index/{uid} {
       allow read, write: if isSignedIn() && request.auth.uid == uid;
     }
 
-    // ──────────────────────────────────────────────────────────────────────
     // PLATFORM ADMINS
-    // ──────────────────────────────────────────────────────────────────────
-
     match /platform_admins/{uid} {
-      allow get: if isSignedIn() && request.auth.uid == uid;
+      allow get: if isSignedIn()
+                 && request.auth.uid == uid;
+
       allow list, write: if isPlatformAdmin();
     }
 
-    // ──────────────────────────────────────────────────────────────────────
-    // WEIGHBRIDGE OPERATORS
-    // ──────────────────────────────────────────────────────────────────────
-
-    match /weighbridge_operators/{uid} {
-      allow get: if isSignedIn() && (request.auth.uid == uid || isPlatformAdmin());
-      allow list: if isPlatformAdmin();
-      allow create: if isSignedIn()
-        && request.auth.uid == uid
-        && request.resource.data.status == 'pending'
-        && request.resource.data.role == 'weighbridgeOperator';
-      allow update: if isPlatformAdmin()
-        || (isSignedIn() 
-            && request.auth.uid == uid 
-            && resource.data.status == 'pending'
-            && request.resource.data.status == 'pending');
-      allow delete: if isPlatformAdmin();
-    }
-
-    // ──────────────────────────────────────────────────────────────────────
-    // PLATFORM CONFIG
-    // ──────────────────────────────────────────────────────────────────────
-
-  // Platform config — platform admins only.
+    // Platform config — platform admins only.
     match /platform_config/{docId} {
       allow get: if isPlatformAdmin()
                   || (isSignedIn() && docId == 'referral_settings');
       allow list, write: if isPlatformAdmin();
     }
 
-    // ──────────────────────────────────────────────────────────────────────
-    // REFERRAL SYSTEM
-    // ──────────────────────────────────────────────────────────────────────
-
-    // Platform-level user documents (for referral codes, rewards, etc.)
-    match /users/{uid} {
-      allow read, write: if isSignedIn() && request.auth.uid == uid;
-      allow list: if isPlatformAdmin();
+    // Platform subscription plans (authoritative plan catalog).
+    // Public users can read only active, public-visible, non-deleted plans.
+    match /platform_subscription_plans/{planId} {
+      allow get, list: if isPlatformAdmin()
+        || (
+          resource.data.isActive == true
+          && resource.data.publicVisible == true
+          && resource.data.deletedAt == null
+        );
+        
+      // Allows platform admins to create, update, and delete
+      allow write: if isPlatformAdmin();
     }
-
-    // ──────────────────────────────────────────────────────────────────────
-    // STORES
-    // ──────────────────────────────────────────────────────────────────────
+    match /{path=**}/customer_subscriptions/{subscriptionId} {
+      allow read: if isPlatformAdmin();
+    }
 
     match /stores/{storeId} {
 
+      // Registration: a signed-in user may create their own store, always as
+      // `pending`. Approval is an admin-only transition (see update below), so
+      // a self-registered store can never start out active.
+
       allow create: if isSignedIn()
-                    && request.resource.data.status == 'pending'
+                    && (
+                      request.resource.data.status == 'pending'
+                      || (
+                        request.resource.data.status == 'approved'
+                        && request.auth.token.firebase.sign_in_provider == 'google.com'
+                      )
+                    )
                     && request.resource.data.ownerUid == request.auth.uid
                     && request.resource.data.storeId == storeId;
 
+      // Allow unauthenticated reads for email activation.
+      // Activation page reads the store doc to verify the token before updating.
       allow get: if isStoreMember(storeId)
                  || isPlatformAdmin()
-                 || isApprovedOperator()
-                 || isCustomerCart();
+                 || isCustomerCart()
+                 || (!isSignedIn() && resource.data.status == 'pending');
 
+
+      // Only the admin console lists stores (the pending-approval queue).
       allow list: if isPlatformAdmin();
 
+      // Admins may change anything — this is how `status` becomes 'approved'.
+      // Members may edit their own profile fields but must not escalate: both
+      // `status` and `ownerUid` have to come back unchanged. The owner-profile
+      // screen saves with a merge set, so request.resource.data holds the
+      // merged document and these comparisons see the existing values.
+      // Unauthenticated email activation: only allow pending → approved transition.
       allow update: if isPlatformAdmin()
                     || (isStoreMember(storeId)
                         && request.resource.data.status == resource.data.status
-                        && request.resource.data.ownerUid == resource.data.ownerUid);
+                && request.resource.data.ownerUid == resource.data.ownerUid
+                && request.resource.data.subscriptionStatus == resource.data.subscriptionStatus
+                && request.resource.data.subscriptionPlanId == resource.data.subscriptionPlanId
+                && request.resource.data.subscriptionCurrentPeriodEnd == resource.data.subscriptionCurrentPeriodEnd
+                && request.resource.data.subscriptionUpdatedAt == resource.data.subscriptionUpdatedAt)
+                    || (!isSignedIn()
+                        && resource.data.status == 'pending'
+                        && request.resource.data.status == 'approved');
 
       allow delete: if isPlatformAdmin();
 
-      // ────────────────────────────────────────────────────────────────────
-      // STORE USER DIRECTORY
-      // ────────────────────────────────────────────────────────────────────
-
+      // Store-scoped user directory. `create` is self-service so registration
+      // can bootstrap the owner's membership record — without it isStoreMember
+      // could never become true for a brand-new store, and every subsequent
+      // write (including the demo-catalog seed) would be denied.
       match /users/{uid} {
         allow read: if isStoreMember(storeId) 
                     || isPlatformAdmin() 
@@ -165,67 +162,15 @@ service cloud.firestore {
         allow update, delete: if isStoreMember(storeId) || isPlatformAdmin();
       }
 
-      // ────────────────────────────────────────────────────────────────────
-      // REFERRALS (store-scoped, owned by the referrer store)
-      // ────────────────────────────────────────────────────────────────────
-
-      match /referrals/{referralId} {
-        // The referral is created when the referred user signs up with a code.
-        // We allow the referred user to create the record under the referrer
-        // store as long as the referenced referrer user exists in that store.
-        allow create: if isSignedIn()
-          && request.resource.data.referredUid == request.auth.uid
-          && exists(/databases/$(database)/documents/stores/$(storeId)/users/$(request.resource.data.referrerUid))
-          && request.resource.data.referrerUid != request.resource.data.referredUid;
-
-        // Store members and the referred user can read the referral record.
+      // PRODUCTS
+      match /products/{productId} {
         allow read: if isStoreMember(storeId)
-          || isPlatformAdmin()
-          || (isSignedIn() && resource.data.referredUid == request.auth.uid)
-          || (isSignedIn() && resource.data.referrerUid == request.auth.uid);
-
-        // Referral lifecycle updates are handled by the store member (referrer)
-        // or by the referred user only when the record is still pending.
-        allow update: if isStoreMember(storeId)
-          || isPlatformAdmin()
-          || (isSignedIn()
-              && resource.data.referredUid == request.auth.uid
-              && resource.data.status == 'pending'
-              && request.resource.data.referredUid == resource.data.referredUid
-              && request.resource.data.referrerUid == resource.data.referrerUid);
-
-        allow delete: if isStoreMember(storeId) || isPlatformAdmin();
-      }
-      // ────────────────────────────────────────────────────────────────────
-      // CATALOG (Read-only for operators)
-      // ────────────────────────────────────────────────────────────────────
-
-      match /products/{id} {
-        allow read: if isStoreMember(storeId) 
-                    || isPlatformAdmin() 
-                    || isApprovedOperator()
-                    || isCustomerCart();
+                   || isPlatformAdmin()
+                   || isCustomerCart();
         allow write: if isStoreMember(storeId) || isPlatformAdmin();
       }
 
-      match /suppliers/{id} {
-        allow read: if isStoreMember(storeId) 
-                    || isPlatformAdmin() 
-                    || isApprovedOperator();
-        allow write: if isStoreMember(storeId) || isPlatformAdmin();
-      }
-
-      match /warehouses/{id} {
-        allow read: if isStoreMember(storeId) 
-                    || isPlatformAdmin() 
-                    || isApprovedOperator();
-        allow write: if isStoreMember(storeId) || isPlatformAdmin();
-      }
-
-      // ────────────────────────────────────────────────────────────────────
       // CARTS
-      // ────────────────────────────────────────────────────────────────────
-
       match /carts/{cartId} {
         allow read: if isStoreMember(storeId)
                    || isPlatformAdmin()
@@ -235,10 +180,9 @@ service cloud.firestore {
                                        || isCustomerCartToken(storeId, cartId);
       }
 
-      // ────────────────────────────────────────────────────────────────────
-      // CART ITEMS
-      // ────────────────────────────────────────────────────────────────────
-
+      // CART ITEMS — the customer's cart is identified by the `cartId` field,
+      // so authorization is per-document: create checks the incoming payload,
+      // read/update/delete check the stored document.
       match /cart_items/{itemId} {
         allow read: if isStoreMember(storeId)
                    || isPlatformAdmin()
@@ -251,90 +195,24 @@ service cloud.firestore {
                              || isCustomerCartToken(storeId, resource.data.cartId);
       }
 
-      // ────────────────────────────────────────────────────────────────────
-      // VEHICLE ENTRIES ✅ COMPLETE RULES
-      // ────────────────────────────────────────────────────────────────────
-
-      match /vehicle_entries/{entryId} {
-        // ── READ ──
-        allow read: if isStoreMember(storeId)
-          || isPlatformAdmin()
-          || (isApprovedOperator()
-              && resource.data.createdByUid == request.auth.uid);
-
-        // ── CREATE ── ✅ ADDED
-        allow create: if isStoreMember(storeId)
-          || isPlatformAdmin()
-          || (isApprovedOperator()
-              && request.resource.data.status == 'pending'
-              && request.resource.data.createdByUid == request.auth.uid
-              && request.resource.data.createdByRole == 'weighbridgeOperator'
-              && isRiceMill(storeId));
-
-        // ── UPDATE ── ✅ ADDED
-        allow update: if isStoreMember(storeId)
-          || isPlatformAdmin()
-          || (isApprovedOperator()
-              && resource.data.createdByUid == request.auth.uid
-              && resource.data.status == 'pending'
-              && request.resource.data.status == 'pending'
-              && request.resource.data.createdByUid == request.auth.uid);
-
-        // ── DELETE ── ✅ ADDED
-        allow delete: if isStoreMember(storeId) || isPlatformAdmin();
-      }
-
-      // ────────────────────────────────────────────────────────────────────
-      // NOTIFICATIONS
+  // ────────────────────────────────────────────────────────────────────
+      // SUBSCRIPTIONS (store lifecycle + backend-projected entitlements)
       // ────────────────────────────────────────────────────────────────────
 
-      match /notifications/{id} {
+      match /customer_subscriptions/{subscriptionId} {
         allow read: if isStoreMember(storeId) || isPlatformAdmin();
-        allow create: if isStoreMember(storeId) 
-                      || isPlatformAdmin() 
-                      || isApprovedOperator();
-        allow update, delete: if isStoreMember(storeId) || isPlatformAdmin();
+        allow create, update, delete: if isPlatformAdmin();
       }
 
-      // ────────────────────────────────────────────────────────────────────
-      // FARMERS
-      // ────────────────────────────────────────────────────────────────────
-
-      match /farmers/{id} {
-        allow read: if isStoreMember(storeId) || isPlatformAdmin() || isApprovedOperator();
-        allow write: if isStoreMember(storeId) || isPlatformAdmin();
-      }
-
-      // ────────────────────────────────────────────────────────────────────
-      // PADDY PROCUREMENT
-      // ────────────────────────────────────────────────────────────────────
-
-      match /paddy_procurement/{id} {
+      match /subscription_state/{docId} {
         allow read: if isStoreMember(storeId) || isPlatformAdmin();
-        allow write: if isStoreMember(storeId) || isPlatformAdmin();
+        // Trusted-backend projected state only (Cloud Functions/Admin SDK bypass rules).
+        allow create, update, delete: if false;
       }
 
-      // ────────────────────────────────────────────────────────────────────
-      // MILL RUNS
-      // ────────────────────────────────────────────────────────────────────
-
-      match /mill_runs/{id} {
-        allow read: if isStoreMember(storeId) || isPlatformAdmin();
-        allow write: if isStoreMember(storeId) || isPlatformAdmin();
-      }
-
-      // ────────────────────────────────────────────────────────────────────
-      // MILLING CHARGES
-      // ────────────────────────────────────────────────────────────────────
-
-      match /milling_charges/{id} {
-        allow read: if isStoreMember(storeId) || isPlatformAdmin();
-        allow write: if isStoreMember(storeId) || isPlatformAdmin();
-      }
-
-      // ────────────────────────────────────────────────────────────────────
-      // FALLBACK
-      // ────────────────────────────────────────────────────────────────────
+      // Everything else under a store (inventory, warehouses, sales, settings,
+      // ...) is members-only. Storefront customers deliberately have no access
+      // here — the client skips stock lookups for customer sessions.
 
       match /{document=**} {
         allow read, write: if isStoreMember(storeId) || isPlatformAdmin();

@@ -110,19 +110,13 @@ class _CustomerInvoiceDetailPageState extends ConsumerState<CustomerInvoiceDetai
 
       await _printPdfInvoice(
         invoiceNo: sale.invoiceNo,
+        invoiceDate: sale.soldAt,
         branding: branding,
         shopName: shopName,
-        items: printableItems,
-        grandTotal: sale.grandTotal,
-        refundEntries: [
-          for (final e in (await _refundSummaryFuture).entries)
-            (
-              method: e.method,
-              amount: e.amount,
-              paidAt: e.paidAt,
-              referenceNo: e.referenceNo,
-            ),
-        ],
+        items: items,
+        subTotal: sale.subTotal,
+        total: sale.grandTotal,
+        taxTotal: sale.taxTotal,
       );
       if (mounted) {
         setState(() {
@@ -489,28 +483,35 @@ class _CustomerInvoiceDetailPageState extends ConsumerState<CustomerInvoiceDetai
                               ],
                             ),
                             const SizedBox(height: 10),
-                            ...summary.entries.map(
-                              (entry) => Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 4),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        '${entry.method.toUpperCase()} • ${DateFormat('dd MMM yyyy hh:mm a').format(entry.paidAt)}'
-                                        '${entry.referenceNo == null || entry.referenceNo!.isEmpty ? '' : ' • ${entry.referenceNo}'}',
-                                        style: const TextStyle(fontSize: 12),
+                            SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ...summary.entries.map(
+                                    (entry) => Padding(
+                                      padding:
+                                          const EdgeInsets.symmetric(vertical: 4),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              '${entry.method.toUpperCase()} • ${DateFormat('dd MMM yyyy hh:mm a').format(entry.paidAt)}'
+                                              '${entry.referenceNo == null || entry.referenceNo!.isEmpty ? '' : ' • ${entry.referenceNo}'}',
+                                              style: const TextStyle(fontSize: 12),
+                                            ),
+                                          ),
+                                          Text(
+                                            '-${formatInr(entry.amount)}',
+                                            style: const TextStyle(
+                                              color: Colors.orange,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    Text(
-                                      '-${formatInr(entry.amount)}',
-                                      style: const TextStyle(
-                                        color: Colors.orange,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
                             const Divider(height: 16),
@@ -601,33 +602,40 @@ class _CustomerInvoiceDetailPageState extends ConsumerState<CustomerInvoiceDetai
 
   Future<void> _printPdfInvoice({
     required String invoiceNo,
+    required DateTime invoiceDate,
     required InvoiceBranding branding,
     required String shopName,
-    required List<
-            ({
-              String name,
-              double qty,
-              double discountAmount,
-              double netAmount
-            })>
-        items,
-    required double grandTotal,
-    List<
-            ({
-              String method,
-              double amount,
-              DateTime paidAt,
-              String? referenceNo
-            })>
-        refundEntries = const [],
+    required List<SaleItem> items,
+    required double subTotal,
+    required double total,
+    required double taxTotal,
   }) async {
-    final bytes = await ReceiptPdfService().generateSimpleReceipt(
+    final productIds = items.map((i) => i.productId).toSet().toList();
+    final products = await ref.read(productRepositoryProvider).getByIds(productIds);
+    final productNameById = {for (final p in products) p.id: p.name};
+
+    final printableItems = items
+        .map(
+          (item) => (
+            description: productNameById[item.productId] ?? 'Product #${item.productId}',
+            unitPrice: item.unitPrice,
+            qty: item.quantity,
+            lineTotal: item.lineTotal,
+          ),
+        )
+        .toList(growable: false);
+
+    final bytes = await ReceiptPdfService().generateClassicInvoice(
       shopName: shopName,
       invoiceNo: invoiceNo,
+      invoiceDate: invoiceDate,
+      customerName: '',
+      customerAddress: '',
       branding: branding,
-      items: items,
-      grandTotal: grandTotal,
-      refundEntries: refundEntries,
+      items: printableItems,
+      subTotal: subTotal,
+      total: total,
+      taxTotal: taxTotal > 0 ? taxTotal : null,
     );
     final pdfBytes = Uint8List.fromList(bytes);
 

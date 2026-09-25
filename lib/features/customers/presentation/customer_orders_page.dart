@@ -13,6 +13,7 @@ import '../../../core/firestore/store_scope.dart';
 import '../../../core/models/invoice_branding.dart';
 import '../../../core/models/printer_config.dart';
 import '../../../core/services/pdf_service.dart';
+import '../../../core/utilities/pdf_share.dart';
 import '../../../core/utilities/money.dart';
 import '../../store/presentation/store_auth_controller.dart';
 
@@ -40,15 +41,14 @@ class _CustomerOrdersPageState extends ConsumerState<CustomerOrdersPage> {
       final items = invoice.items;
 
       final productIds = items.map((i) => i.productId).toSet().toList();
-      final products = await ref.read(productRepositoryProvider).getByIds(productIds);
+      final products =
+          await ref.read(productRepositoryProvider).getByIds(productIds);
       final productNameById = {for (final p in products) p.id: p.name};
 
-      final branding =
-          ref.read(invoiceBrandingProvider).valueOrNull ??
-              const InvoiceBranding.defaults();
-      final printerConfig =
-          ref.read(printerConfigProvider).valueOrNull ??
-              const PrinterConfig.defaults();
+      final branding = ref.read(invoiceBrandingProvider).valueOrNull ??
+          const InvoiceBranding.defaults();
+      final printerConfig = ref.read(printerConfigProvider).valueOrNull ??
+          const PrinterConfig.defaults();
       final shopName = branding.displayName.isNotEmpty
           ? branding.displayName
           : (ref.read(storeSessionProvider)?.storeName ?? 'Pocket POS');
@@ -104,11 +104,13 @@ class _CustomerOrdersPageState extends ConsumerState<CustomerOrdersPage> {
 
       await _printPdfInvoice(
         invoiceNo: sale.invoiceNo,
+        invoiceDate: sale.soldAt,
         branding: branding,
         shopName: shopName,
-        items: printableItems,
-        grandTotal: sale.grandTotal,
-        refundEntries: await _loadRefundEntries(sale.id),
+        items: items,
+        subTotal: sale.subTotal,
+        total: sale.grandTotal,
+        taxTotal: sale.taxTotal,
       );
       if (mounted) {
         setState(() {
@@ -130,13 +132,14 @@ class _CustomerOrdersPageState extends ConsumerState<CustomerOrdersPage> {
   }
 
   void _loadOrders() {
-    _ordersFuture = ref.read(customerRepositoryProvider).getCustomerOrders(widget.customerId);
+    _ordersFuture = ref
+        .read(customerRepositoryProvider)
+        .getCustomerOrders(widget.customerId);
   }
 
   @override
   Widget build(BuildContext context) {
-    final printerConfig =
-      ref.watch(printerConfigProvider).valueOrNull ??
+    final printerConfig = ref.watch(printerConfigProvider).valueOrNull ??
         const PrinterConfig.defaults();
     final canPrint = printerConfig.enabled || printerConfig.allowPdfFallback;
     return Scaffold(
@@ -178,19 +181,22 @@ class _CustomerOrdersPageState extends ConsumerState<CustomerOrdersPage> {
                     final order = paginatedOrders[index];
                     final sale = order.sale;
                     return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       child: ListTile(
                         title: Text('Invoice ${sale.invoiceNo}'),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              DateFormat('dd MMM yyyy hh:mm a').format(sale.soldAt),
+                              DateFormat('dd MMM yyyy hh:mm a')
+                                  .format(sale.soldAt),
                               style: const TextStyle(fontSize: 12),
                             ),
                             Text(
                               '${order.itemCount} items - ${formatInr(sale.grandTotal)}',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
@@ -200,11 +206,15 @@ class _CustomerOrdersPageState extends ConsumerState<CustomerOrdersPage> {
                             IconButton(
                               tooltip: canPrint
                                   ? 'Print invoice'
-                                : 'Enable printer integration or PDF fallback in Settings',
+                                  : 'Enable printer integration or PDF fallback in Settings',
                               icon: const Icon(Icons.print_outlined),
-                              onPressed: canPrint
-                                  ? () => _printSale(sale)
-                                  : null,
+                              onPressed:
+                                  canPrint ? () => _printSale(sale) : null,
+                            ),
+                            IconButton(
+                              tooltip: 'Share invoice',
+                              icon: const Icon(Icons.share_outlined),
+                              onPressed: () => _shareSale(sale),
                             ),
                             const Icon(Icons.chevron_right_rounded),
                           ],
@@ -281,33 +291,45 @@ class _CustomerOrdersPageState extends ConsumerState<CustomerOrdersPage> {
 
   Future<void> _printPdfInvoice({
     required String invoiceNo,
+    required DateTime invoiceDate,
     required InvoiceBranding branding,
     required String shopName,
-    required List<
-            ({
-              String name,
-              double qty,
-              double discountAmount,
-              double netAmount
-            })>
-        items,
-    required double grandTotal,
-    List<
-            ({
-              String method,
-              double amount,
-              DateTime paidAt,
-              String? referenceNo
-            })>
-        refundEntries = const [],
+    required List<SaleItem> items,
+    required double subTotal,
+    required double total,
+    required double taxTotal,
   }) async {
-    final bytes = await ReceiptPdfService().generateSimpleReceipt(
+    final storeId = ref.read(activeStoreIdProvider);
+    if (storeId == null || storeId.isEmpty) return;
+
+    final productIds = items.map((i) => i.productId).toSet().toList();
+    final products =
+        await ref.read(productRepositoryProvider).getByIds(productIds);
+    final productNameById = {for (final p in products) p.id: p.name};
+
+    final printableItems = items
+        .map(
+          (item) => (
+            description:
+                productNameById[item.productId] ?? 'Product #${item.productId}',
+            unitPrice: item.unitPrice,
+            qty: item.quantity,
+            lineTotal: item.lineTotal,
+          ),
+        )
+        .toList(growable: false);
+
+    final bytes = await ReceiptPdfService().generateClassicInvoice(
       shopName: shopName,
       invoiceNo: invoiceNo,
+      invoiceDate: invoiceDate,
+      customerName: '',
+      customerAddress: '',
       branding: branding,
-      items: items,
-      grandTotal: grandTotal,
-      refundEntries: refundEntries,
+      items: printableItems,
+      subTotal: subTotal,
+      total: total,
+      taxTotal: taxTotal > 0 ? taxTotal : null,
     );
     final pdfBytes = Uint8List.fromList(bytes);
 
@@ -323,13 +345,64 @@ class _CustomerOrdersPageState extends ConsumerState<CustomerOrdersPage> {
     }
   }
 
-  Future<List<
-      ({
-        String method,
-        double amount,
-        DateTime paidAt,
-        String? referenceNo
-      })>> _loadRefundEntries(int saleId) async {
+  Future<void> _shareSale(Sale sale) async {
+    try {
+      final invoice =
+          await ref.read(customerRepositoryProvider).getOrderDetails(sale.id);
+      final items = invoice.items;
+      final productIds = items.map((i) => i.productId).toSet().toList();
+      final products =
+          await ref.read(productRepositoryProvider).getByIds(productIds);
+      final productNameById = {for (final p in products) p.id: p.name};
+      final branding = ref.read(invoiceBrandingProvider).valueOrNull ??
+          const InvoiceBranding.defaults();
+      final shopName = branding.displayName.isNotEmpty
+          ? branding.displayName
+          : (ref.read(storeSessionProvider)?.storeName ?? 'Pocket POS');
+      final printableItems = items
+          .map(
+            (item) => (
+              description: productNameById[item.productId] ??
+                  'Product #${item.productId}',
+              unitPrice: item.unitPrice,
+              qty: item.quantity,
+              lineTotal: item.lineTotal,
+            ),
+          )
+          .toList(growable: false);
+      final bytes = await ReceiptPdfService().generateClassicInvoice(
+        shopName: shopName,
+        invoiceNo: sale.invoiceNo,
+        invoiceDate: sale.soldAt,
+        customerName: '',
+        customerAddress: '',
+        branding: branding,
+        items: printableItems,
+        subTotal: sale.subTotal,
+        total: sale.grandTotal,
+        taxTotal: sale.taxTotal > 0 ? sale.taxTotal : null,
+      );
+      await sharePdfFile(
+        bytes: Uint8List.fromList(bytes),
+        fileName: '${sale.invoiceNo}.pdf',
+        text: 'Invoice ${sale.invoiceNo}',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Share failed: $e')),
+      );
+    }
+  }
+
+  Future<
+      List<
+          ({
+            String method,
+            double amount,
+            DateTime paidAt,
+            String? referenceNo
+          })>> _loadRefundEntries(int saleId) async {
     final storeId = ref.read(activeStoreIdProvider);
     if (storeId == null || storeId.isEmpty) return const [];
 
@@ -338,13 +411,12 @@ class _CustomerOrdersPageState extends ConsumerState<CustomerOrdersPage> {
         .where('saleId', isEqualTo: saleId)
         .get();
 
-    final entries = <
-        ({
-          String method,
-          double amount,
-          DateTime paidAt,
-          String? referenceNo
-        })>[];
+    final entries = <({
+      String method,
+      double amount,
+      DateTime paidAt,
+      String? referenceNo
+    })>[];
     for (final doc in snap.docs) {
       final data = doc.data();
       final amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
@@ -353,7 +425,8 @@ class _CustomerOrdersPageState extends ConsumerState<CustomerOrdersPage> {
       entries.add((
         method: (data['method'] as String?) ?? 'refund',
         amount: amount.abs(),
-        paidAt: (data['paidAt'] as dynamic)?.toDate() as DateTime? ?? DateTime.now(),
+        paidAt: (data['paidAt'] as dynamic)?.toDate() as DateTime? ??
+            DateTime.now(),
         referenceNo: data['referenceNo'] as String?,
       ));
     }
