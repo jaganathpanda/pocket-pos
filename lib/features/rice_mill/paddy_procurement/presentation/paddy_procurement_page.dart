@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:pocket_pos/features/paddy_procurement/domain/paddy_procurement.dart';
-import '../../../core/utilities/money.dart';
+import 'package:pocket_pos/features/rice_mill/paddy_procurement/domain/paddy_procurement.dart';
+import '../../../../core/utilities/money.dart';
 import '../providers/paddy_procurement_providers.dart';
 import 'paddy_procurement_form.dart';
 

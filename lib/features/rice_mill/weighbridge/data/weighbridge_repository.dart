@@ -1,4 +1,4 @@
-import 'package:pocket_pos/features/weighbridge/domain/vehicle_entry.dart';
+import 'package:pocket_pos/features/rice_mill/weighbridge/domain/vehicle_entry.dart';
 
 abstract class WeighbridgeRepository {
   /// Live stream of entries with optional filters.

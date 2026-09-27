@@ -41,11 +41,21 @@ import '../features/store/presentation/store_register_page.dart';
 import '../features/suppliers/presentation/supplier_page.dart';
 import '../features/warehouse/domain/inventory_mode.dart';
 import '../features/warehouse/presentation/warehouse_page.dart';
-import '../features/mill_run/presentation/mill_run_page.dart';
-import '../features/mill_run/presentation/milling_charge_page.dart';
-import '../features/mill_run/presentation/milling_contracts_page.dart';
+
+typedef AppNavigationItem = ({String route, String label, IconData icon});
 
 final appRouterProvider = Provider<GoRouter>((ref) {
+  return createAppRouter(ref);
+});
+
+GoRouter createAppRouter(
+  Ref ref, {
+  bool riceMillApp = false,
+  List<RouteBase> publicRoutes = const [],
+  List<RouteBase> authenticatedRoutes = const [],
+  List<AppNavigationItem> riceMillDestinations = const [],
+  Widget Function()? settingsPageBuilder,
+}) {
   final refresh = ValueNotifier<int>(0);
   ref.onDispose(refresh.dispose);
   ref.listen(storeAuthControllerProvider, (_, __) => refresh.value++);
@@ -59,6 +69,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       const authRoutes = {
         '/store-login',
         '/store-register',
+        '/operator-login',
+        '/operator-register',
         '/activate',
         '/admin-login',
         '/storefront',
@@ -72,7 +84,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return loc == '/pending' ? null : '/pending';
         case StoreAuthStage.admin:
           return loc.startsWith('/admin') ? null : '/admin';
+        case StoreAuthStage.operator:
+          if (!riceMillApp) return '/store-login';
+          return loc == '/operator-home' ? null : '/operator-home';
         case StoreAuthStage.active:
+          final role = ref.read(storeAuthControllerProvider).session?.role;
+          if (riceMillApp && role == 'weighbridge_operator') {
+            return loc == '/weighbridge-dashboard'
+                ? null
+                : '/weighbridge-dashboard';
+          }
           if (authRoutes.contains(loc) || loc == '/pending')
             return '/dashboard';
           return null;
@@ -106,8 +127,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/storefront',
           builder: (context, state) => const PublicStorefrontPage()),
+      ...publicRoutes,
       ShellRoute(
-        builder: (context, state, child) => _AppShell(child: child),
+        builder: (context, state, child) => _AppShell(
+          child: child,
+          riceMillApp: riceMillApp,
+          riceMillDestinations: riceMillDestinations,
+        ),
         routes: [
           GoRoute(
               path: '/dashboard',
@@ -208,26 +234,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               builder: (context, state) => const WarehousePage()),
           GoRoute(
               path: '/settings',
-              builder: (context, state) => const SettingsPage()),
-          GoRoute(
-              path: '/mill-runs',
-              builder: (context, state) => const MillRunPage()),
-          GoRoute(
-              path: '/milling-charges',
-              builder: (context, state) => const MillingChargePage()),
-          GoRoute(
-              path: '/milling-contracts',
-              builder: (context, state) => const MillingContractsPage()),
+              builder: (context, state) =>
+                  settingsPageBuilder?.call() ?? const SettingsPage()),
+          ...authenticatedRoutes,
         ],
       ),
     ],
   );
-});
+}
 
 class _AppShell extends ConsumerWidget {
-  const _AppShell({required this.child});
+  const _AppShell({
+    required this.child,
+    required this.riceMillApp,
+    required this.riceMillDestinations,
+  });
 
   final Widget child;
+  final bool riceMillApp;
+  final List<AppNavigationItem> riceMillDestinations;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -240,7 +265,7 @@ class _AppShell extends ConsumerWidget {
     final canManage = user?.canManagePos ?? false;
     final mode =
         ref.watch(inventoryModeProvider).valueOrNull ?? InventoryMode.single;
-    final isRiceMill = ref.watch(isRiceMillProvider);
+    final isRiceMill = riceMillApp;
     final quickCheckoutEnabled = ref.watch(quickCheckoutEnabledProvider);
     final quickInvoiceEnabled = ref.watch(quickInvoiceEnabledProvider);
 
@@ -254,7 +279,7 @@ class _AppShell extends ConsumerWidget {
     ref.watch(warehousesProvider);
     ref.watch(inventoryProvider);
 
-    final destinations = <({String route, String label, IconData icon})>[
+    final destinations = <AppNavigationItem>[
       (route: '/dashboard', label: 'Dashboard', icon: Icons.dashboard_rounded),
       if (!scoped)
         (
@@ -313,15 +338,7 @@ class _AppShell extends ConsumerWidget {
           label: isRiceMill ? 'Paddy Procurement' : 'Purchases',
           icon: Icons.shopping_bag_rounded
         ),
-      // Rice mill-only menu items
-      if (!scoped && isRiceMill)
-        (route: '/mill-runs', label: 'Mill Runs', icon: Icons.factory_rounded),
-      if (!scoped && isRiceMill)
-        (
-          route: '/milling-charges',
-          label: 'Milling Charges',
-          icon: Icons.receipt_long_rounded
-        ),
+      if (!scoped && isRiceMill) ...riceMillDestinations,
       (route: '/reports', label: 'Reports', icon: Icons.analytics_rounded),
       (
         route: '/ledger',
@@ -433,7 +450,7 @@ class _AppShell extends ConsumerWidget {
   void _showMenuSheet(
     BuildContext context,
     WidgetRef ref,
-    List<({String route, String label, IconData icon})> destinations,
+    List<AppNavigationItem> destinations,
     AppUser? user,
   ) {
     showModalBottomSheet<void>(

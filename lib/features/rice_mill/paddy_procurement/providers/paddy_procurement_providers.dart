@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pocket_pos/features/store/presentation/store_auth_controller.dart';
-import '../../../core/firestore/store_scope.dart';
+import '../../../../core/firestore/store_scope.dart';
 import '../data/firestore_paddy_procurement_repository.dart';
 import '../domain/paddy_procurement.dart';
 import '../domain/paddy_procurement_repository.dart';

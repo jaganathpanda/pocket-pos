@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../../../core/firestore/firestore_ids.dart';
-import '../../../core/firestore/store_scope.dart';
-import '../../inventory/data/firestore_inventory_repository.dart';
+import '../../../../core/firestore/firestore_ids.dart';
+import '../../../../core/firestore/store_scope.dart';
+import '../../../inventory/data/firestore_inventory_repository.dart';
 import '../domain/mill_run_models.dart';
 import '../domain/mill_run_repository.dart';
 

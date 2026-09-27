@@ -43,6 +43,19 @@ android {
         }
     }
 
+    flavorDimensions += "app"
+    productFlavors {
+        create("pos") {
+            dimension = "app"
+            resValue("string", "app_name", "Pocket POS")
+        }
+        create("riceMill") {
+            dimension = "app"
+            applicationIdSuffix = ".ricemill"
+            resValue("string", "app_name", "Pocket Rice Mill")
+        }
+    }
+
     signingConfigs {
         create("release") {
             keyAlias = keystoreProperties.getProperty("keyAlias")

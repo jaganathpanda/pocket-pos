@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pocket_pos/features/store/presentation/store_auth_controller.dart';
-import '../../../core/di/providers.dart';
-import '../../../core/firestore/store_scope.dart';
+import '../../rice_mill_providers.dart';
+import '../../../../core/firestore/store_scope.dart';
 import '../domain/milling_config.dart';
 
 class MillingConfigPage extends ConsumerStatefulWidget {

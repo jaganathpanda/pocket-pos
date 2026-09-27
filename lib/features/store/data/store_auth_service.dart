@@ -70,11 +70,17 @@ class StoreAuthService {
   DocumentReference<Map<String, dynamic>> _storeDoc(String storeId) =>
       _db.collection('stores').doc(storeId);
 
+  DocumentReference<Map<String, dynamic>> _operatorDoc(String uid) =>
+      _db.collection('weighbridge_operators').doc(uid);
+
   DocumentReference<Map<String, dynamic>> _notificationConfigDoc() =>
       _db.collection('platform_config').doc('notifications');
 
   DocumentReference<Map<String, dynamic>> _publicFeaturesDoc() =>
       _db.collection('platform_config').doc('public_features');
+
+  DocumentReference<Map<String, dynamic>> _referralSettingsDoc() =>
+      _db.collection('platform_config').doc('referral_settings');
 
   /// Registers a new store (status = pending) and its owner login.
   /// Returns the generated store id.
@@ -93,6 +99,7 @@ class StoreAuthService {
       throw Exception('Email is required.');
     }
 
+    final normalizedReferralCode = referralCode?.trim().toUpperCase();
     final storeId = _generateStoreId();
     final cred = await _auth
         .createUserWithEmailAndPassword(
@@ -209,6 +216,120 @@ class StoreAuthService {
 
     await _persist(storeId: storeId, isAdmin: false);
     return storeId;
+  }
+
+  Future<ReferralSettings> _loadReferralSettings() async {
+    final doc = await _referralSettingsDoc().get();
+    final data = doc.data();
+    if (data == null || data.isEmpty) return const ReferralSettings();
+    return ReferralSettings.fromMap(data);
+  }
+
+  Future<_ReferralReferrerMatch?> _findReferrerByReferralCode(
+    String referralCode,
+  ) async {
+    final snap = await _db
+        .collectionGroup('users')
+        .where('referralCode', isEqualTo: referralCode)
+        .limit(1)
+        .get();
+    if (snap.docs.isEmpty) return null;
+
+    final userDoc = snap.docs.first;
+    final storeRef = userDoc.reference.parent.parent;
+    if (storeRef == null) return null;
+    return _ReferralReferrerMatch(storeId: storeRef.id, uid: userDoc.id);
+  }
+
+  Future<void> _createReferralRecordForRegistration({
+    required String storeId,
+    required String referredUid,
+    required String referredEmail,
+    required String referredName,
+    required String referralCode,
+  }) async {
+    final normalizedCode = referralCode.trim().toUpperCase();
+    if (normalizedCode.isEmpty) return;
+
+    final referrer = await _findReferrerByReferralCode(normalizedCode);
+    if (referrer == null) {
+      await _storeDoc(storeId).set(
+        {
+          'referralRewardStatus': 'invalid_code',
+          'referralRewardEvaluatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+      return;
+    }
+    if (referrer.storeId == storeId) {
+      await _storeDoc(storeId).set(
+        {
+          'referralRewardStatus': 'self_referral_rejected',
+          'referralRewardEvaluatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+      return;
+    }
+
+    final settings = await _loadReferralSettings();
+    final referralId = newIntId().toString();
+    final now = DateTime.now();
+    final referral = Referral(
+      id: referralId,
+      referrerUid: referrer.uid,
+      referredUid: referredUid,
+      referredEmail: referredEmail,
+      referredName: referredName,
+      status: ReferralStatus.pending,
+      rewardType: settings.rewardType,
+      rewardAmount: settings.rewardAmount,
+      createdAt: now,
+      expiryAt: now.add(Duration(days: settings.expiryDays)),
+    );
+
+    final referralRef = _db
+        .collection('stores')
+        .doc(referrer.storeId)
+        .collection('referrals')
+        .doc(referralId);
+    await referralRef.set({
+      ...referral.toMap(),
+      'referrerStoreId': referrer.storeId,
+      'referredStoreId': storeId,
+      'referralCode': normalizedCode,
+    });
+    if (!(await referralRef.get()).exists) {
+      throw Exception('Referral document was not created.');
+    }
+
+    await _storeDoc(storeId).set(
+      {
+        'referralRewardStatus': 'pending',
+        'referralSourceStoreId': referrer.storeId,
+        'referralSourceUid': referrer.uid,
+        'referralReferralId': referralId,
+        'referralAppliedAt': FieldValue.serverTimestamp(),
+        'appliedReferralCode': normalizedCode,
+      },
+      SetOptions(merge: true),
+    );
+    await _storeDoc(storeId).collection('users').doc(referredUid).set(
+      {
+        'referredBy': referrer.uid,
+        'appliedReferralCode': normalizedCode,
+        'referredAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+    await _storeDoc(storeId).set(
+      {
+        'referralLinkStatus': 'linked',
+        'referralLinkError': FieldValue.delete(),
+      },
+      SetOptions(merge: true),
+    );
   }
 
   /// Calls the Google Apps Script Web App to send the registration email.
@@ -431,6 +552,105 @@ class StoreAuthService {
     await _persist(storeId: null, isAdmin: true);
   }
 
+  Future<void> registerOperator({
+    required String name,
+    required String email,
+    required String password,
+    String? mobile,
+  }) async {
+    final normalizedEmail = email.trim().toLowerCase();
+    final cred = await _auth
+        .createUserWithEmailAndPassword(
+            email: normalizedEmail, password: password)
+        .timeout(_netTimeout,
+            onTimeout: () => _timedOut('Creating your account'));
+    try {
+      await _operatorDoc(cred.user!.uid).set({
+        'name': name.trim(),
+        'email': normalizedEmail,
+        'mobile': mobile?.trim(),
+        'status': 'pending',
+        'role': 'weighbridgeOperator',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      await _safeDeleteUser(cred.user);
+      rethrow;
+    }
+    await _persist(storeId: null, isAdmin: false, isOperator: true);
+  }
+
+  Future<OperatorProfile> operatorLogin({
+    required String email,
+    required String password,
+  }) async {
+    final cred = await _auth
+        .signInWithEmailAndPassword(
+            email: email.trim().toLowerCase(), password: password)
+        .timeout(_netTimeout, onTimeout: () => _timedOut('Sign-in'));
+    final uid = cred.user!.uid;
+    final doc = await _operatorDoc(uid).get();
+    if (!doc.exists) {
+      await _auth.signOut();
+      throw Exception('This account is not a weighbridge operator.');
+    }
+    await _persist(storeId: null, isAdmin: false, isOperator: true);
+    return _operatorFromDoc(uid, doc.data()!);
+  }
+
+  OperatorProfile _operatorFromDoc(String uid, Map<String, dynamic> data) {
+    return OperatorProfile(
+      uid: uid,
+      name: (data['name'] as String?) ?? '',
+      email: (data['email'] as String?) ?? '',
+      status: storeStatusFromString(data['status'] as String?),
+    );
+  }
+
+  Future<StoreSession> operatorEnterMill({
+    required String storeId,
+    required OperatorProfile operator,
+  }) async {
+    final id = storeId.trim().toUpperCase();
+    final snap = await _storeDoc(id)
+        .get()
+        .timeout(_netTimeout, onTimeout: () => _timedOut('Loading the mill'));
+    if (!snap.exists) {
+      throw Exception('Mill $id not found. Check the Store ID.');
+    }
+    final data = snap.data()!;
+    final status = storeStatusFromString(data['status'] as String?);
+    if (status != StoreStatus.approved) {
+      throw Exception('Mill $id is not active yet.');
+    }
+    if ((data['businessType'] as String?) != DemoBusinessType.riceMill.name) {
+      throw Exception('Store $id is not a Rice Mill. Weighbridge is only '
+          'available for rice mills.');
+    }
+    return StoreSession(
+      storeId: id,
+      storeName: (data['name'] as String?) ?? id,
+      uid: operator.uid,
+      username: operator.name,
+      role: 'weighbridge_operator',
+      status: status,
+    );
+  }
+
+  Stream<List<OperatorProfile>> watchOperatorsByStatus(StoreStatus status) {
+    return _db
+        .collection('weighbridge_operators')
+        .where('status', isEqualTo: status.name)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => _operatorFromDoc(doc.id, doc.data()))
+            .toList());
+  }
+
+  Future<void> setOperatorStatus(String uid, StoreStatus status) {
+    return _operatorDoc(uid).update({'status': status.name});
+  }
+
   Future<StoreAuthState> restore() async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -568,4 +788,11 @@ class StoreAuthService {
 
 class _EmailTakenException implements Exception {
   const _EmailTakenException();
+}
+
+class _ReferralReferrerMatch {
+  const _ReferralReferrerMatch({required this.storeId, required this.uid});
+
+  final String storeId;
+  final String uid;
 }

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/di/providers.dart';
+import '../../../../core/di/providers.dart';
+import '../../rice_mill_providers.dart';
 import '../domain/vehicle_entry.dart';
 import 'vehicle_entry_detail_page.dart';
 

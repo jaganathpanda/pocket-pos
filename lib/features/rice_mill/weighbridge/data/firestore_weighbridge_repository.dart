@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:pocket_pos/features/weighbridge/data/weighbridge_repository.dart';
-import '../../../core/firestore/firestore_ids.dart';
-import '../../../core/firestore/store_scope.dart';
+import 'package:pocket_pos/features/rice_mill/weighbridge/data/weighbridge_repository.dart';
+import '../../../../core/firestore/firestore_ids.dart';
+import '../../../../core/firestore/store_scope.dart';
 
 import '../domain/vehicle_entry.dart';
 
@@ -56,7 +56,7 @@ class FirestoreWeighbridgeRepository implements WeighbridgeRepository {
     });
   }
 
-  // lib/features/weighbridge/data/firestore_weighbridge_repository.dart
+  // lib/features/rice_mill/weighbridge/data/firestore_weighbridge_repository.dart
 
   @override
   Stream<VehicleEntry?> watchEntry(int id) {

@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../../../core/firestore/firestore_ids.dart';
-import '../../../core/firestore/store_scope.dart';
+import '../../../../core/firestore/firestore_ids.dart';
+import '../../../../core/firestore/store_scope.dart';
 import '../domain/milling_charge_models.dart';
 import '../domain/milling_charge_repository.dart';
 import '../domain/milling_config.dart';

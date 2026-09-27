@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../core/di/providers.dart';
 import '../features/store/domain/store_models.dart';
@@ -7,7 +8,12 @@ import '../features/store/presentation/store_auth_controller.dart';
 import 'router.dart';
 
 class PocketPosApp extends ConsumerWidget {
-  const PocketPosApp({super.key});
+  const PocketPosApp({
+    super.key,
+    this.routerProvider,
+  });
+
+  final Provider<GoRouter>? routerProvider;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -26,7 +32,7 @@ class PocketPosApp extends ConsumerWidget {
       }
     });
 
-    final router = ref.watch(appRouterProvider);
+    final router = ref.watch(routerProvider ?? appRouterProvider);
 
     return MaterialApp.router(
       title: 'Pocket POS',

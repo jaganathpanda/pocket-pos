@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:drift/drift.dart';
-import 'package:pocket_pos/features/weighbridge/data/weighbridge_repository.dart';
-import 'package:pocket_pos/features/weighbridge/domain/vehicle_entry.dart';
-import '../../../core/database/app_database.dart' hide VehicleEntry;
+import 'package:pocket_pos/features/rice_mill/weighbridge/data/weighbridge_repository.dart';
+import 'package:pocket_pos/features/rice_mill/weighbridge/domain/vehicle_entry.dart';
+import '../../../../core/database/app_database.dart' hide VehicleEntry;
 
 // ─── Helper: Parse manual weights from JSON ───
 

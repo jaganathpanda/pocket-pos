@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 
-import '../../../core/firestore/firestore_ids.dart';
-import '../../../core/firestore/store_scope.dart';
-import '../../inventory/data/firestore_inventory_repository.dart';
-import '../../inventory/domain/inventory_repository.dart';
+import '../../../../core/firestore/firestore_ids.dart';
+import '../../../../core/firestore/store_scope.dart';
+import '../../../inventory/data/firestore_inventory_repository.dart';
+import '../../../inventory/domain/inventory_repository.dart';
 import '../domain/paddy_procurement.dart';
 import '../domain/paddy_procurement_repository.dart';
 

@@ -1,4 +1,4 @@
-// ── lib/features/paddy_procurement/paddy_procurement_form.dart ──
+// ── lib/features/rice_mill/paddy_procurement/paddy_procurement_form.dart ──
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,8 +10,8 @@ import 'package:pocket_pos/core/widgets/help_dialog.dart';
 import 'package:pocket_pos/core/widgets/tooltip_form_field.dart';
 import 'package:pocket_pos/core/widgets/tooltip_icon.dart';
 import 'package:pocket_pos/core/di/providers.dart';
-import 'package:pocket_pos/features/paddy_procurement/domain/paddy_procurement.dart';
-import 'package:pocket_pos/features/paddy_procurement/providers/paddy_procurement_providers.dart';
+import 'package:pocket_pos/features/rice_mill/paddy_procurement/domain/paddy_procurement.dart';
+import 'package:pocket_pos/features/rice_mill/paddy_procurement/providers/paddy_procurement_providers.dart';
 
 class PaddyProcurementForm extends ConsumerStatefulWidget {
   const PaddyProcurementForm({super.key, this.procurementId});

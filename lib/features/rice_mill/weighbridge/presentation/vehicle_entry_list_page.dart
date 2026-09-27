@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:pocket_pos/core/di/providers.dart';
-import 'package:pocket_pos/features/weighbridge/presentation/vehicle_entry_detail_page.dart';
+import 'package:pocket_pos/features/rice_mill/weighbridge/presentation/vehicle_entry_detail_page.dart';
+
+import '../../rice_mill_providers.dart';
 import '../domain/vehicle_entry.dart';
 
 class VehicleEntryListPage extends ConsumerStatefulWidget {
