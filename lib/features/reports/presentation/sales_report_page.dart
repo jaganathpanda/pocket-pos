@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
@@ -14,6 +13,8 @@ import '../../../core/firestore/store_scope.dart';
 import '../../../core/models/invoice_branding.dart';
 import '../../../core/models/printer_config.dart';
 import '../../../core/services/pdf_service.dart';
+import '../../../core/utilities/csv_file_export.dart';
+import '../../../core/utilities/pdf_share.dart';
 import '../../sales/domain/sales_repository.dart';
 import '../../store/presentation/store_auth_controller.dart';
 import '../../../core/utilities/money.dart';
@@ -28,11 +29,11 @@ class SalesReportPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final range = ref.watch(salesReportRangeProvider);
     final report = ref.watch(salesReportProvider);
+    final visibleRowsLimit = ref.watch(salesReportVisibleRowsProvider);
     final lastPrintMode = ref.watch(_salesLastPrintModeProvider);
     final showLastPrintBanner = ref.watch(_salesShowLastPrintBannerProvider);
-    final printerConfig =
-        ref.watch(printerConfigProvider).valueOrNull ??
-            const PrinterConfig.defaults();
+    final printerConfig = ref.watch(printerConfigProvider).valueOrNull ??
+        const PrinterConfig.defaults();
     final canPrint = printerConfig.enabled || printerConfig.allowPdfFallback;
 
     return Scaffold(
@@ -49,7 +50,9 @@ class SalesReportPage extends ConsumerWidget {
                 initialDateRange: range,
               );
               if (picked != null) {
-                ref.read(salesReportRangeProvider.notifier).state = picked;
+                ref.read(salesReportManualRangeProvider.notifier).state =
+                    picked;
+                ref.read(salesReportVisibleRowsProvider.notifier).state = 50;
               }
             },
             icon: const Icon(Icons.date_range_rounded),
@@ -64,13 +67,20 @@ class SalesReportPage extends ConsumerWidget {
           IconButton(
             tooltip: 'Export CSV',
             onPressed: () async {
-              final data = await ref.read(salesReportProvider.future);
-              if (!context.mounted) return;
-              await Clipboard.setData(ClipboardData(text: _toCsv(data)));
-              if (context.mounted) {
+              try {
+                final data = await ref.read(salesReportProvider.future);
+                await saveCsvFile(
+                  fileName: 'sales_report.csv',
+                  content: _toCsv(data),
+                );
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Sales report CSV copied to clipboard')),
+                  const SnackBar(content: Text('Sales report CSV downloaded')),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('CSV download failed: $e')),
                 );
               }
             },
@@ -83,6 +93,8 @@ class SalesReportPage extends ConsumerWidget {
         data: (data) {
           final rangeLabel =
               '${DateFormat('dd MMM yyyy').format(data.start)} - ${DateFormat('dd MMM yyyy').format(data.end)}';
+          final visibleRows =
+              data.rows.take(visibleRowsLimit).toList(growable: false);
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -95,6 +107,14 @@ class SalesReportPage extends ConsumerWidget {
                 const SizedBox(height: 12),
               ],
               Text(rangeLabel, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 4),
+              Text(
+                'Financial year totals are shown for the selected settings range.',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: Colors.grey[700]),
+              ),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 12,
@@ -206,7 +226,7 @@ class SalesReportPage extends ConsumerWidget {
                               DataColumn(label: Text('Actions')),
                             ],
                             rows: [
-                              for (final row in data.rows)
+                              for (final row in visibleRows)
                                 DataRow(
                                   cells: [
                                     DataCell(Text(row.invoiceNo)),
@@ -235,22 +255,29 @@ class SalesReportPage extends ConsumerWidget {
                                         children: [
                                           IconButton(
                                             tooltip: canPrint
-                                              ? 'Print invoice'
-                                              : 'Enable printer integration or PDF fallback in Settings',
+                                                ? 'Print invoice'
+                                                : 'Enable printer integration or PDF fallback in Settings',
                                             icon: const Icon(
                                                 Icons.print_outlined),
                                             onPressed: canPrint
-                                              ? () =>
-                                                _printInvoice(context, ref, row)
-                                              : null,
+                                                ? () => _printInvoice(
+                                                    context, ref, row)
+                                                : null,
+                                          ),
+                                          IconButton(
+                                            tooltip: 'Share invoice',
+                                            icon: const Icon(
+                                                Icons.share_outlined),
+                                            onPressed: () => _shareInvoice(
+                                                context, ref, row),
                                           ),
                                           IconButton(
                                             tooltip: _isReturnCompleted(
                                                     row.paymentStatus)
                                                 ? 'Invoice already returned'
                                                 : 'Sales return / refund',
-                                            icon: const Icon(
-                                                Icons.assignment_return_outlined),
+                                            icon: const Icon(Icons
+                                                .assignment_return_outlined),
                                             onPressed: _isReturnCompleted(
                                                     row.paymentStatus)
                                                 ? null
@@ -307,6 +334,23 @@ class SalesReportPage extends ConsumerWidget {
                             ],
                           ),
                         ),
+                      if (data.rows.length > visibleRows.length) ...[
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: FilledButton.tonalIcon(
+                            onPressed: () {
+                              ref
+                                  .read(salesReportVisibleRowsProvider.notifier)
+                                  .state = visibleRows.length + 50;
+                            },
+                            icon: const Icon(Icons.expand_more_rounded),
+                            label: Text(
+                              'Show More (${visibleRows.length}/${data.rows.length})',
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -382,7 +426,8 @@ class SalesReportPage extends ConsumerWidget {
 
   String _toCsv(SalesReportData data) {
     final b = StringBuffer();
-    b.writeln('invoice,date,payment_method,payment_status,items,qty,amount,products_gst');
+    b.writeln(
+        'invoice,date,payment_method,payment_status,items,qty,amount,products_gst');
     for (final row in data.rows) {
       b.writeln(
         '${_csv(row.invoiceNo)},${row.soldAt.toIso8601String()},${_csv((row.paymentMethod ?? '-').toUpperCase())},'
@@ -411,23 +456,24 @@ class SalesReportPage extends ConsumerWidget {
     final items = await _loadReturnableItems(ref, row.saleId);
     if (items.isEmpty) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('No returnable quantities left for this invoice.')),
+        const SnackBar(
+            content: Text('No returnable quantities left for this invoice.')),
       );
       return;
     }
 
-    final result = await _showPartialReturnDialog(context, row.invoiceNo, items);
+    final result =
+        await _showPartialReturnDialog(context, row.invoiceNo, items);
     if (result == null) return;
 
     try {
-      final returnResult = await ref
-          .read(salesRepositoryProvider)
-          .processPartialSaleReturn(
-            saleId: row.saleId,
-            lines: result.lines,
-            reason: result.reason,
-            refundMethod: result.refundMethod,
-          );
+      final returnResult =
+          await ref.read(salesRepositoryProvider).processPartialSaleReturn(
+                saleId: row.saleId,
+                lines: result.lines,
+                reason: result.reason,
+                refundMethod: result.refundMethod,
+              );
 
       ref.invalidate(salesReportProvider);
       ref.invalidate(dashboardMetricsProvider);
@@ -439,10 +485,13 @@ class SalesReportPage extends ConsumerWidget {
       final refundText = returnResult.refundAmount > 0
           ? 'Refunded ${formatInr(returnResult.refundAmount)} via ${result.refundMethod.toUpperCase()}.'
           : 'No monetary refund needed for this return.';
-      final stockText =
-          returnResult.stockRestocked ? ' Stock restocked.' : ' Stock tracking is disabled.';
+      final stockText = returnResult.stockRestocked
+          ? ' Stock restocked.'
+          : ' Stock tracking is disabled.';
       messenger.showSnackBar(
-        SnackBar(content: Text('Sale return completed. $returnedText $refundText$stockText')),
+        SnackBar(
+            content: Text(
+                'Sale return completed. $returnedText $refundText$stockText')),
       );
     } catch (e) {
       messenger.showSnackBar(
@@ -462,11 +511,14 @@ class SalesReportPage extends ConsumerWidget {
         .get();
     if (itemSnap.docs.isEmpty) return const [];
 
-    final saleItems = itemSnap.docs.map(saleItemFromDoc).toList(growable: false);
-    final productIds = saleItems.map((i) => i.productId).toSet().toList(growable: false);
+    final saleItems =
+        itemSnap.docs.map(saleItemFromDoc).toList(growable: false);
+    final productIds =
+        saleItems.map((i) => i.productId).toSet().toList(growable: false);
     final productSnap = await storeCollection(fs, storeId, 'products').get();
     final productById = {
-      for (final d in productSnap.docs) (int.tryParse(d.id) ?? 0): productFromDoc(d),
+      for (final d in productSnap.docs)
+        (int.tryParse(d.id) ?? 0): productFromDoc(d),
     };
 
     final rows = <_ReturnableLine>[];
@@ -474,12 +526,14 @@ class SalesReportPage extends ConsumerWidget {
       final item = saleItemFromDoc(doc);
       if (!productIds.contains(item.productId)) continue;
       final returnedQty = fsNum(doc.data()['returnedQty']);
-      final remainingQty = (item.quantity - returnedQty).clamp(0, item.quantity).toDouble();
+      final remainingQty =
+          (item.quantity - returnedQty).clamp(0, item.quantity).toDouble();
       if (remainingQty <= 0) continue;
       rows.add(
         _ReturnableLine(
           saleItemId: item.id,
-          productName: productById[item.productId]?.name ?? 'Product #${item.productId}',
+          productName:
+              productById[item.productId]?.name ?? 'Product #${item.productId}',
           soldQty: item.quantity,
           alreadyReturnedQty: returnedQty,
           remainingQty: remainingQty,
@@ -497,7 +551,9 @@ class SalesReportPage extends ConsumerWidget {
   }
 
   Future<_PartialReturnDialogResult?> _showPartialReturnDialog(
-      BuildContext context, String invoiceNo, List<_ReturnableLine> items) async {
+      BuildContext context,
+      String invoiceNo,
+      List<_ReturnableLine> items) async {
     final reasonCtrl = TextEditingController();
     var refundMethod = 'cash';
     final qtyCtrls = [
@@ -507,6 +563,8 @@ class SalesReportPage extends ConsumerWidget {
       for (final _ in items) FocusNode(),
     ];
 
+    var isDialogOpen = true;
+
     final response = await showDialog<_PartialReturnDialogResult>(
       context: context,
       builder: (ctx) {
@@ -514,197 +572,231 @@ class SalesReportPage extends ConsumerWidget {
           builder: (context, setState) {
             return AlertDialog(
               title: Text('Return / Refund - $invoiceNo'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      onPressed: () {
-                        for (var i = 0; i < qtyCtrls.length; i++) {
-                          qtyCtrls[i].text = items[i].remainingQty
-                              .toStringAsFixed(items[i].remainingQty % 1 == 0 ? 0 : 2);
-                        }
-                        setState(() {});
-                      },
-                      icon: const Icon(Icons.select_all_rounded, size: 16),
-                      label: const Text('Return all remaining'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: () async {
+                          for (var i = 0; i < qtyCtrls.length; i++) {
+                            qtyCtrls[i].text = items[i]
+                                .remainingQty
+                                .toStringAsFixed(
+                                    items[i].remainingQty % 1 == 0 ? 0 : 2);
+                          }
+                          await Future.microtask(() {
+                            if (isDialogOpen) {
+                              setState(() {});
+                            }
+                          });
+                        },
+                        icon: const Icon(Icons.select_all_rounded, size: 16),
+                        label: const Text('Return all remaining'),
+                      ),
                     ),
-                  ),
-                  SizedBox(
-                    width: 520,
-                    height: 220,
-                    child: ListView.separated(
-                      itemCount: items.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
-                      itemBuilder: (context, index) {
-                        final line = items[index];
-                        final soldText = line.soldQty
-                            .toStringAsFixed(line.soldQty % 1 == 0 ? 0 : 2);
-                        final returnedText = line.alreadyReturnedQty.toStringAsFixed(
-                            line.alreadyReturnedQty % 1 == 0 ? 0 : 2);
-                        final remainingText = line.remainingQty
-                            .toStringAsFixed(line.remainingQty % 1 == 0 ? 0 : 2);
-                        final isFullyReturned = line.remainingQty <= 0.0001;
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      line.productName,
-                                      style: const TextStyle(fontWeight: FontWeight.w600),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Wrap(
-                                      spacing: 6,
-                                      runSpacing: 6,
-                                      children: [
-                                        Chip(
-                                          visualDensity: VisualDensity.compact,
-                                          label: Text('Sold: $soldText'),
-                                        ),
-                                        Chip(
-                                          visualDensity: VisualDensity.compact,
-                                          backgroundColor:
-                                              Colors.orange.withOpacity(0.12),
-                                          side: BorderSide(
-                                            color: Colors.orange.withOpacity(0.35),
-                                          ),
-                                          label: Text(
-                                            'Returned: $returnedText',
-                                            style: const TextStyle(
-                                              color: Colors.orange,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                        Chip(
-                                          visualDensity: VisualDensity.compact,
-                                          backgroundColor: isFullyReturned
-                                              ? Colors.red.withOpacity(0.12)
-                                              : Colors.green.withOpacity(0.12),
-                                          side: BorderSide(
-                                            color: (isFullyReturned
-                                                    ? Colors.red
-                                                    : Colors.green)
-                                                .withOpacity(0.35),
-                                          ),
-                                          label: Text(
-                                            'Remaining: $remainingText',
-                                            style: TextStyle(
-                                              color: isFullyReturned
-                                                  ? Colors.red
-                                                  : Colors.green,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              SizedBox(
-                                width: 90,
-                                child: GestureDetector(
-                                  onLongPress: () {
-                                    qtyCtrls[index].text = '0';
-                                    qtyCtrls[index].selection = const TextSelection(
-                                      baseOffset: 0,
-                                      extentOffset: 1,
-                                    );
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Reset ${items[index].productName} to 0',
-                                        ),
-                                        duration: const Duration(milliseconds: 900),
+                    SizedBox(
+                      width: 520,
+                      height: 220,
+                      child: ListView.separated(
+                        itemCount: items.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final line = items[index];
+                          final soldText = line.soldQty
+                              .toStringAsFixed(line.soldQty % 1 == 0 ? 0 : 2);
+                          final returnedText = line.alreadyReturnedQty
+                              .toStringAsFixed(
+                                  line.alreadyReturnedQty % 1 == 0 ? 0 : 2);
+                          final remainingText = line.remainingQty
+                              .toStringAsFixed(
+                                  line.remainingQty % 1 == 0 ? 0 : 2);
+                          final isFullyReturned = line.remainingQty <= 0.0001;
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        line.productName,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w600),
                                       ),
-                                    );
-                                  },
-                                  child: TextField(
-                                    controller: qtyCtrls[index],
-                                    focusNode: qtyFocusNodes[index],
-                                    autofocus: index == 0,
-                                    keyboardType:
-                                        const TextInputType.numberWithOptions(decimal: true),
-                                    onTap: () {
-                                      final raw = qtyCtrls[index].text.trim();
-                                      final parsed = double.tryParse(raw) ?? 0;
-                                      if (parsed <= 0) {
-                                        final next = items[index].remainingQty
-                                            .toStringAsFixed(
-                                                items[index].remainingQty % 1 == 0 ? 0 : 2);
-                                        qtyCtrls[index].text = next;
-                                        qtyCtrls[index].selection = TextSelection(
-                                          baseOffset: 0,
-                                          extentOffset: next.length,
-                                        );
-                                      }
+                                      const SizedBox(height: 6),
+                                      Wrap(
+                                        spacing: 6,
+                                        runSpacing: 6,
+                                        children: [
+                                          Chip(
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            label: Text('Sold: $soldText'),
+                                          ),
+                                          Chip(
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            backgroundColor:
+                                                Colors.orange.withOpacity(0.12),
+                                            side: BorderSide(
+                                              color: Colors.orange
+                                                  .withOpacity(0.35),
+                                            ),
+                                            label: Text(
+                                              'Returned: $returnedText',
+                                              style: const TextStyle(
+                                                color: Colors.orange,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                          Chip(
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            backgroundColor: isFullyReturned
+                                                ? Colors.red.withOpacity(0.12)
+                                                : Colors.green
+                                                    .withOpacity(0.12),
+                                            side: BorderSide(
+                                              color: (isFullyReturned
+                                                      ? Colors.red
+                                                      : Colors.green)
+                                                  .withOpacity(0.35),
+                                            ),
+                                            label: Text(
+                                              'Remaining: $remainingText',
+                                              style: TextStyle(
+                                                color: isFullyReturned
+                                                    ? Colors.red
+                                                    : Colors.green,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                SizedBox(
+                                  width: 90,
+                                  child: GestureDetector(
+                                    onLongPress: () {
+                                      qtyCtrls[index].text = '0';
+                                      qtyCtrls[index].selection =
+                                          const TextSelection(
+                                        baseOffset: 0,
+                                        extentOffset: 1,
+                                      );
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Reset ${items[index].productName} to 0',
+                                          ),
+                                          duration:
+                                              const Duration(milliseconds: 900),
+                                        ),
+                                      );
                                     },
-                                    textInputAction: index == qtyCtrls.length - 1
-                                        ? TextInputAction.done
-                                        : TextInputAction.next,
-                                    onSubmitted: (_) {
-                                      if (index < qtyFocusNodes.length - 1) {
-                                        FocusScope.of(context)
-                                            .requestFocus(qtyFocusNodes[index + 1]);
-                                      }
-                                    },
-                                    decoration: const InputDecoration(
-                                      border: OutlineInputBorder(),
-                                      isDense: true,
-                                      labelText: 'Return Qty',
+                                    child: TextField(
+                                      controller: qtyCtrls[index],
+                                      focusNode: qtyFocusNodes[index],
+                                      autofocus: index == 0,
+                                      keyboardType:
+                                          const TextInputType.numberWithOptions(
+                                              decimal: true),
+                                      onTap: () {
+                                        final raw = qtyCtrls[index].text.trim();
+                                        final parsed =
+                                            double.tryParse(raw) ?? 0;
+                                        if (parsed <= 0) {
+                                          final next = items[index]
+                                              .remainingQty
+                                              .toStringAsFixed(
+                                                  items[index].remainingQty %
+                                                              1 ==
+                                                          0
+                                                      ? 0
+                                                      : 2);
+                                          qtyCtrls[index].text = next;
+                                          qtyCtrls[index].selection =
+                                              TextSelection(
+                                            baseOffset: 0,
+                                            extentOffset: next.length,
+                                          );
+                                        }
+                                      },
+                                      textInputAction:
+                                          index == qtyCtrls.length - 1
+                                              ? TextInputAction.done
+                                              : TextInputAction.next,
+                                      onSubmitted: (_) {
+                                        if (index < qtyFocusNodes.length - 1) {
+                                          FocusScope.of(context).requestFocus(
+                                              qtyFocusNodes[index + 1]);
+                                        }
+                                      },
+                                      decoration: const InputDecoration(
+                                        border: OutlineInputBorder(),
+                                        isDense: true,
+                                        labelText: 'Return Qty',
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: reasonCtrl,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Return reason *',
+                        hintText:
+                            'Damaged item, billing error, customer cancellation...',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: refundMethod,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                        labelText: 'Refund method',
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'cash', child: Text('Cash')),
+                        DropdownMenuItem(value: 'upi', child: Text('UPI')),
+                        DropdownMenuItem(value: 'card', child: Text('Card')),
+                        DropdownMenuItem(
+                            value: 'bank', child: Text('Bank Transfer')),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => refundMethod = value);
+                        }
                       },
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: reasonCtrl,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Return reason *',
-                      hintText: 'Damaged item, billing error, customer cancellation...',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: refundMethod,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                      labelText: 'Refund method',
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'cash', child: Text('Cash')),
-                      DropdownMenuItem(value: 'upi', child: Text('UPI')),
-                      DropdownMenuItem(value: 'card', child: Text('Card')),
-                      DropdownMenuItem(value: 'bank', child: Text('Bank Transfer')),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => refundMethod = value);
-                      }
-                    },
-                  ),
-                ],
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(ctx),
+                  onPressed: () {
+                    isDialogOpen = false;
+                    Navigator.pop(ctx);
+                  },
                   child: const Text('Cancel'),
                 ),
                 FilledButton(
@@ -744,12 +836,14 @@ class SalesReportPage extends ConsumerWidget {
                     if (lines.isEmpty) {
                       ScaffoldMessenger.of(ctx).showSnackBar(
                         const SnackBar(
-                          content: Text('Enter return quantity for at least one item.'),
+                          content: Text(
+                              'Enter return quantity for at least one item.'),
                         ),
                       );
                       return;
                     }
 
+                    isDialogOpen = false;
                     Navigator.pop(
                       ctx,
                       _PartialReturnDialogResult(
@@ -768,13 +862,16 @@ class SalesReportPage extends ConsumerWidget {
       },
     );
 
-    reasonCtrl.dispose();
-    for (final c in qtyCtrls) {
-      c.dispose();
-    }
-    for (final n in qtyFocusNodes) {
-      n.dispose();
-    }
+    // Defer disposal to ensure all pending callbacks complete
+    Future.microtask(() {
+      reasonCtrl.dispose();
+      for (final c in qtyCtrls) {
+        c.dispose();
+      }
+      for (final n in qtyFocusNodes) {
+        n.dispose();
+      }
+    });
     return response;
   }
 
@@ -798,7 +895,8 @@ class SalesReportPage extends ConsumerWidget {
       final productIds = saleItems.map((i) => i.productId).toSet().toList();
       var productNameById = <int, String>{};
       if (productIds.isNotEmpty) {
-        final productSnap = await storeCollection(fs, storeId, 'products').get();
+        final productSnap =
+            await storeCollection(fs, storeId, 'products').get();
         final productById = {
           for (final d in productSnap.docs)
             (int.tryParse(d.id) ?? 0): productFromDoc(d),
@@ -809,12 +907,10 @@ class SalesReportPage extends ConsumerWidget {
         };
       }
 
-      final branding =
-          ref.read(invoiceBrandingProvider).valueOrNull ??
-              const InvoiceBranding.defaults();
-      final printerConfig =
-          ref.read(printerConfigProvider).valueOrNull ??
-              const PrinterConfig.defaults();
+      final branding = ref.read(invoiceBrandingProvider).valueOrNull ??
+          const InvoiceBranding.defaults();
+      final printerConfig = ref.read(printerConfigProvider).valueOrNull ??
+          const PrinterConfig.defaults();
       final shopName = branding.displayName.isNotEmpty
           ? branding.displayName
           : (ref.read(storeSessionProvider)?.storeName ?? 'Pocket POS');
@@ -865,11 +961,11 @@ class SalesReportPage extends ConsumerWidget {
 
       await _printPdfInvoice(
         invoiceNo: row.invoiceNo,
+        invoiceDate: row.soldAt,
         branding: branding,
         shopName: shopName,
-        items: printableItems,
+        saleItems: saleItems,
         grandTotal: row.grandTotal,
-        refundEntries: await _loadRefundEntries(ref, row.saleId),
       );
       ref.read(_salesLastPrintModeProvider.notifier).state = 'PDF fallback';
       ref.read(_salesShowLastPrintBannerProvider.notifier).state = true;
@@ -880,35 +976,108 @@ class SalesReportPage extends ConsumerWidget {
     }
   }
 
+  Future<void> _shareInvoice(
+      BuildContext context, WidgetRef ref, SalesReportRow row) async {
+    try {
+      final storeId = ref.read(activeStoreIdProvider);
+      if (storeId == null || storeId.isEmpty) {
+        throw Exception('No active store.');
+      }
+      final fs = ref.read(firestoreProvider);
+      final itemSnap = await storeCollection(fs, storeId, 'sale_items')
+          .where('saleId', isEqualTo: row.saleId)
+          .get();
+      final saleItems = itemSnap.docs.map(saleItemFromDoc).toList()
+        ..sort((a, b) => a.id.compareTo(b.id));
+      final productSnap = await storeCollection(fs, storeId, 'products').get();
+      final productById = {
+        for (final d in productSnap.docs)
+          (int.tryParse(d.id) ?? 0): productFromDoc(d),
+      };
+      final branding = ref.read(invoiceBrandingProvider).valueOrNull ??
+          const InvoiceBranding.defaults();
+      final shopName = branding.displayName.isNotEmpty
+          ? branding.displayName
+          : (ref.read(storeSessionProvider)?.storeName ?? 'Pocket POS');
+      final printableItems = saleItems
+          .map(
+            (item) => (
+              description:
+                  '${productById[item.productId]?.name ?? 'Product #${item.productId}'} (GST ${item.taxPercent.toStringAsFixed(item.taxPercent % 1 == 0 ? 0 : 2)}%)',
+              unitPrice: item.unitPrice,
+              qty: item.quantity,
+              lineTotal: item.lineTotal,
+            ),
+          )
+          .toList(growable: false);
+      final subTotal = saleItems.fold<double>(
+          0, (sum, item) => sum + item.unitPrice * item.quantity);
+      final taxTotal = saleItems.fold<double>(
+          0,
+          (sum, item) =>
+              sum + item.unitPrice * item.quantity * item.taxPercent / 100);
+      final bytes = await ReceiptPdfService().generateClassicInvoice(
+        shopName: shopName,
+        invoiceNo: row.invoiceNo,
+        invoiceDate: row.soldAt,
+        customerName: '',
+        customerAddress: '',
+        branding: branding,
+        items: printableItems,
+        subTotal: subTotal,
+        total: row.grandTotal,
+        taxTotal: taxTotal > 0 ? taxTotal : null,
+      );
+      await sharePdfFile(
+        bytes: Uint8List.fromList(bytes),
+        fileName: '${row.invoiceNo}.pdf',
+        text: 'Invoice ${row.invoiceNo}',
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Share failed: $e')),
+      );
+    }
+  }
+
   Future<void> _printPdfInvoice({
     required String invoiceNo,
+    required DateTime invoiceDate,
     required InvoiceBranding branding,
     required String shopName,
-    required List<
-            ({
-              String name,
-              double qty,
-              double discountAmount,
-              double netAmount
-            })>
-        items,
+    required List<SaleItem> saleItems,
     required double grandTotal,
-    List<
-            ({
-              String method,
-              double amount,
-              DateTime paidAt,
-              String? referenceNo
-            })>
-        refundEntries = const [],
   }) async {
-    final bytes = await ReceiptPdfService().generateSimpleReceipt(
+    final subTotal = saleItems.fold<double>(
+        0, (sum, item) => sum + (item.unitPrice * item.quantity));
+    final taxTotal = saleItems.fold<double>(
+        0,
+        (sum, item) =>
+            sum + ((item.unitPrice * item.quantity * item.taxPercent) / 100));
+
+    final printableItems = saleItems
+        .map(
+          (item) => (
+            description: item.id.toString(),
+            unitPrice: item.unitPrice,
+            qty: item.quantity,
+            lineTotal: item.lineTotal,
+          ),
+        )
+        .toList(growable: false);
+
+    final bytes = await ReceiptPdfService().generateClassicInvoice(
       shopName: shopName,
       invoiceNo: invoiceNo,
+      invoiceDate: invoiceDate,
+      customerName: '',
+      customerAddress: '',
       branding: branding,
-      items: items,
-      grandTotal: grandTotal,
-      refundEntries: refundEntries,
+      items: printableItems,
+      subTotal: subTotal,
+      total: grandTotal,
+      taxTotal: taxTotal > 0 ? taxTotal : null,
     );
 
     final pdfBytes = Uint8List.fromList(bytes);
@@ -924,13 +1093,14 @@ class SalesReportPage extends ConsumerWidget {
     }
   }
 
-  Future<List<
-      ({
-        String method,
-        double amount,
-        DateTime paidAt,
-        String? referenceNo
-      })>> _loadRefundEntries(WidgetRef ref, int saleId) async {
+  Future<
+      List<
+          ({
+            String method,
+            double amount,
+            DateTime paidAt,
+            String? referenceNo
+          })>> _loadRefundEntries(WidgetRef ref, int saleId) async {
     final storeId = ref.read(activeStoreIdProvider);
     if (storeId == null || storeId.isEmpty) return const [];
 
@@ -939,13 +1109,12 @@ class SalesReportPage extends ConsumerWidget {
         .where('saleId', isEqualTo: saleId)
         .get();
 
-    final entries = <
-        ({
-          String method,
-          double amount,
-          DateTime paidAt,
-          String? referenceNo
-        })>[];
+    final entries = <({
+      String method,
+      double amount,
+      DateTime paidAt,
+      String? referenceNo
+    })>[];
     for (final doc in snap.docs) {
       final data = doc.data();
       final amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
@@ -953,7 +1122,8 @@ class SalesReportPage extends ConsumerWidget {
       entries.add((
         method: (data['method'] as String?) ?? 'refund',
         amount: amount.abs(),
-        paidAt: (data['paidAt'] as dynamic)?.toDate() as DateTime? ?? DateTime.now(),
+        paidAt: (data['paidAt'] as dynamic)?.toDate() as DateTime? ??
+            DateTime.now(),
         referenceNo: data['referenceNo'] as String?,
       ));
     }

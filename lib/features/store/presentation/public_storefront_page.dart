@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import '../../../core/constants/app_constants.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/firestore/store_scope.dart';
+import '../../../core/utilities/validators.dart';
 import '../../products/data/firestore_product_repository.dart';
 import '../../sales/data/firestore_sales_repository.dart';
 import '../../sales/domain/sales_repository.dart';
@@ -117,6 +118,12 @@ class _PublicStorefrontPageState extends ConsumerState<PublicStorefrontPage> {
     if (storeId.isEmpty || customerName.isEmpty || customerMobile.isEmpty) {
       setState(() {
         _error = 'Enter store ID, customer name and mobile number.';
+      });
+      return;
+    }
+    if (!isValidMobile(customerMobile)) {
+      setState(() {
+        _error = 'Enter a valid 10-digit mobile number.';
       });
       return;
     }

@@ -1,0 +1,89 @@
+name: Build Static Plans JSON
+
+on:
+  workflow_dispatch: # Allows manual trigger from GitHub Actions UI
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: prod # Target the prod branch
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Fetch Firestore Plans and Write to web/plans.json
+        env:
+          PROJECT_ID: "pocketpos-firebase"
+        run: |
+          node -e '
+          const fs = require("fs");
+          const path = require("path");
+
+          async function build() {
+            const firestoreUrl = "https://firestore.googleapis.com/v1/projects/'"$PROJECT_ID"'/databases/(default)/documents/platform_subscription_plans";
+            const response = await fetch(firestoreUrl);
+            const data = await response.json();
+
+            let plans = [];
+
+            if (data.documents) {
+              plans = data.documents
+                .map(doc => {
+                  const fields = doc.fields || {};
+                  return {
+                    id: doc.name.split("/").pop(),
+                    name: fields.name?.stringValue || "",
+                    description: fields.description?.stringValue || "",
+                    billingCycle: fields.billingCycle?.stringValue || "monthly",
+                    priceMinor: Number(fields.priceMinor?.integerValue || fields.priceMinor?.doubleValue || 0),
+                    isActive: fields.isActive?.booleanValue || false,
+                    publicVisible: fields.publicVisible?.booleanValue || false,
+                    deletedAt: fields.deletedAt && fields.deletedAt.nullValue !== undefined ? null : fields.deletedAt,
+                    isPopular: fields.isPopular?.booleanValue || false,
+                    badgeText: fields.badgeText?.stringValue || "",
+                    ctaLabel: fields.ctaLabel?.stringValue || "Start now",
+                    ctaUrl: fields.ctaUrl?.stringValue || "/store-login",
+                    sortOrder: Number(fields.sortOrder?.integerValue || 0),
+                    featureList: fields.featureList?.arrayValue?.values
+                      ? fields.featureList.arrayValue.values.map(v => v.stringValue || "")
+                      : []
+                  };
+                })
+                .filter(p => p.isActive === true && p.publicVisible === true && p.deletedAt === null)
+                .sort((a, b) => a.sortOrder - b.sortOrder);
+            }
+
+            const payload = {
+              updated: new Date().toISOString(),
+              plans: plans
+            };
+
+            // Ensure web directory exists and save plans.json inside it
+            const targetDir = path.join(process.cwd(), "web");
+            if (!fs.existsSync(targetDir)) {
+              fs.mkdirSync(targetDir, { recursive: true });
+            }
+
+            const filePath = path.join(targetDir, "plans.json");
+            fs.writeFileSync(filePath, JSON.stringify(payload, null, 2));
+            console.log(`Successfully generated ${filePath} with ${plans.length} active plans.`);
+          }
+
+          build();
+          '
+
+      - name: Commit and Push to web/plans.json
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add web/plans.json
+          git diff-index --quiet HEAD || (git commit -m "chore: update web/plans.json [skip ci]" && git push origin prod)

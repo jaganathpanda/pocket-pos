@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/seed/demo_business_type.dart';
+import '../../../core/utilities/validators.dart';
+import '../../../core/web/parent_modal_bridge.dart';
 import 'store_auth_controller.dart';
 
 class StoreRegisterPage extends ConsumerStatefulWidget {
@@ -45,15 +47,19 @@ class _StoreRegisterPageState extends ConsumerState<StoreRegisterPage> {
               businessType: _businessType,
               mobile: _mobile.text,
               email: _email.text,
-              referralCode: _referralCode.text,
             );
     if (!mounted) return;
     if (storeId == null) {
       final err = ref.read(storeAuthControllerProvider).error;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(err ?? 'Registration failed')));
+      return;
     }
-    // On success the router redirect moves to the pending-approval screen.
+    // Registered. When this page is running inside the marketing site's modal,
+    // tell the host to retire the prompt — the visitor has no reason to see the
+    // registration nudge again. No-op when not embedded.
+    notifyRegistrationComplete();
+    // The router redirect then moves to the pending-approval screen.
   }
 
   String? _required(String? v) =>
@@ -121,7 +127,7 @@ class _StoreRegisterPageState extends ConsumerState<StoreRegisterPage> {
                   _field(_ownerName, 'Owner name *', Icons.person_rounded,
                       validator: _required),
                   _field(_mobile, 'Mobile', Icons.phone,
-                      keyboard: TextInputType.phone),
+                      keyboard: TextInputType.phone, validator: validateMobile),
                   _field(_email, 'Email *', Icons.email_outlined,
                       keyboard: TextInputType.emailAddress,
                       validator: _validEmail),

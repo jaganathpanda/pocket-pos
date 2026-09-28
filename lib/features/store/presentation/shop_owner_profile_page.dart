@@ -5,13 +5,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/firestore/store_scope.dart';
+import '../../../core/utilities/validators.dart';
 import 'store_auth_controller.dart';
 
 class ShopOwnerProfilePage extends ConsumerStatefulWidget {
   const ShopOwnerProfilePage({super.key});
 
   @override
-  ConsumerState<ShopOwnerProfilePage> createState() => _ShopOwnerProfilePageState();
+  ConsumerState<ShopOwnerProfilePage> createState() =>
+      _ShopOwnerProfilePageState();
 }
 
 class _ShopOwnerProfilePageState extends ConsumerState<ShopOwnerProfilePage> {
@@ -62,10 +64,16 @@ class _ShopOwnerProfilePageState extends ConsumerState<ShopOwnerProfilePage> {
           'name': _storeNameCtrl.text.trim(),
           'ownerName': _ownerNameCtrl.text.trim(),
           'ownerUsername': _usernameCtrl.text.trim(),
-          'mobile': _mobileCtrl.text.trim().isEmpty ? null : _mobileCtrl.text.trim(),
-          'email': _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
-          'address': _addressCtrl.text.trim().isEmpty ? null : _addressCtrl.text.trim(),
-          'tagline': _taglineCtrl.text.trim().isEmpty ? null : _taglineCtrl.text.trim(),
+          'mobile':
+              _mobileCtrl.text.trim().isEmpty ? null : _mobileCtrl.text.trim(),
+          'email':
+              _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
+          'address': _addressCtrl.text.trim().isEmpty
+              ? null
+              : _addressCtrl.text.trim(),
+          'tagline': _taglineCtrl.text.trim().isEmpty
+              ? null
+              : _taglineCtrl.text.trim(),
           'updatedAt': FieldValue.serverTimestamp(),
         },
         SetOptions(merge: true),
@@ -102,9 +110,11 @@ class _ShopOwnerProfilePageState extends ConsumerState<ShopOwnerProfilePage> {
       _storeNameCtrl.text.trim(),
       if (_taglineCtrl.text.trim().isNotEmpty) _taglineCtrl.text.trim(),
       'Owner: ${_ownerNameCtrl.text.trim().isEmpty ? '-' : _ownerNameCtrl.text.trim()}',
-      if (_mobileCtrl.text.trim().isNotEmpty) 'Mobile: ${_mobileCtrl.text.trim()}',
+      if (_mobileCtrl.text.trim().isNotEmpty)
+        'Mobile: ${_mobileCtrl.text.trim()}',
       if (_emailCtrl.text.trim().isNotEmpty) 'Email: ${_emailCtrl.text.trim()}',
-      if (_addressCtrl.text.trim().isNotEmpty) 'Address: ${_addressCtrl.text.trim()}',
+      if (_addressCtrl.text.trim().isNotEmpty)
+        'Address: ${_addressCtrl.text.trim()}',
       'Store ID: $storeId',
     ];
     return lines.join('\n');
@@ -121,7 +131,8 @@ class _ShopOwnerProfilePageState extends ConsumerState<ShopOwnerProfilePage> {
       );
     }
 
-    final storeDoc = FirebaseFirestore.instance.collection('stores').doc(storeId);
+    final storeDoc =
+        FirebaseFirestore.instance.collection('stores').doc(storeId);
 
     return Scaffold(
       appBar: AppBar(
@@ -164,8 +175,8 @@ class _ShopOwnerProfilePageState extends ConsumerState<ShopOwnerProfilePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text('Owner & Shop Details',
-                            style:
-                                TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                            style: TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 16)),
                         const SizedBox(height: 12),
                         _field(
                           _storeNameCtrl,
@@ -189,6 +200,7 @@ class _ShopOwnerProfilePageState extends ConsumerState<ShopOwnerProfilePage> {
                           _mobileCtrl,
                           'Mobile Number',
                           keyboardType: TextInputType.phone,
+                          mobile: true,
                         ),
                         const SizedBox(height: 10),
                         _field(
@@ -268,6 +280,7 @@ class _ShopOwnerProfilePageState extends ConsumerState<ShopOwnerProfilePage> {
     TextEditingController controller,
     String label, {
     bool required = false,
+    bool mobile = false,
     TextInputType? keyboardType,
     int maxLines = 1,
   }) {
@@ -280,9 +293,11 @@ class _ShopOwnerProfilePageState extends ConsumerState<ShopOwnerProfilePage> {
         border: const OutlineInputBorder(),
         isDense: true,
       ),
-      validator: required
-          ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
-          : null,
+      validator: mobile
+          ? validateMobile
+          : required
+              ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+              : null,
     );
   }
 }

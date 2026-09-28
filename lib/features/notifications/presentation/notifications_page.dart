@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../weighbridge/presentation/vehicle_entry_detail_page.dart';
 import '../domain/app_notification.dart';
 import '../providers/notification_providers.dart';
 
 class NotificationsPage extends ConsumerWidget {
-  const NotificationsPage({super.key});
+  const NotificationsPage({
+    super.key,
+    this.onVehicleEntrySelected,
+  });
+
+  final ValueChanged<int>? onVehicleEntrySelected;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -32,8 +36,10 @@ class NotificationsPage extends ConsumerWidget {
           return ListView.separated(
             itemCount: items.length,
             separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, i) =>
-                _NotificationTile(notification: items[i]),
+            itemBuilder: (context, i) => _NotificationTile(
+              notification: items[i],
+              onVehicleEntrySelected: onVehicleEntrySelected,
+            ),
           );
         },
       ),
@@ -45,15 +51,18 @@ class NotificationsPage extends ConsumerWidget {
     // targetUid if available, else no-op.
     final items = ref.read(myNotificationsProvider).valueOrNull ?? const [];
     if (items.isEmpty) return;
-    ref
-        .read(notificationRepositoryProvider)
-        .markAllRead(items.first.targetUid);
+    ref.read(notificationRepositoryProvider).markAllRead(items.first.targetUid);
   }
 }
 
 class _NotificationTile extends ConsumerWidget {
-  const _NotificationTile({required this.notification});
+  const _NotificationTile({
+    required this.notification,
+    this.onVehicleEntrySelected,
+  });
+
   final AppNotification notification;
+  final ValueChanged<int>? onVehicleEntrySelected;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -79,11 +88,7 @@ class _NotificationTile extends ConsumerWidget {
         await ref.read(notificationRepositoryProvider).markRead(n.id);
         if (!context.mounted) return;
         if (n.entityType == 'vehicle_entry' && n.entityId != null) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => VehicleEntryDetailPage(entryId: n.entityId),
-            ),
-          );
+          onVehicleEntrySelected?.call(n.entityId!);
         }
       },
     );
