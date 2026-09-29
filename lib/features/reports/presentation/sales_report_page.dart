@@ -43,11 +43,28 @@ class SalesReportPage extends ConsumerWidget {
           IconButton(
             tooltip: 'Pick date range',
             onPressed: () async {
+              final firstDate = DateTime(2020);
+              final lastDate = DateUtils.dateOnly(DateTime.now());
+              final rangeStart = DateUtils.dateOnly(range.start);
+              final rangeEnd = DateUtils.dateOnly(range.end);
+              final initialStart = rangeStart.isBefore(firstDate)
+                  ? firstDate
+                  : rangeStart.isAfter(lastDate)
+                      ? lastDate
+                      : rangeStart;
+              final initialEnd = rangeEnd.isBefore(initialStart)
+                  ? initialStart
+                  : rangeEnd.isAfter(lastDate)
+                      ? lastDate
+                      : rangeEnd;
               final picked = await showDateRangePicker(
                 context: context,
-                firstDate: DateTime(2020),
-                lastDate: DateTime.now(),
-                initialDateRange: range,
+                firstDate: firstDate,
+                lastDate: lastDate,
+                initialDateRange: DateTimeRange(
+                  start: initialStart,
+                  end: initialEnd,
+                ),
               );
               if (picked != null) {
                 ref.read(salesReportManualRangeProvider.notifier).state =

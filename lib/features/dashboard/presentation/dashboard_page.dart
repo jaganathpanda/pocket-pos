@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:pocket_pos/l10n/app_localizations.dart';
 
@@ -15,11 +16,34 @@ class DashboardPage extends ConsumerWidget {
     final upcomingExpiries = ref.watch(upcomingExpiringProductsProvider);
 
     final strings = AppLocalizations.of(context);
+    final compactActions = MediaQuery.sizeOf(context).width < 600;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(strings.dashboard),
         actions: [
+          compactActions
+              ? IconButton(
+                  tooltip: 'Add Sales',
+                  onPressed: () => context.push('/billing'),
+                  icon: const Icon(Icons.add_shopping_cart_rounded),
+                )
+              : TextButton.icon(
+                  onPressed: () => context.push('/billing'),
+                  icon: const Icon(Icons.add_shopping_cart_rounded),
+                  label: const Text('Add Sales'),
+                ),
+          compactActions
+              ? IconButton(
+                  tooltip: 'Find Invoice',
+                  onPressed: () => context.push('/find-invoice'),
+                  icon: const Icon(Icons.search_rounded),
+                )
+              : TextButton.icon(
+                  onPressed: () => context.push('/find-invoice'),
+                  icon: const Icon(Icons.search_rounded),
+                  label: const Text('Find Invoice'),
+                ),
           IconButton(
             tooltip: strings.refreshMetrics,
             onPressed: () => ref.invalidate(dashboardMetricsProvider),
@@ -95,15 +119,27 @@ class DashboardPage extends ConsumerWidget {
 
           return LayoutBuilder(
             builder: (context, constraints) {
+              const spacing = 12.0;
+              const preferredCardWidth = 220.0;
+              final availableWidth = (constraints.maxWidth - 32)
+                  .clamp(0.0, double.infinity)
+                  .toDouble();
+              final columnCount =
+                  ((availableWidth + spacing) / (preferredCardWidth + spacing))
+                      .floor()
+                      .clamp(2, 5)
+                      .toInt();
+              final cardWidth =
+                  (availableWidth - spacing * (columnCount - 1)) / columnCount;
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
+                  spacing: spacing,
+                  runSpacing: spacing,
                   children: [
                     ...cards.map((c) {
                       return SizedBox(
-                        width: 220,
+                        width: cardWidth,
                         child: Card(
                           child: Padding(
                             padding: const EdgeInsets.all(12),
@@ -135,7 +171,7 @@ class DashboardPage extends ConsumerWidget {
                       );
                     }),
                     SizedBox(
-                      width: 220,
+                      width: cardWidth,
                       child: Card(
                         child: Padding(
                           padding: const EdgeInsets.all(12),
