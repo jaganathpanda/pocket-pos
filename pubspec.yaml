@@ -40,6 +40,7 @@ dependencies:
   unified_esc_pos_printer: ^3.4.0
   share_plus: ^12.0.2
   csv: ^8.0.0
+  cloud_functions: ^6.5.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
