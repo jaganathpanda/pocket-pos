@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pocket_pos/l10n/app_localizations.dart';
 
 import '../core/di/providers.dart';
+import '../core/localization/app_locale.dart';
 import '../features/store/domain/store_models.dart';
 import '../features/store/presentation/store_auth_controller.dart';
 import 'router.dart';
@@ -33,10 +36,22 @@ class PocketPosApp extends ConsumerWidget {
     });
 
     final router = ref.watch(routerProvider ?? appRouterProvider);
+    final locale = ref.watch(localeProvider);
 
     return MaterialApp.router(
       title: 'Pocket POS',
       debugShowCheckedModeBanner: false,
+      locale: locale,
+      supportedLocales: const [
+        Locale('en'),
+        Locale('hi'),
+      ],
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF005D4D)),
         useMaterial3: true,

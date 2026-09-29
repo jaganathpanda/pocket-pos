@@ -1,12 +1,14 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:pocket_pos/l10n/app_localizations.dart';
 
 import '../../../core/database/seed/demo_business_type.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/firestore/store_catalog_seeder.dart';
 import '../../../core/firestore/store_scope.dart';
+import '../../../core/localization/app_locale.dart';
 import '../../../core/models/discount_policy.dart';
 import '../../../core/models/invoice_branding.dart';
 import '../../../core/models/printer_config.dart';
@@ -17,6 +19,67 @@ import '../../store/presentation/store_auth_controller.dart';
 import '../../subscription/presentation/store_subscription_status.dart';
 import '../../warehouse/domain/inventory_mode.dart';
 
+class SettingsLanguageSection extends ConsumerWidget {
+  const SettingsLanguageSection({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locale = ref.watch(localeProvider);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.language_rounded, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    AppLocalizations.of(context).language,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 18,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<Locale>(
+              initialValue: locale,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+              ),
+              items: const [
+                DropdownMenuItem(
+                  value: Locale('en'),
+                  child: Text('English'),
+                ),
+                DropdownMenuItem(
+                  value: Locale('hi'),
+                  child: Text('हिंदी'),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(localeProvider.notifier).setLocale(value);
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key, this.additionalSections = const []});
 
@@ -25,12 +88,13 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final storeId = ref.watch(activeStoreIdProvider) ?? '';
-
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).settings)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const SettingsLanguageSection(),
+          const SizedBox(height: 16),
           // Subscription Status — Show at top for visibility
           StoreSubscriptionStatus(storeId: storeId),
           const SizedBox(height: 16),

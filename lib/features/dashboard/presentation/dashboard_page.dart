@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:pocket_pos/l10n/app_localizations.dart';
 
 import '../../../core/di/providers.dart';
 import '../../../core/utilities/money.dart';
@@ -13,12 +14,14 @@ class DashboardPage extends ConsumerWidget {
     final metrics = ref.watch(dashboardMetricsProvider);
     final upcomingExpiries = ref.watch(upcomingExpiringProductsProvider);
 
+    final strings = AppLocalizations.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: Text(strings.dashboard),
         actions: [
           IconButton(
-            tooltip: 'Refresh metrics',
+            tooltip: strings.refreshMetrics,
             onPressed: () => ref.invalidate(dashboardMetricsProvider),
             icon: const Icon(Icons.refresh_rounded),
           ),
@@ -29,62 +32,62 @@ class DashboardPage extends ConsumerWidget {
         data: (m) {
           final cards = <({String title, String value, IconData icon})>[
             (
-              title: "Today's Revenue",
+              title: strings.todayRevenue,
               value: formatInr(m.todayRevenue),
               icon: Icons.payments_rounded
             ),
             (
-              title: "Today's Transactions",
+              title: strings.todayTransactions,
               value: m.todayTransactions.toString(),
               icon: Icons.receipt_long_rounded
             ),
             (
-              title: 'Total Revenue',
+              title: strings.totalRevenue,
               value: formatInr(m.totalRevenue),
               icon: Icons.savings_rounded
             ),
             (
-              title: 'Total Transactions',
+              title: strings.totalTransactions,
               value: m.totalTransactions.toString(),
               icon: Icons.receipt_rounded
             ),
             (
-              title: 'Total Tax Collected',
+              title: strings.totalTaxCollected,
               value: formatInr(m.totalTax),
               icon: Icons.account_balance_rounded
             ),
             (
-              title: 'Total Discount',
+              title: strings.totalDiscount,
               value: formatInr(m.totalDiscount),
               icon: Icons.local_offer_rounded
             ),
             (
-              title: 'Active Carts',
+              title: strings.activeCarts,
               value: m.activeCarts.toString(),
               icon: Icons.shopping_cart_rounded
             ),
             (
-              title: 'Total Products',
+              title: strings.totalProducts,
               value: m.totalProducts.toString(),
               icon: Icons.inventory_2_rounded
             ),
             (
-              title: 'Total Customers',
+              title: strings.totalCustomers,
               value: m.totalCustomers.toString(),
               icon: Icons.people_alt_rounded
             ),
             (
-              title: 'Low Stock Items',
+              title: strings.lowStockItems,
               value: m.lowStockItems.toString(),
               icon: Icons.warning_amber_rounded
             ),
             (
-              title: 'Out Of Stock',
+              title: strings.outOfStock,
               value: m.outOfStockItems.toString(),
               icon: Icons.block_rounded
             ),
             (
-              title: 'Pending Credit',
+              title: strings.pendingCredit,
               value: formatInr(m.pendingCredit),
               icon: Icons.account_balance_wallet_rounded
             ),
@@ -142,9 +145,9 @@ class DashboardPage extends ConsumerWidget {
                             children: [
                               const Icon(Icons.event_busy_rounded, size: 20),
                               const SizedBox(height: 8),
-                              const Text(
-                                'Upcoming Expiry',
-                                style: TextStyle(
+                              Text(
+                                strings.upcomingExpiry,
+                                style: const TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey,
                                 ),
@@ -159,8 +162,8 @@ class DashboardPage extends ConsumerWidget {
                                     child: GestureDetector(
                                       onTap: items.isEmpty
                                           ? null
-                                          : () => _showExpiryDialog(
-                                              context, items),
+                                          : () =>
+                                              _showExpiryDialog(context, items),
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
@@ -180,7 +183,8 @@ class DashboardPage extends ConsumerWidget {
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            'product${items.length == 1 ? '' : 's'} expiring soon',
+                                            strings.productsExpiringCount(
+                                                items.length),
                                             style: const TextStyle(
                                               fontSize: 11,
                                               color: Colors.grey,
@@ -189,10 +193,9 @@ class DashboardPage extends ConsumerWidget {
                                           if (items.isNotEmpty)
                                             Padding(
                                               padding:
-                                                  const EdgeInsets.only(
-                                                      top: 6),
+                                                  const EdgeInsets.only(top: 6),
                                               child: Text(
-                                                'Click to view all',
+                                                strings.clickToViewAll,
                                                 style: TextStyle(
                                                   fontSize: 10,
                                                   color: Colors.blue.shade600,
@@ -213,7 +216,7 @@ class DashboardPage extends ConsumerWidget {
                                   ),
                                 ),
                                 error: (e, _) => Text(
-                                  'Expiry data unavailable',
+                                  strings.expiryDataUnavailable,
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Theme.of(context).colorScheme.error,
@@ -232,7 +235,9 @@ class DashboardPage extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(
+          child: Text(strings.dashboardError(e.toString())),
+        ),
       ),
     );
   }
@@ -241,10 +246,11 @@ class DashboardPage extends ConsumerWidget {
     BuildContext context,
     List<({String name, DateTime expiryDate, int daysLeft})> items,
   ) {
+    final strings = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Products Expiring Soon'),
+        title: Text(strings.productsExpiringSoon),
         content: SizedBox(
           width: double.maxFinite,
           child: ListView.separated(
@@ -270,13 +276,12 @@ class DashboardPage extends ConsumerWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
                     color: isExpired ? Colors.red : null,
-                    decoration:
-                        isExpired ? TextDecoration.lineThrough : null,
+                    decoration: isExpired ? TextDecoration.lineThrough : null,
                   ),
                 ),
                 subtitle: Text(
                   '${DateFormat('dd MMM yyyy').format(item.expiryDate)}  ·  '
-                  '${isExpired ? 'EXPIRED' : '${item.daysLeft} day${item.daysLeft == 1 ? '' : 's'} left'}',
+                  '${isExpired ? strings.expired : strings.daysLeft(item.daysLeft)}',
                   style: TextStyle(
                     fontSize: 12,
                     color: isExpired ? Colors.red : Colors.grey,
@@ -289,7 +294,7 @@ class DashboardPage extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
+            child: Text(strings.close),
           ),
         ],
       ),
