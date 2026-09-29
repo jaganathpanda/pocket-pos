@@ -1,0 +1,47 @@
+{
+  "@@locale": "hi",
+  "appTitle": "पॉकेट POS",
+  "settings": "सेटिंग्स",
+  "language": "भाषा",
+  "english": "अंग्रेज़ी",
+  "hindi": "हिंदी",
+  "save": "सेव",
+  "dashboard": "डैशबोर्ड",
+  "refreshMetrics": "मेट्रिक्स रीफ्रेश करें",
+  "todayRevenue": "आज की बिक्री",
+  "todayTransactions": "आज के लेनदेन",
+  "totalRevenue": "कुल बिक्री",
+  "totalTransactions": "कुल लेनदेन",
+  "totalTaxCollected": "कुल एकत्रित कर",
+  "totalDiscount": "कुल छूट",
+  "activeCarts": "सक्रिय कार्ट",
+  "totalProducts": "कुल उत्पाद",
+  "totalCustomers": "कुल ग्राहक",
+  "lowStockItems": "कम स्टॉक वाले उत्पाद",
+  "outOfStock": "स्टॉक समाप्त",
+  "pendingCredit": "बकाया उधार",
+  "upcomingExpiry": "आगामी समाप्ति",
+  "productsExpiringCount": "{count, plural, =1{1 उत्पाद जल्द समाप्त होगा} other{{count} उत्पाद जल्द समाप्त होंगे}}",
+  "daysLeft": "{count, plural, =1{1 दिन बाकी} other{{count} दिन बाकी}}",
+  "expired": "समाप्त",
+  "dashboardError": "त्रुटि: {message}",
+  "@productsExpiringCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "@daysLeft": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "@dashboardError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "productsExpiringSoon": "जल्दी समाप्त होने वाले उत्पाद",
+  "clickToViewAll": "सभी देखने के लिए क्लिक करें",
+  "expiryDataUnavailable": "समाप्ति डेटा उपलब्ध नहीं है",
+  "close": "बंद करें"
+}

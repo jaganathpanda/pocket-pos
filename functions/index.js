@@ -1,5 +1,6 @@
 const { onDocumentCreated, onDocumentWritten, onDocumentUpdated } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
@@ -12,6 +13,169 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 const resendApiKey = defineSecret("RESEND_API_KEY");
 const INFO_EMAIL = "info@mypocketpos.in";
+
+async function deleteRefsInBatches(refs) {
+  for (let offset = 0; offset < refs.length; offset += 400) {
+    const batch = db.batch();
+    for (const ref of refs.slice(offset, offset + 400)) {
+      batch.delete(ref);
+    }
+    await batch.commit();
+  }
+}
+
+async function removeStoreIndexDocuments(storeId, userIds, storeEmail) {
+  const refs = new Map();
+  for (const collectionName of ["user_store_index", "email_index"]) {
+    const snapshot = await db.collection(collectionName)
+      .where("storeId", "==", storeId)
+      .get();
+    for (const doc of snapshot.docs) refs.set(doc.ref.path, doc.ref);
+  }
+
+  for (const uid of userIds) {
+    const indexRef = db.collection("user_store_index").doc(uid);
+    const indexSnap = await indexRef.get();
+    if (indexSnap.data()?.storeId === storeId) {
+      refs.set(indexRef.path, indexRef);
+    }
+  }
+  if (typeof storeEmail === "string" && storeEmail.trim()) {
+    const emailKey = storeEmail.trim().toLowerCase();
+    const emailRef = db.collection("email_index").doc(emailKey);
+    const emailSnap = await emailRef.get();
+    if (emailSnap.data()?.storeId === storeId) {
+      refs.set(emailRef.path, emailRef);
+    }
+  }
+  await deleteRefsInBatches([...refs.values()]);
+}
+
+exports.deleteStore = onCall(
+  {
+    region: "asia-south1",
+    timeoutSeconds: 540,
+    memory: "512MiB",
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in as a platform admin.");
+    }
+
+    const adminDoc = await db.collection("platform_admins")
+      .doc(request.auth.uid)
+      .get();
+    if (!adminDoc.exists) {
+      throw new HttpsError("permission-denied", "Platform admin access is required.");
+    }
+
+    const storeId = typeof request.data?.storeId === "string"
+      ? request.data.storeId.trim()
+      : "";
+    const confirmation = typeof request.data?.confirmStoreId === "string"
+      ? request.data.confirmStoreId.trim()
+      : "";
+    if (!/^[A-Za-z0-9_-]{1,64}$/.test(storeId) || confirmation !== storeId) {
+      throw new HttpsError("invalid-argument", "Enter the exact store ID to confirm deletion.");
+    }
+
+    const storeRef = db.collection("stores").doc(storeId);
+    const jobRef = db.collection("_store_deletion_jobs").doc(storeId);
+    const storeSnap = await storeRef.get();
+    const jobSnap = await jobRef.get();
+    if (!storeSnap.exists && !jobSnap.exists) {
+      throw new HttpsError("not-found", `Store ${storeId} was not found.`);
+    }
+
+    const userIds = new Set();
+    const storeData = storeSnap.data() || {};
+    if (typeof storeData.ownerUid === "string") userIds.add(storeData.ownerUid);
+
+    if (storeSnap.exists) {
+      await storeRef.set({
+        status: "deleting",
+        deletionStartedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+      const members = await storeRef.collection("users").get();
+      for (const member of members.docs) userIds.add(member.id);
+    }
+
+    const [userIndex, emailIndex] = await Promise.all([
+      db.collection("user_store_index").where("storeId", "==", storeId).get(),
+      db.collection("email_index").where("storeId", "==", storeId).get(),
+    ]);
+    for (const indexDoc of userIndex.docs) userIds.add(indexDoc.id);
+    for (const indexDoc of emailIndex.docs) {
+      const uid = indexDoc.data().uid;
+      if (typeof uid === "string") userIds.add(uid);
+    }
+
+    const jobUsers = jobRef.collection("auth_users");
+    const existingJobUsers = await jobUsers.get();
+    for (const userDoc of existingJobUsers.docs) userIds.add(userDoc.id);
+
+    await jobRef.set({
+      storeId,
+      requestedBy: request.auth.uid,
+      startedAt: jobSnap.exists
+        ? jobSnap.data().startedAt
+        : admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    for (const uid of userIds) {
+      await jobUsers.doc(uid).set({ uid }, { merge: true });
+    }
+
+    const storedUsers = await jobUsers.get();
+    const allUserIds = storedUsers.docs.map((doc) => doc.id);
+
+    const referredStoreRefs = await db.collectionGroup("referrals")
+      .where("referredStoreId", "==", storeId)
+      .get();
+    await deleteRefsInBatches(referredStoreRefs.docs.map((doc) => doc.ref));
+    await removeStoreIndexDocuments(storeId, allUserIds, storeData.email);
+    await db.recursiveDelete(storeRef);
+
+    let deletedAuthUsers = 0;
+    for (let offset = 0; offset < allUserIds.length; offset += 20) {
+      const batch = allUserIds.slice(offset, offset + 20);
+      const results = await Promise.all(batch.map(async (uid) => {
+        const [platformAdmin, operator] = await Promise.all([
+          db.collection("platform_admins").doc(uid).get(),
+          db.collection("weighbridge_operators").doc(uid).get(),
+        ]);
+        if (platformAdmin.exists || operator.exists) return { skipped: true };
+        try {
+          await admin.auth().deleteUser(uid);
+          return { deleted: true };
+        } catch (error) {
+          if (error.code === "auth/user-not-found") return { deleted: true };
+          return { error };
+        }
+      }));
+
+      const failed = results.find((result) => result.error);
+      if (failed) {
+        logger.error("Store deletion paused while deleting Auth users.", {
+          storeId,
+          error: failed.error,
+        });
+        throw new HttpsError(
+          "internal",
+          "Store data cleanup is in progress but an account could not be removed. Retry deletion to continue."
+        );
+      }
+      deletedAuthUsers += results.filter((result) => result.deleted).length;
+    }
+
+    await db.recursiveDelete(jobRef);
+    logger.info("Store and associated data deleted by platform admin.", {
+      storeId,
+      requestedBy: request.auth.uid,
+      deletedAuthUsers,
+    });
+    return { storeId, deletedAuthUsers };
+  }
+);
 
 // ==========================================
 // HELPER FUNCTIONS

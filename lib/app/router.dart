@@ -23,6 +23,7 @@ import '../features/purchases/presentation/purchase_page.dart';
 import '../features/ledger/presentation/credit_ledger_page.dart';
 import '../features/reports/presentation/sales_report_page.dart';
 import '../features/sales/presentation/quick_checkout_page.dart';
+import '../features/sales/presentation/invoice_lookup_page.dart';
 import '../features/sales/presentation/sales_history_import_page.dart';
 import '../features/sales/presentation/pos_billing_page.dart';
 import '../features/expense/presentation/expense_page.dart';
@@ -167,6 +168,9 @@ GoRouter createAppRouter(
           GoRoute(
               path: '/billing',
               builder: (context, state) => const PosBillingPage()),
+          GoRoute(
+              path: '/find-invoice',
+              builder: (context, state) => const InvoiceLookupPage()),
           GoRoute(
               path: '/quick-checkout',
               builder: (context, state) => const QuickCheckoutPage()),

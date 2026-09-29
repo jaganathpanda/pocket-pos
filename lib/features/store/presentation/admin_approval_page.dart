@@ -1,3 +1,4 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -132,6 +133,9 @@ class AdminApprovalPage extends ConsumerWidget {
             error: (e, _) => _Empty('Storefront feature flag error: $e'),
           ),
           const SizedBox(height: 20),
+          const _SectionHeader('Danger zone'),
+          const _StoreDeletionSection(),
+          const SizedBox(height: 20),
           const _SectionHeader('Pending approval'),
           pending.when(
             data: (list) => list.isEmpty
@@ -185,6 +189,177 @@ class AdminApprovalPage extends ConsumerWidget {
             error: (e, _) => _Empty('Error: $e'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StoreDeletionSection extends ConsumerStatefulWidget {
+  const _StoreDeletionSection();
+
+  @override
+  ConsumerState<_StoreDeletionSection> createState() =>
+      _StoreDeletionSectionState();
+}
+
+class _StoreDeletionSectionState extends ConsumerState<_StoreDeletionSection> {
+  final _storeIdController = TextEditingController();
+  bool _deleting = false;
+
+  @override
+  void dispose() {
+    _storeIdController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _deleteStore() async {
+    final storeId = _storeIdController.text.trim();
+    if (storeId.isEmpty || _deleting) return;
+
+    final confirmationController = TextEditingController();
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Permanently delete store?'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'This removes $storeId, its Firestore data, related account '
+                  'indexes, and store member login accounts. This cannot be undone.',
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: confirmationController,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Type the store ID to confirm',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Cancel'),
+              ),
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: confirmationController,
+                builder: (context, value, _) => FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                  onPressed: value.text.trim() == storeId
+                      ? () => Navigator.pop(dialogContext, true)
+                      : null,
+                  icon: const Icon(Icons.delete_forever_rounded),
+                  label: const Text('Delete permanently'),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    final confirmation = confirmationController.text.trim();
+    confirmationController.dispose();
+    if (!confirmed || !mounted) return;
+
+    setState(() => _deleting = true);
+    try {
+      final callable = FirebaseFunctions.instanceFor(region: 'asia-south1')
+          .httpsCallable('deleteStore');
+      final result = await callable.call<Map<String, dynamic>>({
+        'storeId': storeId,
+        'confirmStoreId': confirmation,
+      });
+      if (!mounted) return;
+      _storeIdController.clear();
+      ref.invalidate(_pendingStoresProvider);
+      ref.invalidate(_approvedStoresProvider);
+      final deletedUsers = result.data['deletedAuthUsers'] ?? 0;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Store $storeId deleted. $deletedUsers login accounts removed.'),
+        ),
+      );
+    } on FirebaseFunctionsException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message ?? 'Store deletion failed.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Store deletion failed: $error')),
+      );
+    } finally {
+      if (mounted) setState(() => _deleting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Delete a store and all associated data',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Store members’ Firebase Authentication accounts are also removed.',
+            ),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final input = TextField(
+                  controller: _storeIdController,
+                  enabled: !_deleting,
+                  textCapitalization: TextCapitalization.characters,
+                  decoration: const InputDecoration(
+                    labelText: 'Store ID',
+                    hintText: 'STR-ABC123',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                );
+                final button = FilledButton.icon(
+                  onPressed: _deleting ? null : _deleteStore,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                  icon: _deleting
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.delete_forever_rounded),
+                  label: Text(_deleting ? 'Deleting' : 'Delete store'),
+                );
+                if (constraints.maxWidth < 520) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [input, const SizedBox(height: 8), button],
+                  );
+                }
+                return Row(
+                  children: [
+                    Expanded(child: input),
+                    const SizedBox(width: 12),
+                    button,
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

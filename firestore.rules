@@ -29,7 +29,8 @@ service cloud.firestore {
     // Is the caller a member of this store (owner/staff)?
     function isStoreMember(storeId) {
       return isSignedIn()
-        && exists(/databases/$(database)/documents/stores/$(storeId)/users/$(request.auth.uid));
+        && exists(/databases/$(database)/documents/stores/$(storeId)/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/stores/$(storeId)).data.status != 'deleting';
     }
 
     // A scoped public-storefront session. Explicitly forces both sides of the

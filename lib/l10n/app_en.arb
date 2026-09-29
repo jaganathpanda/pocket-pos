@@ -1,0 +1,47 @@
+{
+  "@@locale": "en",
+  "appTitle": "Pocket POS",
+  "settings": "Settings",
+  "language": "Language",
+  "english": "English",
+  "hindi": "Hindi",
+  "save": "Save",
+  "dashboard": "Dashboard",
+  "refreshMetrics": "Refresh metrics",
+  "todayRevenue": "Today's Revenue",
+  "todayTransactions": "Today's Transactions",
+  "totalRevenue": "Total Revenue",
+  "totalTransactions": "Total Transactions",
+  "totalTaxCollected": "Total Tax Collected",
+  "totalDiscount": "Total Discount",
+  "activeCarts": "Active Carts",
+  "totalProducts": "Total Products",
+  "totalCustomers": "Total Customers",
+  "lowStockItems": "Low Stock Items",
+  "outOfStock": "Out Of Stock",
+  "pendingCredit": "Pending Credit",
+  "upcomingExpiry": "Upcoming Expiry",
+  "productsExpiringCount": "{count, plural, =1{1 product expiring soon} other{{count} products expiring soon}}",
+  "daysLeft": "{count, plural, =1{1 day left} other{{count} days left}}",
+  "expired": "EXPIRED",
+  "dashboardError": "Error: {message}",
+  "@productsExpiringCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "@daysLeft": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "@dashboardError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "productsExpiringSoon": "Products Expiring Soon",
+  "clickToViewAll": "Click to view all",
+  "expiryDataUnavailable": "Expiry data unavailable",
+  "close": "Close"
+}
