@@ -40,6 +40,9 @@ import '../features/store/presentation/activation_page.dart';
 import '../features/store/presentation/store_login_page.dart';
 import '../features/store/presentation/store_register_page.dart';
 import '../features/suppliers/presentation/supplier_page.dart';
+import '../features/table_booking/presentation/table_booking_page.dart';
+import '../features/table_booking/presentation/table_configuration_page.dart';
+import '../core/database/seed/demo_business_type.dart';
 import '../features/warehouse/domain/inventory_mode.dart';
 import '../features/warehouse/presentation/warehouse_page.dart';
 
@@ -181,6 +184,12 @@ GoRouter createAppRouter(
               path: '/customers',
               builder: (context, state) => const CustomerListPage()),
           GoRoute(
+              path: '/table-bookings',
+              builder: (context, state) => const TableBookingPage()),
+          GoRoute(
+              path: '/table-configuration',
+              builder: (context, state) => const TableConfigurationPage()),
+          GoRoute(
             path: '/customer/:id',
             builder: (context, state) {
               final id = int.parse(state.pathParameters['id']!);
@@ -272,6 +281,8 @@ class _AppShell extends ConsumerWidget {
     final isRiceMill = riceMillApp;
     final quickCheckoutEnabled = ref.watch(quickCheckoutEnabledProvider);
     final quickInvoiceEnabled = ref.watch(quickInvoiceEnabledProvider);
+    final isHotel =
+        ref.watch(businessTypeProvider).valueOrNull == DemoBusinessType.hotel;
 
     // Keep the warehouse + inventory caches warm for the whole authenticated
     // session. Firestore's one-time .get() throws ("client is offline") for a
@@ -330,6 +341,18 @@ class _AppShell extends ConsumerWidget {
         label: isRiceMill ? 'Rice Parties' : 'Customers',
         icon: Icons.person_rounded
       ),
+      if (isHotel)
+        (
+          route: '/table-bookings',
+          label: 'Table Bookings',
+          icon: Icons.table_restaurant_rounded
+        ),
+      if (isHotel)
+        (
+          route: '/table-configuration',
+          label: 'Table Configuration',
+          icon: Icons.table_bar_rounded
+        ),
       if (!scoped)
         (
           route: '/suppliers',

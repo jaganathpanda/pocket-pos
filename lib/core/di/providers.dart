@@ -24,6 +24,10 @@ import '../../features/staff/domain/staff_repository.dart';
 import '../../features/store/presentation/store_auth_controller.dart';
 import '../../features/suppliers/data/firestore_supplier_repository.dart';
 import '../../features/suppliers/domain/supplier_repository.dart';
+import '../../features/table_booking/data/firestore_table_reservation_repository.dart';
+import '../../features/table_booking/domain/restaurant_table.dart';
+import '../../features/table_booking/domain/table_reservation.dart';
+import '../../features/table_booking/domain/table_reservation_repository.dart';
 import '../../features/warehouse/data/firestore_warehouse_repository.dart';
 import '../../features/warehouse/domain/inventory_mode.dart';
 import '../../features/warehouse/domain/warehouse_repository.dart';
@@ -89,6 +93,22 @@ final customerRepositoryProvider = Provider<CustomerRepository>((ref) {
 final customersProvider = StreamProvider<List<Customer>>((ref) {
   if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
   return ref.watch(customerRepositoryProvider).watchAll();
+});
+
+final tableReservationRepositoryProvider =
+    Provider<TableReservationRepository>((ref) {
+  return FirestoreTableReservationRepository(
+      ref.watch(firestoreProvider), ref.watch(activeStoreIdProvider) ?? '');
+});
+
+final tableReservationsProvider = StreamProvider<List<TableReservation>>((ref) {
+  if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
+  return ref.watch(tableReservationRepositoryProvider).watchAll();
+});
+
+final restaurantTablesProvider = StreamProvider<List<RestaurantTable>>((ref) {
+  if (ref.watch(activeStoreIdProvider) == null) return Stream.value(const []);
+  return ref.watch(tableReservationRepositoryProvider).watchTables();
 });
 
 final staffRepositoryProvider = Provider<StaffRepository>((ref) {
