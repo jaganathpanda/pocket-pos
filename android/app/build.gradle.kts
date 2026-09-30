@@ -52,8 +52,9 @@ android {
         create("riceMill") {
             dimension = "app"
             applicationIdSuffix = ".ricemill"
-            resValue("string", "app_name", "Pocket Rice Mill")
+            resValue("string", "app_name", "My Pocket Rice Mill")
         }
+        
     }
 
     signingConfigs {
