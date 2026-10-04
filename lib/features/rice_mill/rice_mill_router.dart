@@ -8,6 +8,7 @@ import '../store/presentation/operator_home_page.dart';
 import '../store/presentation/operator_login_page.dart';
 import '../store/presentation/operator_register_page.dart';
 import '../notifications/presentation/notifications_page.dart';
+import 'farmers/presentation/farmer_list_page.dart';
 import 'mill_run/presentation/mill_run_page.dart';
 import 'mill_run/presentation/milling_charge_page.dart';
 import 'mill_run/presentation/milling_config_page.dart';
@@ -20,6 +21,10 @@ final riceMillRouterProvider = Provider<GoRouter>((ref) {
   return createAppRouter(
     ref,
     riceMillApp: true,
+    activeRoleRedirect: (role, location) =>
+        role == 'weighbridge_operator' && location != '/weighbridge-dashboard'
+            ? '/weighbridge-dashboard'
+            : null,
     publicRoutes: [
       GoRoute(
         path: '/operator-login',
@@ -39,6 +44,10 @@ final riceMillRouterProvider = Provider<GoRouter>((ref) {
       ),
     ],
     authenticatedRoutes: [
+      GoRoute(
+        path: '/farmers',
+        builder: (context, state) => const FarmerListPage(),
+      ),
       GoRoute(
         path: '/mill-runs',
         builder: (context, state) => const MillRunPage(),
@@ -69,6 +78,11 @@ final riceMillRouterProvider = Provider<GoRouter>((ref) {
       ),
     ],
     riceMillDestinations: const [
+      (
+        route: '/farmers',
+        label: 'Farmers / Mandi',
+        icon: Icons.agriculture_rounded,
+      ),
       (
         route: '/mill-runs',
         label: 'Mill Runs',

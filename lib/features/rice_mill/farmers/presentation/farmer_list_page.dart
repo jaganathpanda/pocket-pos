@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import '../../../core/utilities/money.dart';
 import '../domain/farmer.dart';
 import '../providers/farmer_providers.dart';
 

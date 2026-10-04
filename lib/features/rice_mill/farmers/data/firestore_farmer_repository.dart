@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../core/firestore/firestore_ids.dart';
-import '../../../core/firestore/store_scope.dart';
+import '../../../../core/firestore/firestore_ids.dart';
+import '../../../../core/firestore/store_scope.dart';
 import '../domain/farmer.dart';
 import '../domain/farmer_repository.dart';
 

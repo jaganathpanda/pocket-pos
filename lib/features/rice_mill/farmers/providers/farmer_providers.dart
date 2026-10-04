@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/firestore/store_scope.dart';
-import '../../store/presentation/store_auth_controller.dart';
+import '../../../../core/firestore/store_scope.dart';
+import '../../../store/presentation/store_auth_controller.dart';
 import '../data/firestore_farmer_repository.dart';
 import '../domain/farmer.dart';
 import '../domain/farmer_repository.dart';

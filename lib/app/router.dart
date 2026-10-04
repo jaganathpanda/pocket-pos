@@ -59,6 +59,7 @@ GoRouter createAppRouter(
   List<RouteBase> authenticatedRoutes = const [],
   List<AppNavigationItem> riceMillDestinations = const [],
   Widget Function()? settingsPageBuilder,
+  String? Function(String role, String location)? activeRoleRedirect,
 }) {
   final refresh = ValueNotifier<int>(0);
   ref.onDispose(refresh.dispose);
@@ -93,10 +94,11 @@ GoRouter createAppRouter(
           return loc == '/operator-home' ? null : '/operator-home';
         case StoreAuthStage.active:
           final role = ref.read(storeAuthControllerProvider).session?.role;
-          if (riceMillApp && role == 'weighbridge_operator') {
-            return loc == '/weighbridge-dashboard'
-                ? null
-                : '/weighbridge-dashboard';
+          if (role != null) {
+            final roleRedirect = activeRoleRedirect?.call(role, loc);
+            if (roleRedirect != null) {
+              return roleRedirect;
+            }
           }
           if (authRoutes.contains(loc) || loc == '/pending')
             return '/dashboard';
@@ -356,7 +358,7 @@ class _AppShell extends ConsumerWidget {
       if (!scoped)
         (
           route: '/suppliers',
-          label: isRiceMill ? 'Farmers / Mandi' : 'Vendors',
+          label: isRiceMill ? 'Suppliers' : 'Vendors',
           icon: Icons.storefront_rounded
         ),
       if (!scoped)
