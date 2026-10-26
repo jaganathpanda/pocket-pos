@@ -157,7 +157,7 @@ class _StoreLoginPageState extends ConsumerState<StoreLoginPage> {
                     TextButton(
                       onPressed:
                           busy ? null : () => context.push('/store-register'),
-                      child: const Text('Register a new store'),
+                      child: const Text('Register a new store-1'),
                     ),
                     TextButton(
                       onPressed:
