@@ -1,0 +1,61 @@
+[
+  {
+    "id": "starter",
+    "name": "Starter",
+    "description": "Perfect for small kirana and single-counter retail stores getting started.",
+    "monthlyPrice": 0,
+    "monthlyOriginalPrice": 699,
+    "yearlyPrice": 0,
+    "yearlyOriginalPrice": 8388,
+    "isPopular": false,
+    "ctaText": "Start Free",
+    "features": [
+      "1 POS Counter",
+      "1 Store Location",
+      "Offline-first billing & fast checkout",
+      "GST tax calculation & invoice generation",
+      "Camera & USB barcode scanning",
+      "Basic inventory tracking"
+    ]
+  },
+  {
+    "id": "professional",
+    "name": "Professional",
+    "description": "Ideal for growing businesses needing multi-counter billing and warehouses.",
+    "monthlyPrice": 299,
+    "monthlyOriginalPrice": 1299,
+    "yearlyPrice": 3588,
+    "yearlyOriginalPrice": 15588,
+    "isPopular": true,
+    "ctaText": "Start Free Trial",
+    "features": [
+      "Up to 3 POS Counters",
+      "Up to 2 Warehouses",
+      "Everything in Starter, plus:",
+      "Multi-warehouse stock transfers",
+      "Customer credit (Udhar) ledger",
+      "Low-stock alerts & stock adjustments",
+      "Daily sales & tax export reports"
+    ]
+  },
+  {
+    "id": "enterprise",
+    "name": "Business Unlimited",
+    "description": "For multi-store retailers requiring maximum scale and priority support.",
+    "monthlyPrice": 999,
+    "monthlyOriginalPrice": 2499,
+    "yearlyPrice": 11988,
+    "yearlyOriginalPrice": 29988,
+    "isPopular": false,
+    "ctaText": "Contact Sales",
+    "features": [
+      "Unlimited POS Counters",
+      "Unlimited Warehouses & Stores",
+      "Everything in Professional, plus:",
+      "Advanced multi-store cloud sync",
+      "Custom product catalog importing",
+      "Dedicated account manager",
+      "Priority 24/7 phone support"
+    ]
+  }
+]

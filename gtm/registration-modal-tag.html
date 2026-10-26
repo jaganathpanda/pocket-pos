@@ -1,0 +1,282 @@
+<!--
+  GTM Custom HTML Tag — "Registration Modal"
+  ==========================================
+  Version-controlled copy of a tag that lives in Google Tag Manager. This file
+  is NOT loaded by the site; paste its contents into the Custom HTML tag body
+  and keep the two in sync.
+
+  Behaviour:
+    - Auto-opens the modal AUTO_OPEN_DELAY_MS after the tag fires (5s).
+    - Dismissing it (×, backdrop, Esc, or the app's own close button) collapses
+      it to the amber #registration-sticky tab on the right edge.
+    - Clicking that tab re-opens the same modal.
+    - The tab's own × hides it for the rest of the session.
+
+  Requires #flutter-modal-container and #registration-sticky in web/index.html.
+  The Flutter side of the contract is lib/core/web/parent_modal_bridge.dart —
+  CLOSE_MESSAGE and the trusted origin must match on both ends.
+
+  Tag settings:
+    - Type:    Custom HTML
+    - Trigger: DOM Ready (All Pages). No click trigger — the popup is timed.
+    - Leave "Support document.write" UNCHECKED.
+-->
+<script>
+  (function () {
+    'use strict';
+
+    // ── Only ever run in the top-level document ────────────────────────────
+    // The modal's iframe loads this same index.html, GTM container and all, so
+    // without this guard the tag fires again inside the frame: it opens a modal
+    // within the modal (which is why the card looked blank white) and shows
+    // that inner page's sticky tab inside the card. Each level would spawn
+    // another. Bail out whenever we are framed.
+    try {
+      if (window.self !== window.top) return;
+    } catch (e) {
+      return; // cross-origin access threw — we are definitely framed
+    }
+    // Belt and braces: the embedded app is always loaded with embed=1, so treat
+    // that as "this document is the embedded one" even if the frame check is
+    // somehow inconclusive.
+    if (window.location.search.indexOf('embed=1') !== -1) return;
+
+    // ── Configuration ──────────────────────────────────────────────────────
+    // Two required parts of this URL, both easy to lose:
+    //   app=1            → index.html auto-calls enterApp(), so the iframe
+    //                      boots the Flutter engine instead of rendering the
+    //                      marketing landing overlay inside the modal.
+    //   #/store-register → the app uses hash routing (no usePathUrlStrategy),
+    //                      and the route is /store-register, not /registration.
+    // buildUrl() appends &embed=1 before the '#'.
+    var APP_URL = 'https://mypocketpos.in/?app=1#/store-register';
+    // Origins allowed to send us the close signal. Scheme + host (+ port), no
+    // trailing slash — compared against event.origin.
+    var TRUSTED_ORIGINS = ['https://mypocketpos.in'];
+    var CLOSE_MESSAGE = 'close_registration_modal';
+    var DONE_MESSAGE = 'registration_complete';
+    var AUTO_OPEN_DELAY_MS = 5000;
+    // Session key for "user dismissed the tab, stop nagging".
+    var DISMISS_KEY = 'pocketpos_reg_dismissed';
+    // Survives page loads: set once the visitor has actually registered.
+    var DONE_KEY = 'pocketpos_reg_done';
+    // Written by the Flutter app via shared_preferences, which on web is
+    // localStorage with a 'flutter.' prefix. Present whenever a store session
+    // is active, so it doubles as a logged-in signal readable from plain JS.
+    var STORE_ID_KEY = 'flutter.active_store_id';
+    var ADMIN_KEY = 'flutter.is_platform_admin';
+
+    var container = document.getElementById('flutter-modal-container');
+    var content = document.getElementById('flutter-modal-content');
+    var tab = document.getElementById('registration-sticky');
+    if (!container || !content || !tab) return; // markup missing — fail silently
+
+    // The tag can fire more than once per page. Everything below is idempotent,
+    // and listeners plus the auto-open timer are set up only on the first run.
+    var state = window.__pocketPosModal;
+    var firstRun = !state;
+    if (firstRun) state = window.__pocketPosModal = { lastFocus: null };
+
+    // Storage access throws in some privacy modes, so it is always guarded.
+    function isDismissed() {
+      try { return sessionStorage.getItem(DISMISS_KEY) === '1'; }
+      catch (e) { return false; }
+    }
+    function rememberDismissed() {
+      try { sessionStorage.setItem(DISMISS_KEY, '1'); } catch (e) { }
+    }
+    function hasRegistered() {
+      try { return localStorage.getItem(DONE_KEY) === '1'; }
+      catch (e) { return false; }
+    }
+    function rememberRegistered() {
+      try { localStorage.setItem(DONE_KEY, '1'); } catch (e) { }
+    }
+
+    // A store session (or admin session) is active. The Flutter app clears
+    // these on logout, so a logged-out visitor starts seeing the prompt again.
+    function isLoggedIn() {
+      try {
+        if (localStorage.getItem(STORE_ID_KEY)) return true;
+        return localStorage.getItem(ADMIN_KEY) === 'true';
+      } catch (e) { return false; }
+    }
+
+    // The visitor has left the marketing page and is using the app in this very
+    // document (Login / Register store call enterApp(), which hides #landing
+    // and boots Flutter). Popping a registration modal over the running app is
+    // exactly the bug being fixed here.
+    function appInForeground() {
+      if (window._flutterAppLoaded) return true;
+      var landing = document.getElementById('landing');
+      if (landing && landing.style.display === 'none') return true;
+      var loader = document.getElementById('app-loader');
+      if (loader && loader.style.display === 'flex') return true; // booting
+      return false;
+    }
+
+    // Any of these means the prompt has no business being on screen.
+    function shouldSuppress() {
+      return isLoggedIn() || hasRegistered() || appInForeground() || isDismissed();
+    }
+
+    function retirePrompt() {
+      container.classList.remove('is-open');
+      container.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-open');
+      tab.hidden = true;
+    }
+
+    function buildUrl() {
+      var hash = '';
+      var url = APP_URL;
+      var h = url.indexOf('#');
+      if (h !== -1) {
+        hash = url.slice(h);
+        url = url.slice(0, h);
+      }
+      return url + (url.indexOf('?') === -1 ? '?' : '&') + 'embed=1' + hash;
+    }
+
+    function ensureIframe() {
+      // Reuse the existing frame so repeat opens don't stack iframes — and so
+      // collapsing to the tab keeps a part-filled form intact.
+      var iframe = document.getElementById('flutter-app-iframe');
+      if (iframe) return iframe;
+
+      iframe = document.createElement('iframe');
+      iframe.id = 'flutter-app-iframe';
+      iframe.src = buildUrl();
+      iframe.title = 'Register your store';
+      iframe.setAttribute('loading', 'lazy');
+      iframe.setAttribute('allow', 'clipboard-write; camera');
+      // No `sandbox`: the Flutter app signs in with Firebase Auth, which needs
+      // same-origin access to IndexedDB. A sandbox without allow-same-origin
+      // breaks login; one with it grants little, since the frame is first-party.
+      content.appendChild(iframe);
+      return iframe;
+    }
+
+    function openModal() {
+      if (container.classList.contains('is-open')) return;
+      // Re-checked here, not just before the timer, because the visitor may
+      // have logged in or entered the app during the delay.
+      if (isLoggedIn() || hasRegistered() || appInForeground()) {
+        retirePrompt();
+        return;
+      }
+      ensureIframe();
+      state.lastFocus = document.activeElement;
+      tab.hidden = true;                       // modal and tab are exclusive
+      container.classList.add('is-open');
+      container.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+      var closeBtn = document.getElementById('close-flutter-modal');
+      if (closeBtn) closeBtn.focus();
+    }
+
+    // Every dismissal path lands here: hide the modal, leave the tab behind.
+    function collapseToTab() {
+      if (!container.classList.contains('is-open')) return;
+      container.classList.remove('is-open');
+      container.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-open');
+      if (!isDismissed()) {
+        tab.hidden = false;
+        // Move focus to the tab so keyboard users aren't dropped at the top of
+        // the document.
+        var openBtn = document.getElementById('registration-sticky-open');
+        if (openBtn) openBtn.focus();
+      } else if (state.lastFocus && typeof state.lastFocus.focus === 'function') {
+        state.lastFocus.focus();
+      }
+      state.lastFocus = null;
+    }
+
+    function dismissTab() {
+      tab.hidden = true;
+      rememberDismissed();
+    }
+
+    if (firstRun) {
+      // ── Close signal from inside the Flutter app ────────────────────────
+      window.addEventListener('message', function (event) {
+        // 1. Origin must be on the allowlist. Never trust event.data alone.
+        if (TRUSTED_ORIGINS.indexOf(event.origin) === -1) return;
+
+        // 2. The message must come from our iframe, not another frame that
+        //    happens to sit on a trusted origin.
+        var iframe = document.getElementById('flutter-app-iframe');
+        if (!iframe || event.source !== iframe.contentWindow) return;
+
+        // 3. Accept a bare string or {type:'...'} so the Flutter side can
+        //    evolve to a richer payload without breaking this tag.
+        var data = event.data;
+        var message = typeof data === 'string'
+          ? data
+          : (data && typeof data === 'object' ? data.type : null);
+
+        if (message === DONE_MESSAGE) {
+          // Registered — retire the prompt for good rather than collapsing it.
+          rememberRegistered();
+          retirePrompt();
+          return;
+        }
+        if (message === CLOSE_MESSAGE) collapseToTab();
+      }, false);
+
+      // ── Dismissal from the parent page ──────────────────────────────────
+      var closeBtn = document.getElementById('close-flutter-modal');
+      if (closeBtn) closeBtn.addEventListener('click', collapseToTab);
+
+      // Backdrop click — only when the backdrop itself is the target, so a
+      // click that started inside the card doesn't dismiss it.
+      container.addEventListener('click', function (event) {
+        if (event.target === container) collapseToTab();
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' || event.keyCode === 27) collapseToTab();
+      });
+
+      // ── The collapsed tab ───────────────────────────────────────────────
+      var tabOpen = document.getElementById('registration-sticky-open');
+      if (tabOpen) tabOpen.addEventListener('click', openModal);
+
+      var tabDismiss = document.getElementById('registration-sticky-dismiss');
+      if (tabDismiss) tabDismiss.addEventListener('click', dismissTab);
+
+      // ── Sticky tab on load + timed auto-open ────────────────────────────
+      if (!shouldSuppress()) {
+        // Show the tab immediately so Registration is reachable straight away
+        // — before the timed popup, and again after any dismissal. openModal()
+        // hides it while the modal is up, so the two are never both visible.
+        tab.hidden = false;
+
+        window.setTimeout(function () {
+          if (!shouldSuppress()) openModal();
+        }, AUTO_OPEN_DELAY_MS);
+
+        // Logging in happens in this same document, and same-document
+        // localStorage writes do not fire a 'storage' event — so the state has
+        // to be polled. Cheap, and it stops itself the moment it fires. Also
+        // catches registration completing inside the (same-origin) iframe.
+        var watch = window.setInterval(function () {
+          if (!isLoggedIn() && !hasRegistered() && !appInForeground()) return;
+          retirePrompt();
+          window.clearInterval(watch);
+        }, 1000);
+
+        // A logout in another tab does fire 'storage'; bring the prompt back.
+        window.addEventListener('storage', function (e) {
+          if (e.key !== STORE_ID_KEY && e.key !== ADMIN_KEY) return;
+          if (!shouldSuppress()) tab.hidden = false;
+        });
+      }
+
+      // Let other tags / page code drive the modal too.
+      window.pocketPosOpenRegistration = openModal;
+      window.pocketPosCloseRegistration = collapseToTab;
+    }
+  })();
+</script>
