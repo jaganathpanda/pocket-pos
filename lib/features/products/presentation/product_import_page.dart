@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:csv/csv.dart';
@@ -12,6 +12,7 @@ import '../../../core/di/providers.dart';
 import '../../../core/firestore/store_scope.dart';
 import '../../../core/utilities/csv_file_export.dart';
 import '../../store/presentation/store_auth_controller.dart';
+import 'product_spreadsheet_reader.dart';
 
 double parseProductImportOpeningStock(String raw) {
   final value = raw.trim();
@@ -147,20 +148,31 @@ class _ProductImportPageState extends ConsumerState<ProductImportPage> {
     }
   }
 
-  Future<void> _pickCsv() async {
+  Future<void> _pickFile({bool excelOnly = false}) async {
     setState(() => _loading = true);
     try {
       final picked = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: const <String>['csv'],
+        allowedExtensions: excelOnly
+            ? const <String>['xlsx', 'xls']
+            : const <String>['csv', 'xlsx', 'xls'],
         withData: true,
       );
-      final bytes = picked?.files.single.bytes;
-      if (bytes == null) {
-        throw Exception('No CSV file selected');
+      final pickedFile = picked?.files.single;
+      final bytes = pickedFile?.bytes;
+      if (bytes == null || pickedFile == null) {
+        throw Exception('No file selected');
       }
-      final content = utf8.decode(bytes, allowMalformed: true);
-      final preview = await _buildPreview(content);
+
+      final name = pickedFile.name.toLowerCase();
+      final List<List<dynamic>> rawRows;
+      if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+        rawRows = ProductSpreadsheetReader.readExcel(bytes);
+      } else {
+        rawRows = ProductSpreadsheetReader.readCsv(bytes);
+      }
+
+      final preview = await _buildPreview(rawRows);
       if (!mounted) return;
       setState(() => _preview = preview);
     } catch (e) {
@@ -173,10 +185,11 @@ class _ProductImportPageState extends ConsumerState<ProductImportPage> {
     }
   }
 
-  Future<_ProductImportPreview> _buildPreview(String csvContent) async {
-    final rows = const CsvDecoder().convert(csvContent);
+  Future<_ProductImportPreview> _buildPreview(
+    List<List<dynamic>> rows,
+  ) async {
     if (rows.isEmpty) {
-      throw Exception('CSV is empty');
+      throw Exception('File is empty');
     }
     final header = rows.first.map((cell) => '$cell'.trim()).toList();
     final missing = _headers.where((value) => !header.contains(value)).toList();
@@ -357,12 +370,12 @@ class _ProductImportPageState extends ConsumerState<ProductImportPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Product CSV Import',
+                    'Product CSV / Excel Import',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'Download the template, fill the rows, upload the CSV, review create/update validation, then confirm the import.',
+                    'Download the template, fill the rows, upload the CSV or Excel file, review create/update validation, then confirm the import.',
                     style: TextStyle(color: Colors.grey),
                   ),
                   const SizedBox(height: 14),
@@ -381,9 +394,16 @@ class _ProductImportPageState extends ConsumerState<ProductImportPage> {
                         label: const Text('Export Current Products'),
                       ),
                       OutlinedButton.icon(
-                        onPressed: _loading ? null : _pickCsv,
+                        onPressed:
+                            _loading ? null : () => _pickFile(excelOnly: false),
                         icon: const Icon(Icons.upload_file_rounded),
                         label: const Text('Upload CSV'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed:
+                            _loading ? null : () => _pickFile(excelOnly: true),
+                        icon: const Icon(Icons.table_chart_outlined),
+                        label: const Text('Upload Excel'),
                       ),
                     ],
                   ),
